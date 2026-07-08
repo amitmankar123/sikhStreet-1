@@ -1,0 +1,25 @@
+/* User Module Specific Styles */
+
+/* Enforce Poppins for headings within the user module */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Enforce Inter for body text within the user module */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  background-color: #FFFBF5;
+  color: #2A2420;
+}
+
+/* Custom Scrollbar for User App */
+.scrollbar-user {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-user::-webkit-scrollbar {
+  display: none;
+}

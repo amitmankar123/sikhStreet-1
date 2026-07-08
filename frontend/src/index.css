@@ -1,0 +1,438 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────
+   CSS Custom Properties (Design Tokens)
+───────────────────────────────────────────────────────────────── */
+:root {
+  /* Vendor panel variables */
+  --vendor-bg:           250 250 250;  /* #FAFAFA */
+  --vendor-primary:      10 25 47;     /* #0A192F */
+  --vendor-accent:       212 175 55;   /* #D4AF37 */
+  --vendor-accent-hover: 184 150 43;   /* #B8962B */
+
+  /* Buyer brand variables */
+  --brand-bg:      #FFF8F0;
+  --brand-surface: #FFFFFF;
+  --brand-navy:    #2C1A0E;
+  --brand-saffron: #F1641E;
+  --brand-gold:    #C9922A;
+  --brand-border:  #EDE0D4;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CSS Reset / Base
+───────────────────────────────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Typography
+───────────────────────────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────────────────────────────
+   Root Layout
+───────────────────────────────────────────────────────────────── */
+html {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Figma warm cream background */
+  background: var(--brand-bg);
+  color: var(--brand-navy);
+
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+
+  /* Hide scrollbar globally */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Scrollbar Utilities
+───────────────────────────────────────────────────────────────── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-responsive {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-responsive::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .scrollbar-responsive {
+    -ms-overflow-style: auto;
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-responsive::-webkit-scrollbar {
+    display: block;
+    width: 6px;
+  }
+
+  .scrollbar-responsive::-webkit-scrollbar-track {
+    background: #F5EDE4;
+    border-radius: 4px;
+  }
+
+  .scrollbar-responsive::-webkit-scrollbar-thumb {
+    background: #BFA99A;
+    border-radius: 4px;
+  }
+
+  .scrollbar-responsive::-webkit-scrollbar-thumb:hover {
+    background: #7A6152;
+  }
+}
+
+/* Nano (thin) scrollbar */
+.scrollbar-nano {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.scrollbar-nano::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-nano::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+.scrollbar-nano::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(156, 163, 175, 0.6) 0%, rgba(107, 114, 128, 0.6) 100%);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.scrollbar-nano::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(107, 114, 128, 0.8) 0%, rgba(75, 85, 99, 0.8) 100%);
+}
+
+.scrollbar-nano::-webkit-scrollbar:horizontal {
+  height: 4px;
+}
+
+/* Admin panel scrollbar */
+.scrollbar-admin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.4) transparent;
+}
+
+.scrollbar-admin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.scrollbar-admin::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.5);
+  border-radius: 10px;
+  margin: 2px;
+}
+
+.scrollbar-admin::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.5) 0%, rgba(167, 139, 250, 0.5) 100%);
+  border-radius: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.scrollbar-admin::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.7) 0%, rgba(167, 139, 250, 0.7) 100%);
+  box-shadow: 0 0 8px rgba(124, 58, 237, 0.3);
+}
+
+.scrollbar-admin::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.9) 0%, rgba(167, 139, 250, 0.9) 100%);
+}
+
+.scrollbar-admin::-webkit-scrollbar:horizontal {
+  height: 5px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Writing Mode Utility
+───────────────────────────────────────────────────────────────── */
+.writing-vertical-rl {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Glassmorphism & Visual Utilities
+───────────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Glass surfaces */
+  .glass {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(237, 224, 212, 0.6);
+    transform: translateZ(0);
+    will-change: backdrop-filter;
+  }
+
+  .glass-dark {
+    background: rgba(44, 26, 14, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transform: translateZ(0);
+    will-change: backdrop-filter;
+  }
+
+  .glass-card {
+    background: #ffffff;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(237, 224, 212, 0.5);
+    box-shadow: 0 4px 24px 0 rgba(44, 26, 14, 0.08);
+    transform: translateZ(0);
+    will-change: backdrop-filter;
+  }
+
+  /* Warm cream glass for brand surfaces */
+  .glass-brand {
+    background: rgba(255, 248, 240, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(237, 224, 212, 0.6);
+    transform: translateZ(0);
+  }
+
+  /* Gradients */
+  .gradient-primary {
+    background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+  }
+
+  .gradient-secondary {
+    background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  }
+
+  .gradient-saffron {
+    background: linear-gradient(135deg, #F1641E 0%, #F97B3C 100%);
+  }
+
+  .gradient-gold {
+    background: linear-gradient(135deg, #C9922A 0%, #E8B84B 100%);
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  }
+
+  .gradient-green {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  }
+
+  .gradient-saffron {
+    background: linear-gradient(135deg, #F1641E 0%, #D94E0A 100%);
+  }
+
+  .gradient-red {
+    background: linear-gradient(135deg, #EF4444 0%, #F97316 100%);
+  }
+
+  /* Brand warm cream gradient (page backgrounds) */
+  .gradient-brand-bg {
+    background: linear-gradient(180deg, #FFF8F0 0%, #FFF3E4 50%, #FBEBD8 100%);
+  }
+
+  /* Text gradients */
+  .text-gradient {
+    background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-saffron {
+    background: linear-gradient(135deg, #F1641E 0%, #C9922A 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Shadows */
+  .shadow-glow {
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+  }
+
+  .shadow-glow-green {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+
+  .shadow-glow-red {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  }
+
+  .shadow-glow-saffron {
+    box-shadow: 0 4px 20px rgba(241, 100, 30, 0.3);
+  }
+
+  .shadow-glow-accent {
+    box-shadow: 0 0 20px rgba(255, 225, 27, 0.3);
+  }
+
+  .shadow-card {
+    box-shadow: 0 2px 12px 0 rgba(44, 26, 14, 0.08);
+  }
+
+  .shadow-card-hover {
+    box-shadow: 0 8px 30px 0 rgba(44, 26, 14, 0.14);
+  }
+
+  /* Hover lift */
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  /* GPU acceleration */
+  .gpu-accelerate {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  .gpu-accelerate-opacity {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+  }
+
+  .gpu-accelerate-all {
+    transform: translateZ(0);
+    will-change: transform, opacity, filter;
+  }
+
+  /* Shimmer (skeleton loading) */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.5) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+
+  /* Brand button utilities */
+  .btn-saffron {
+    background: #F1641E;
+    color: #ffffff;
+    border-radius: 9999px;
+    font-weight: 600;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  }
+
+  .btn-saffron:hover {
+    background: #D4521A;
+    box-shadow: 0 4px 16px rgba(241, 100, 30, 0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn-saffron:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+
+  /* Saffron pill badge */
+  .badge-saffron {
+    background: #FFF0E8;
+    color: #F1641E;
+    border: 1px solid #F1641E22;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.1rem 0.5rem;
+  }
+
+  /* Heritage card style */
+  .card-heritage {
+    background: #FFFFFF;
+    border: 1px solid #EDE0D4;
+    border-radius: 1rem;
+    box-shadow: 0 2px 12px 0 rgba(44, 26, 14, 0.07);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .card-heritage:hover {
+    box-shadow: 0 8px 30px 0 rgba(44, 26, 14, 0.13);
+    transform: translateY(-3px);
+  }
+
+  /* Performance optimizations */
+  .optimize-animation {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  .optimize-scroll {
+    will-change: scroll-position;
+    transform: translateZ(0);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Reduced Motion
+───────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .shimmer      { animation: none !important; }
+  .hover-lift   { transition: none !important; }
+  .btn-saffron  { transition: none !important; }
+}
