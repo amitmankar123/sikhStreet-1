@@ -25,7 +25,8 @@ const SwipeableCartItem = ({ item, index }) => {
     const getProductStock = () => Number(item?.stockQuantity);
     
     const unitStr = String(item?.unit || '').toLowerCase();
-    const isFractionalUnit = ['meter', 'meters', 'm', 'kg', 'kilogram', 'kilograms', 'gram', 'grams', 'g', 'litre', 'litres', 'l'].includes(unitStr);
+    const isTurbanItem = item?.variant?.fabric !== undefined || (item?.name || '').toLowerCase().includes('turban');
+    const isFractionalUnit = !isTurbanItem && ['meter', 'meters', 'm', 'kg', 'kilogram', 'kilograms', 'gram', 'grams', 'g', 'litre', 'litres', 'l'].includes(unitStr);
     const quantityStep = isFractionalUnit ? 0.5 : 1;
     const minQuantity = isFractionalUnit ? 0.5 : 1;
 
@@ -36,7 +37,10 @@ const SwipeableCartItem = ({ item, index }) => {
     const isLowStock = () => String(item?.stock || "") === "low_stock";
 
     const handleQuantityChange = (id, currentQuantity, change, variant) => {
-        const newQuantity = currentQuantity + change;
+        let newQuantity = currentQuantity + change;
+        if (!isFractionalUnit) {
+            newQuantity = Math.round(newQuantity);
+        }
 
         if (newQuantity < minQuantity) {
             removeItem(id, variant);

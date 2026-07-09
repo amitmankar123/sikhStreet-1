@@ -25,7 +25,6 @@ const DimensionInputPanel = ({ onAdd }) => {
   const [length, setLength] = useState("");
   const [width, setWidth] = useState("");
   const [price, setPrice] = useState("");
-  const [stock, setStock] = useState("");
 
   // When dimType changes, auto-update the selected unit to match the valid set
   useEffect(() => {
@@ -55,11 +54,10 @@ const DimensionInputPanel = ({ onAdd }) => {
     } else {
       formatted = `${trimmedLen} ${unit}`;
     }
-    onAdd(formatted, price, stock);
+    onAdd(formatted, price, "");
     setLength("");
     setWidth("");
     setPrice("");
-    setStock("");
   };
 
   return (
@@ -113,7 +111,7 @@ const DimensionInputPanel = ({ onAdd }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <input
           type="number"
           value={length}
@@ -137,13 +135,6 @@ const DimensionInputPanel = ({ onAdd }) => {
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           placeholder="Price (optional)"
-          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs bg-white"
-        />
-        <input
-          type="number"
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
-          placeholder="Stock (optional)"
           className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs bg-white"
         />
       </div>
@@ -183,11 +174,11 @@ const ColorInputPanel = ({ onAdd, isTurbanCategory = false, onTurbanColorAdd }) 
     const trimmed = val.trim();
     if (!trimmed) { toast.error("Please enter a color name"); return; }
     if (isTurbanCategory) {
-      if (!price) { toast.error("Price per meter is required for each color"); return; }
+      if (!stock) { toast.error("Stock is required for each turban color"); return; }
       if (!imageFile) { toast.error("Photo is required for each turban color"); return; }
-      onTurbanColorAdd && onTurbanColorAdd(trimmed, colorHex, price, stock, imageFile);
+      onTurbanColorAdd && onTurbanColorAdd(trimmed, colorHex, "", stock, imageFile);
     } else {
-      onAdd(trimmed, price, stock);
+      onAdd(trimmed, price, "");
     }
     setVal(""); setColorHex("#000000"); setPrice(""); setStock("");
     setImageFile(null); setImagePreview("");
@@ -196,7 +187,7 @@ const ColorInputPanel = ({ onAdd, isTurbanCategory = false, onTurbanColorAdd }) 
   if (isTurbanCategory) {
     return (
       <div className="bg-amber-50 rounded-lg p-3 border border-amber-200 space-y-3 mt-2">
-        <p className="text-xs font-semibold text-amber-700">Add Turban Color — Price &amp; Photo required <span className="text-red-500">*</span></p>
+        <p className="text-xs font-semibold text-amber-700">Add Turban Color — Stock &amp; Photo required <span className="text-red-500">*</span></p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="flex items-center gap-2">
             <input
@@ -216,17 +207,10 @@ const ColorInputPanel = ({ onAdd, isTurbanCategory = false, onTurbanColorAdd }) 
           </div>
           <input
             type="number"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            placeholder="Price per meter (₹) *"
-            className="w-full px-2.5 py-1.5 border border-red-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400 text-xs bg-white"
-          />
-          <input
-            type="number"
             value={stock}
             onChange={(e) => setStock(e.target.value)}
-            placeholder="Stock in meters (optional)"
-            className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs bg-white"
+            placeholder="Stock quantity *"
+            className="w-full px-2.5 py-1.5 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-xs bg-white"
           />
           <div className="flex items-center gap-2">
             <input type="file" accept="image/*" id="turban-color-img-pf" className="hidden" onChange={handleImageSelect} />
@@ -249,7 +233,7 @@ const ColorInputPanel = ({ onAdd, isTurbanCategory = false, onTurbanColorAdd }) 
 
   return (
     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 space-y-2 mt-2">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <input
           type="text"
           value={val}
@@ -262,13 +246,6 @@ const ColorInputPanel = ({ onAdd, isTurbanCategory = false, onTurbanColorAdd }) 
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           placeholder="Price (optional)"
-          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs bg-white"
-        />
-        <input
-          type="number"
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
-          placeholder="Stock (optional)"
           className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs bg-white"
         />
       </div>
@@ -456,7 +433,6 @@ const ArtAdvancedConfig = ({ config, onChange }) => {
 const SizeInputPanel = ({ onAdd }) => {
   const [val, setVal] = useState("");
   const [price, setPrice] = useState("");
-  const [stock, setStock] = useState("");
 
   const handleAdd = (e) => {
     e.preventDefault();
@@ -465,15 +441,14 @@ const SizeInputPanel = ({ onAdd }) => {
       toast.error("Please enter a size value");
       return;
     }
-    onAdd(trimmed, price, stock);
+    onAdd(trimmed, price, "");
     setVal("");
     setPrice("");
-    setStock("");
   };
 
   return (
     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 space-y-2 mt-2">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <input
           type="text"
           value={val}
@@ -486,13 +461,6 @@ const SizeInputPanel = ({ onAdd }) => {
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           placeholder="Price (optional)"
-          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs bg-white"
-        />
-        <input
-          type="number"
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
-          placeholder="Stock (optional)"
           className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs bg-white"
         />
       </div>
@@ -512,7 +480,6 @@ const SizeInputPanel = ({ onAdd }) => {
 const CustomAttributeInputPanel = ({ onAdd }) => {
   const [val, setVal] = useState("");
   const [price, setPrice] = useState("");
-  const [stock, setStock] = useState("");
 
   const handleAdd = (e) => {
     e.preventDefault();
@@ -521,15 +488,14 @@ const CustomAttributeInputPanel = ({ onAdd }) => {
       toast.error("Please enter a value");
       return;
     }
-    onAdd(trimmed, price, stock);
+    onAdd(trimmed, price, "");
     setVal("");
     setPrice("");
-    setStock("");
   };
 
   return (
     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 space-y-2 mt-2">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <input
           type="text"
           value={val}
@@ -542,13 +508,6 @@ const CustomAttributeInputPanel = ({ onAdd }) => {
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           placeholder="Price (optional)"
-          className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs bg-white"
-        />
-        <input
-          type="number"
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
-          placeholder="Stock (optional)"
           className="w-full px-2.5 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs bg-white"
         />
       </div>
@@ -1208,7 +1167,7 @@ const ProductForm = () => {
       return;
     }
 
-    if (!formData.name || !formData.price || !formData.stockQuantity || !formData.categoryId) {
+    if (!formData.name || !formData.price || (!isArtCategory && !formData.stockQuantity) || !formData.categoryId) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -1244,7 +1203,7 @@ const ProductForm = () => {
     const parsedOriginalPrice = formData.originalPrice
       ? parseFloat(formData.originalPrice)
       : null;
-    const parsedStockQuantity = parseFloat(formData.stockQuantity);
+    const parsedStockQuantity = isArtCategory ? 1 : parseFloat(formData.stockQuantity);
     const parsedTotalAllowedQuantity = formData.totalAllowedQuantity
       ? parseFloat(formData.totalAllowedQuantity)
       : null;
@@ -1342,13 +1301,44 @@ const ProductForm = () => {
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Category <span className="text-red-500">*</span>
+                Main Category <span className="text-red-500">*</span>
               </label>
-              <CategorySelector
-                value={formData.categoryId}
-                subcategoryId={formData.subcategoryId}
-                onChange={handleChange}
+              <AnimatedSelect
+                name="categoryId"
+                value={formData.categoryId || ""}
+                onChange={(e) => {
+                  handleChange(e);
+                  handleChange({ target: { name: 'subcategoryId', value: null } });
+                }}
                 required
+                placeholder="Select Main Category"
+                options={[
+                  ...(categories || [])
+                    .filter((cat) => !cat.parentId && cat.isActive !== false)
+                    .map((cat) => ({ value: String(cat.id || cat._id), label: cat.name })),
+                ]}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Subcategory
+              </label>
+              <AnimatedSelect
+                name="subcategoryId"
+                value={formData.subcategoryId || ""}
+                onChange={handleChange}
+                placeholder="Select Subcategory"
+                options={[
+                  ...(categories || [])
+                    .filter(
+                      (cat) =>
+                        cat.parentId &&
+                        String(cat.parentId) === String(formData.categoryId) &&
+                        cat.isActive !== false
+                    )
+                    .map((cat) => ({ value: String(cat.id || cat._id), label: cat.name })),
+                ]}
               />
             </div>
 
@@ -1571,41 +1561,43 @@ const ProductForm = () => {
         </div>
 
         {/* Inventory */}
-        <div>
-          <h2 className="text-base font-bold text-gray-800 mb-2">Inventory</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                {isTurbanCategory ? 'Total Meters Available' : 'Stock Quantity'} <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="stockQuantity" step="any" value={formData.stockQuantity}
-                onChange={handleChange}
-                required
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
-                placeholder="0"
-              />
-            </div>
+        {!isArtCategory && (
+          <div>
+            <h2 className="text-base font-bold text-gray-800 mb-2">Inventory</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  {isTurbanCategory ? 'Total Meters Available' : 'Stock Quantity'} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="stockQuantity" step="any" value={formData.stockQuantity}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                  placeholder="0"
+                />
+              </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Stock Status
-              </label>
-              <AnimatedSelect
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                options={[
-                  { value: 'in_stock', label: 'In Stock' },
-                  { value: 'low_stock', label: 'Low Stock' },
-                  { value: 'out_of_stock', label: 'Out of Stock' },
-                ]}
-              />
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Stock Status
+                </label>
+                <AnimatedSelect
+                  name="stock"
+                  value={formData.stock}
+                  onChange={handleChange}
+                  options={[
+                    { value: 'in_stock', label: 'In Stock' },
+                    { value: 'low_stock', label: 'Low Stock' },
+                    { value: 'out_of_stock', label: 'Out of Stock' },
+                  ]}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Product Variants */}
         <div>
@@ -1825,8 +1817,8 @@ const ProductForm = () => {
                 </p>
                 <div className="space-y-2">
                   {variantCombinations.map((combo) => (
-                    <div key={combo.key} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-center">
-                      <p className="text-xs text-gray-700 md:col-span-1">
+                    <div key={combo.key} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
+                      <p className="text-xs text-gray-700 md:col-span-1 truncate" title={combo.label || ((combo.size || "Any Size") + " / " + (combo.color || "Any Color"))}>
                         {combo.label || ((combo.size || "Any Size") + " / " + (combo.color || "Any Color"))}
                       </p>
                       <input
@@ -1848,28 +1840,7 @@ const ProductForm = () => {
                           }));
                         }}
                         className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs"
-                        placeholder="Use base price"
-                      />
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={formData.variants?.stockMap?.[combo.key] ?? ""}
-                        onChange={(e) => {
-                          const nextValue = e.target.value;
-                          setFormData((prev) => ({
-                            ...prev,
-                            variants: {
-                              ...prev.variants,
-                              stockMap: {
-                                ...(prev.variants?.stockMap || {}),
-                                [combo.key]: nextValue === "" ? "" : Number(nextValue),
-                              },
-                            },
-                          }));
-                        }}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs"
-                        placeholder="Variant stock"
+                        placeholder="Variant price"
                       />
                       <div className="flex items-center gap-2">
                         <input

@@ -39,97 +39,9 @@ import MobileProductCard from "../components/Mobile/MobileProductCard";
 import PageTransition from "../../../shared/components/PageTransition";
 import Badge from "../../../shared/components/Badge";
 import ProductCard from "../../../shared/components/ProductCard";
-import { getVariantSignature } from "../../../shared/utils/variant";
-
-// Frame prices are ADDITIVE (base + frame add-on price).
-// All other variant attributes replace the base price.
-const isFrameOnlySelection = (selectedVariant) => {
-  if (!selectedVariant) return false;
-  const keys = Object.keys(selectedVariant);
-  return keys.length > 0 && keys.every((k) => k.toLowerCase() === "frame");
-};
-
-const resolveVariantPrice = (product, selectedVariant) => {
-  const basePrice = Number(product?.price) || 0;
-  if (!selectedVariant || !product?.variants?.prices) return basePrice;
-
-  const entries =
-    product.variants.prices instanceof Map
-      ? Array.from(product.variants.prices.entries())
-      : Object.entries(product.variants.prices || {});
-
-  // --- Frame attribute: price is ADDITIVE (base price + frame add-on price) ---
-  // Example: product ₹1000 + Gold Frame ₹300 = ₹1300
-  if (isFrameOnlySelection(selectedVariant)) {
-    const frameVal = String(Object.values(selectedVariant)[0] || "").trim().toLowerCase();
-    const frameKey = `frame=${frameVal}`;
-    const frameEntry =
-      entries.find(([k]) => String(k).trim().toLowerCase() === frameKey) ||
-      entries.find(([k]) => String(k).trim().toLowerCase().includes(frameVal));
-    if (frameEntry) {
-      const frameParsed = Number(frameEntry[1]);
-      if (Number.isFinite(frameParsed) && frameParsed >= 0) return basePrice + frameParsed;
-    }
-    return basePrice;
-  }
-
-  const dynamicKey = getVariantSignature(selectedVariant || {});
-  if (dynamicKey) {
-    const direct = entries.find(([key]) => String(key).trim() === dynamicKey);
-    if (direct) {
-      const parsed = Number(direct[1]);
-      if (Number.isFinite(parsed) && parsed >= 0) return parsed;
-    }
-    const normalized = entries.find(
-      ([key]) => String(key).trim().toLowerCase() === dynamicKey.toLowerCase()
-    );
-    if (normalized) {
-      const parsed = Number(normalized[1]);
-      if (Number.isFinite(parsed) && parsed >= 0) return parsed;
-    }
-  }
+import { getVariantSignature, resolveVariantPrice } from "../../../shared/utils/variant";
 
 
-  // Fallback to single axes (e.g. color=saffron or size=5.5m) if the combined key is not found
-  const singleKeys = Object.entries(selectedVariant || {})
-    .map(([axis, val]) => `${axis.toLowerCase().trim().replace(/\s+/g, "_")}=${String(val).toLowerCase().trim()}`);
-  for (const sk of singleKeys) {
-    const direct = entries.find(([key]) => String(key).trim().toLowerCase() === sk);
-    if (direct) {
-      const parsed = Number(direct[1]);
-      if (Number.isFinite(parsed) && parsed >= 0) return parsed;
-    }
-  }
-
-  const size = String(selectedVariant.size || "").trim().toLowerCase();
-  const color = String(selectedVariant.color || "").trim().toLowerCase();
-
-  const candidates = [
-    `${size}|${color}`,
-    `${size}-${color}`,
-    `${size}_${color}`,
-    `${size}:${color}`,
-    size && !color ? size : null,
-    color && !size ? color : null,
-  ].filter(Boolean);
-
-  for (const candidate of candidates) {
-    const exact = entries.find(([key]) => String(key).trim() === candidate);
-    if (exact) {
-      const parsed = Number(exact[1]);
-      if (Number.isFinite(parsed) && parsed >= 0) return parsed;
-    }
-    const normalized = entries.find(
-      ([key]) => String(key).trim().toLowerCase() === candidate
-    );
-    if (normalized) {
-      const parsed = Number(normalized[1]);
-      if (Number.isFinite(parsed) && parsed >= 0) return parsed;
-    }
-  }
-
-  return basePrice;
-};
 
 const isMongoId = (value) => {
   const str = String(value || "").trim();
@@ -294,10 +206,11 @@ const MobileProductDetail = () => {
   }, [product]);
 
   const isFractionalUnit = useMemo(() => {
+    if (isTurbanProduct) return false;
     if (!product?.unit) return false;
     const unitStr = product.unit.toLowerCase();
     return ['meter', 'meters', 'm', 'kg', 'kilogram', 'kilograms', 'gram', 'grams', 'g', 'litre', 'litres', 'l'].includes(unitStr);
-  }, [product?.unit]);
+  }, [product?.unit, isTurbanProduct]);
 
   const quantityStep = isFractionalUnit ? 0.5 : 1;
   const minQuantity = isFractionalUnit ? 0.5 : 1;
@@ -459,8 +372,9 @@ const MobileProductDetail = () => {
     // Art-specific gift wrap fee (separate from turban)
     const artGiftWrapFeeLocal = (isArtProduct && artGiftWrapEnabled && product?.artConfig?.giftWrap?.price) ? Number(product.artConfig.giftWrap.price) : 0;
 
+    const turbanLength = isTurbanProduct ? (parseFloat(selectedVariant?.size) || 1) : 1;
     // baseRate for art already includes frame add-on price
-    const finalPrice = ratePerMeter + (embroideryFee + giftWrapFee) / quantity + artGiftWrapFeeLocal / quantity;
+    const finalPrice = ratePerMeter * turbanLength + embroideryFee + giftWrapFee + artGiftWrapFeeLocal;
 
     const cartVariant = {
       ...(selectedVariant || {}),
@@ -501,7 +415,7 @@ const MobileProductDetail = () => {
       stockQuantity: effectiveStock,
       vendorId: product.vendorId,
       vendorName: vendor?.storeName || vendor?.name || product.vendorName,
-      unit: product.unit,
+      unit: isTurbanProduct ? 'Piece' : product.unit,
     });
     if (!addedToCart) return;
     if (redirectToCheckout === true) {
@@ -682,10 +596,9 @@ const MobileProductDetail = () => {
   // Art-specific gift wrap fee — completely separate from turban fees
   const artGiftWrapFee = (isArtProduct && artGiftWrapEnabled && product?.artConfig?.giftWrap?.price) ? Number(product.artConfig.giftWrap.price) : 0;
 
-  // For art products: baseRate already includes frame add-on (e.g. ₹1000 base + ₹300 frame = ₹1300)
-  // Final = baseRate * qty + artGiftWrapFee
-  // For turban: ratePerMeter * qty + embroideryFee + giftWrapFee
-  const finalCalculatedPrice = ratePerMeter * quantity + embroideryFee + giftWrapFee + artGiftWrapFee;
+  const turbanLength = isTurbanProduct ? (parseFloat(selectedVariant?.size) || 1) : 1;
+  const unitPrice = ratePerMeter * turbanLength + embroideryFee + giftWrapFee + artGiftWrapFee;
+  const finalCalculatedPrice = unitPrice * quantity;
 
   if (!product) {
     return (
@@ -1010,17 +923,13 @@ const MobileProductDetail = () => {
                       </div>
                       <div className="grid grid-cols-4 gap-1.5">
                         {sizes.map((sizeVal) => {
-                          const meterVal = parseFloat(sizeVal);
-                          const isSelected = selectedVariant?.size === sizeVal || (isTurbanProduct && quantity === meterVal);
+                          const isSelected = selectedVariant?.size === sizeVal;
                           return (
                             <button
                               key={sizeVal}
                               type="button"
                               onClick={() => {
                                 setSelectedVariant(prev => ({ ...prev, size: sizeVal }));
-                                if (isTurbanProduct && !isNaN(meterVal)) {
-                                  setQuantity(meterVal);
-                                }
                               }}
                               className={`py-2 rounded-xl text-xs font-bold border-2 transition-all ${isSelected
                                   ? "border-[#8d4b00] bg-[#fdeade]/30 text-[#8d4b00]"
@@ -1043,12 +952,17 @@ const MobileProductDetail = () => {
                               min="0.5"
                               max="30"
                               step="0.1"
-                              value={quantity}
+                              value={(() => {
+                                const sizeStr = selectedVariant?.size || "";
+                                const match = sizeStr.match(/^([\d.]+)/);
+                                return match ? match[1] : "";
+                              })()}
                               onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                if (!isNaN(val)) {
-                                  setQuantity(val);
-                                  setSelectedVariant(prev => ({ ...prev, size: `${val}m` }));
+                                const valStr = e.target.value;
+                                if (valStr === "") {
+                                  setSelectedVariant(prev => ({ ...prev, size: "" }));
+                                } else {
+                                  setSelectedVariant(prev => ({ ...prev, size: `${valStr}m` }));
                                 }
                               }}
                               className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#8d4b00] bg-white font-bold"
@@ -1203,7 +1117,7 @@ const MobileProductDetail = () => {
                   <div>
                     <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Subtotal</p>
                     <p className="text-[10px] text-gray-400">
-                      {quantity} {product.unit}s × {formatPrice(ratePerMeter)}
+                      {quantity} {isTurbanProduct ? "item" : product.unit}(s) × {formatPrice(ratePerMeter * (isTurbanProduct ? (parseFloat(selectedVariant?.size) || 1) : 1))}
                       {embroideryFee > 0 && ` + ${formatPrice(embroideryFee)} emb.`}
                       {giftWrapFee > 0 && ` + ${formatPrice(giftWrapFee)} gift`}
                       {artGiftWrapFee > 0 && ` + ${formatPrice(artGiftWrapFee)} gift wrap`}
@@ -1218,17 +1132,17 @@ const MobileProductDetail = () => {
                 <div className="flex flex-col gap-2">
                   <button
                     type="button"
-                    onClick={() => handleAddToCart(true)}
+                    onClick={() => handleAddToCart(false)}
                     disabled={selectedAvailableStock <= 0}
-                    className="w-full py-3 rounded-full font-bold text-white bg-[#8d4b00] hover:bg-[#6c3900] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                    className="w-full py-3 rounded-full font-bold text-[#8d4b00] bg-white border-2 border-[#8d4b00] hover:bg-[#fdeade]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs"
                   >
                     Add to Cart
                   </button>
                   <button
                     type="button"
-                    onClick={handleAddToCart}
+                    onClick={() => handleAddToCart(true)}
                     disabled={selectedAvailableStock <= 0}
-                    className="w-full py-3 rounded-full font-bold text-[#8d4b00] bg-white border-2 border-[#8d4b00] hover:bg-[#fdeade]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                    className="w-full py-3 rounded-full font-bold text-white bg-[#8d4b00] hover:bg-[#6c3900] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-xs"
                   >
                     Buy Now
                   </button>

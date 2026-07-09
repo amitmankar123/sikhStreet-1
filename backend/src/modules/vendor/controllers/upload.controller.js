@@ -23,7 +23,8 @@ export const uploadImage = asyncHandler(async (req, res) => {
             .json(new ApiResponse(201, uploaded, 'Image uploaded successfully'));
     } catch (error) {
         await cleanupLocalFiles([req.file.path]);
-        throw error;
+        console.error("Cloudinary upload failed:", error);
+        throw new ApiError(error.http_code || 500, error.message || 'Image upload failed');
     }
 });
 
@@ -43,7 +44,8 @@ export const uploadVideo = asyncHandler(async (req, res) => {
             .json(new ApiResponse(201, uploaded, 'Video uploaded successfully'));
     } catch (error) {
         await cleanupLocalFiles([req.file.path]);
-        throw error;
+        console.error("Cloudinary upload failed:", error);
+        throw new ApiError(error.http_code || 500, error.message || 'Video upload failed');
     }
 });
 

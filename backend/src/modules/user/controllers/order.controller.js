@@ -41,103 +41,161 @@ const resolveVariantSelection = (product, selectedVariant) => {
         throw new ApiError(400, `Invalid price configured for product ${product?.name || product?.id || ''}.`);
     }
 
+    const hasTurbanConfig = product?.turbanConfig && (
+        (Array.isArray(product.turbanConfig.fabric) && product.turbanConfig.fabric.length > 0) ||
+        product.turbanConfig.embroidery?.enabled ||
+        product.turbanConfig.giftWrap?.enabled
+    );
+    const isArtProduct = !!product?.artConfig;
+
     const entries = toVariantPriceEntries(product?.variants?.prices);
-    const attributeAxes = Array.isArray(product?.variants?.attributes)
-        ? product.variants.attributes
-            .map((attr) => ({
-                axisKey: normalizeAxisName(attr?.name),
-                values: Array.isArray(attr?.values) ? attr.values : [],
-            }))
-            .filter((attr) => attr.axisKey && attr.values.length > 0)
-        : [];
-    const hasDynamicAxes = attributeAxes.length > 0;
+    
+    let calculatedPrice = basePrice;
+    let variantKey = null;
 
-    if (hasDynamicAxes) {
-        const normalizedSelection = {};
-        Object.entries(selectedVariant || {}).forEach(([axis, value]) => {
-            const axisKey = normalizeAxisName(axis);
-            const selectedValue = String(value || '').trim();
-            if (axisKey && selectedValue) normalizedSelection[axisKey] = selectedValue;
-        });
-
-        const missingAxis = attributeAxes.find((attr) => !String(normalizedSelection[attr.axisKey] || '').trim());
-        if (missingAxis) {
-            throw new ApiError(400, `Please select ${missingAxis.axisKey.replace(/_/g, ' ')} for ${product?.name || 'product'}.`);
-        }
-
-        const selectionKey = createDynamicVariantKey(normalizedSelection);
-        if (!selectionKey) {
-            throw new ApiError(400, `Please select a variant for ${product?.name || 'product'}.`);
-        }
-        if (!entries.length) {
-            return { price: basePrice, variantKey: selectionKey, hasVariantAxes: true };
-        }
-
-        const exact = entries.find(([rawKey]) => String(rawKey).trim() === selectionKey);
-        if (exact) {
-            const price = Number(exact[1]);
-            if (Number.isFinite(price) && price >= 0) {
-                return { price, variantKey: String(exact[0]).trim(), hasVariantAxes: true };
+    // 1. Check exact combined dynamic signature
+    const dynamicKey = createDynamicVariantKey(selectedVariant || {});
+    if (dynamicKey && entries.length > 0) {
+        const exact = entries.find(([key]) => String(key).trim() === dynamicKey);
+        if (exact && Number.isFinite(Number(exact[1])) && Number(exact[1]) >= 0) {
+            calculatedPrice = Number(exact[1]);
+            variantKey = String(exact[0]).trim();
+        } else {
+            const normalized = entries.find(([key]) => normalizeVariantPart(key) === normalizeVariantPart(dynamicKey));
+            if (normalized && Number.isFinite(Number(normalized[1])) && Number(normalized[1]) >= 0) {
+                calculatedPrice = Number(normalized[1]);
+                variantKey = String(normalized[0]).trim();
             }
         }
-        const normalized = entries.find(
-            ([rawKey]) => normalizeVariantPart(rawKey) === normalizeVariantPart(selectionKey)
-        );
-        if (normalized) {
-            const price = Number(normalized[1]);
-            if (Number.isFinite(price) && price >= 0) {
-                return { price, variantKey: String(normalized[0]).trim(), hasVariantAxes: true };
-            }
-        }
-        throw new ApiError(400, `Selected variant is not available for ${product?.name || 'product'}.`);
     }
 
-    const sizes = Array.isArray(product?.variants?.sizes) ? product.variants.sizes : [];
-    const colors = Array.isArray(product?.variants?.colors) ? product.variants.colors : [];
-    const hasVariantAxes = sizes.length > 0 || colors.length > 0;
-
+    // 2. Legacy size/color check if dynamic didn't match
     const size = normalizeVariantPart(selectedVariant?.size);
     const color = normalizeVariantPart(selectedVariant?.color);
-    if (hasVariantAxes && !size && !color) {
-        throw new ApiError(400, `Please select a variant for ${product?.name || 'product'}.`);
-    }
-    if (!entries.length || (!size && !color)) {
-        return { price: basePrice, variantKey: null, hasVariantAxes };
-    }
 
-    const candidateKeys = [
-        `${size}|${color}`,
-        `${size}-${color}`,
-        `${size}_${color}`,
-        `${size}:${color}`,
-        size && !color ? size : null,
-        color && !size ? color : null,
-    ].filter(Boolean);
-
-    for (const candidate of candidateKeys) {
-        const exact = entries.find(([rawKey]) => String(rawKey).trim() === candidate);
-        if (exact) {
-            const price = Number(exact[1]);
-            if (Number.isFinite(price) && price >= 0) {
-                return { price, variantKey: String(exact[0]).trim(), hasVariantAxes };
-            }
-        }
-
-        const normalized = entries.find(
-            ([rawKey]) => normalizeVariantPart(rawKey) === normalizeVariantPart(candidate)
-        );
-        if (normalized) {
-            const price = Number(normalized[1]);
-            if (Number.isFinite(price) && price >= 0) {
-                return { price, variantKey: String(normalized[0]).trim(), hasVariantAxes };
+    if (calculatedPrice === basePrice && size && color && entries.length > 0) {
+        const candidates = [
+            `${size}|${color}`, `${size}-${color}`, `${size}_${color}`, `${size}:${color}`
+        ];
+        for (const candidate of candidates) {
+            const match = entries.find(([key]) => normalizeVariantPart(key) === normalizeVariantPart(candidate));
+            if (match && Number.isFinite(Number(match[1])) && Number(match[1]) >= 0) {
+                calculatedPrice = Number(match[1]);
+                variantKey = String(match[0]).trim();
+                break;
             }
         }
     }
 
-    if (hasVariantAxes) {
-        throw new ApiError(400, `Selected variant is not available for ${product?.name || 'product'}.`);
+    // 3. Fallback to single axes (replacement like size vs additive like color)
+    let additiveSum = 0;
+    const ADDITIVE_ATTRIBUTES = ["color", "frame"];
+    const singleKeys = Object.entries(selectedVariant || {})
+        .map(([axis, val]) => ({
+            axis: normalizeAxisName(axis),
+            keyStr: `${normalizeAxisName(axis)}=${normalizeVariantPart(val)}`,
+            valStr: normalizeVariantPart(val)
+        }));
+
+    // Process replacement keys (e.g., size)
+    if (calculatedPrice === basePrice && entries.length > 0) {
+        for (const { axis, keyStr, valStr } of singleKeys) {
+            if (ADDITIVE_ATTRIBUTES.includes(axis)) continue;
+            const match = entries.find(([key]) => {
+                const k = normalizeVariantPart(key);
+                return k === keyStr || k === valStr;
+            });
+            if (match) {
+                const parsed = Number(match[1]);
+                if (Number.isFinite(parsed) && parsed >= 0) {
+                    calculatedPrice = parsed;
+                    variantKey = variantKey || String(match[0]).trim();
+                    break;
+                }
+            }
+        }
     }
-    return { price: basePrice, variantKey: null, hasVariantAxes };
+
+    // Process additive keys (e.g., color, frame)
+    if (entries.length > 0) {
+        for (const { axis, keyStr, valStr } of singleKeys) {
+            if (!ADDITIVE_ATTRIBUTES.includes(axis)) continue;
+            const match = entries.find(([key]) => {
+                const k = normalizeVariantPart(key);
+                return k === keyStr || k === valStr;
+            });
+            if (match) {
+                const parsed = Number(match[1]);
+                if (Number.isFinite(parsed) && parsed >= 0) {
+                    additiveSum += parsed;
+                    variantKey = variantKey || String(match[0]).trim();
+                }
+            }
+        }
+    }
+    
+    calculatedPrice += additiveSum;
+
+    // --- Apply Turban / Art logic ---
+    if (hasTurbanConfig) {
+        const fabricRate = selectedVariant?.fabric 
+            ? Number(product.turbanConfig?.fabric?.find(f => f.type === selectedVariant.fabric)?.price) || 0
+            : 0;
+        const ratePerMeter = fabricRate > 0 ? fabricRate : calculatedPrice;
+        
+        const embroideryFee = selectedVariant?.embroidery === 'Yes' 
+            ? Number(product.turbanConfig?.embroidery?.price) || 0 : 0;
+        const giftWrapFee = selectedVariant?.gift_wrap === 'Yes' 
+            ? Number(product.turbanConfig?.giftWrap?.price) || 0 : 0;
+        
+        const turbanLength = parseFloat(selectedVariant?.size) || 1;
+        
+        calculatedPrice = (ratePerMeter * turbanLength) + embroideryFee + giftWrapFee;
+        
+        // Stock variant key is primarily color for Turban
+        if (selectedVariant?.color) {
+            variantKey = normalizeVariantPart(selectedVariant.color);
+        }
+    } else if (isArtProduct) {
+        const artGiftWrapFee = selectedVariant?.art_gift_wrap === 'Yes' 
+            ? Number(product.artConfig?.giftWrap?.price) || 0 : 0;
+        calculatedPrice += artGiftWrapFee;
+        if (selectedVariant?.color) {
+            variantKey = normalizeVariantPart(selectedVariant.color) || variantKey;
+        }
+    } else {
+        // Validation for standard products
+        const attributeAxes = Array.isArray(product?.variants?.attributes)
+            ? product.variants.attributes
+                .map((attr) => ({ axisKey: normalizeAxisName(attr?.name), values: Array.isArray(attr?.values) ? attr.values : [] }))
+                .filter((attr) => attr.axisKey && attr.values.length > 0)
+            : [];
+            
+        if (attributeAxes.length > 0) {
+            const normalizedSelection = {};
+            Object.entries(selectedVariant || {}).forEach(([axis, value]) => {
+                const axisKey = normalizeAxisName(axis);
+                const selectedValue = String(value || '').trim();
+                if (axisKey && selectedValue) normalizedSelection[axisKey] = selectedValue;
+            });
+            const missingAxis = attributeAxes.find((attr) => !String(normalizedSelection[attr.axisKey] || '').trim());
+            if (missingAxis) {
+                throw new ApiError(400, `Please select ${missingAxis.axisKey.replace(/_/g, ' ')} for ${product?.name || 'product'}.`);
+            }
+        } else {
+            const sizes = Array.isArray(product?.variants?.sizes) ? product.variants.sizes : [];
+            const colors = Array.isArray(product?.variants?.colors) ? product.variants.colors : [];
+            const hasVariantAxes = sizes.length > 0 || colors.length > 0;
+            if (hasVariantAxes && !size && !color) {
+                throw new ApiError(400, `Please select a variant for ${product?.name || 'product'}.`);
+            }
+            if (hasVariantAxes && entries.length > 0 && calculatedPrice === basePrice && additiveSum === 0 && !variantKey) {
+                throw new ApiError(400, `Selected variant is not available for ${product?.name || 'product'}.`);
+            }
+        }
+    }
+
+    return { price: calculatedPrice, variantKey, hasVariantAxes: true };
 };
 
 const resolveOrderItemVariantKey = (product, orderItem) => {

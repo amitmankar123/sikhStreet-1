@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import { useVendorAuthStore } from '../../store/vendorAuthStore';
 import { getVendorOrderById, updateVendorOrderStatus } from '../../services/vendorService';
 import { formatPrice } from '../../../../shared/utils/helpers';
+import { formatVariantLabel } from '../../../../shared/utils/variant';
 import Badge from '../../../../shared/components/Badge';
 import AnimatedSelect from '../../../Admin/components/AnimatedSelect';
 import toast from 'react-hot-toast';
@@ -209,7 +210,12 @@ const OrderDetail = () => {
                                                     <h3 className="font-medium text-gray-800">
                                                         {item.name}
                                                     </h3>
-                                                    <p className="text-sm text-gray-500">
+                                                    {formatVariantLabel(item?.variant) && (
+                                                        <p className="text-xs text-gray-600 mt-0.5">
+                                                            {formatVariantLabel(item?.variant)}
+                                                        </p>
+                                                    )}
+                                                    <p className="text-sm text-gray-500 mt-1">
                                                         Qty: {item.quantity}
                                                     </p>
                                                 </div>

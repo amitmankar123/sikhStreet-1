@@ -24,6 +24,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import DataTable from "../../components/DataTable";
 import ExportButton from "../../components/ExportButton";
 import Badge from "../../../../shared/components/Badge";
+import { formatVariantLabel } from "../../../../shared/utils/variant";
 import ConfirmModal from "../../components/ConfirmModal";
 import AnimatedSelect from "../../components/AnimatedSelect";
 import { formatPrice } from "../../../../shared/utils/helpers";
@@ -189,7 +190,12 @@ const OrderItemsDropdown = ({ items, orderTotal }) => {
                           {itemId}
                         </td>
                         <td className="px-2 sm:px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
-                          {item.name || `Item ${index + 1}`}
+                          <p className="font-medium">{item.name || `Item ${index + 1}`}</p>
+                          {formatVariantLabel(item?.variant) && (
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                  {formatVariantLabel(item?.variant)}
+                              </p>
+                          )}
                         </td>
                         <td className="px-2 sm:px-4 py-2 text-sm text-gray-700 text-center whitespace-nowrap">
                           {item.quantity || 1}
