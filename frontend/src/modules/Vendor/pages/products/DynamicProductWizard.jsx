@@ -565,7 +565,11 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
 
     const targetCategoryId = formData.subcategoryId || formData.categoryId;
     const targetCat = categories.find(c => String(c.id || c._id) === String(targetCategoryId));
-    
+    const parentCat = categories.find(c => String(c.id || c._id) === String(formData.categoryId));
+
+    const isArtCategory = (targetCat && String(targetCat.name || "").toLowerCase().includes("art")) || 
+                          (parentCat && String(parentCat.name || "").toLowerCase().includes("art"));
+
     let resolvedSteps = [];
 
     // Assemble steps according to the category/subcategory config
@@ -592,7 +596,9 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
       resolvedSteps = [...defaultSteps, ...customSteps];
     } else {
       // Default Fallback flow if no config is declared
-      if (formData.productType === "digital") {
+      if (isArtCategory) {
+        resolvedSteps = [...defaultSteps, "basic_info", "art_matrix", "shipping", "seo", "preview", "publish"];
+      } else if (formData.productType === "digital") {
         resolvedSteps = [...defaultSteps, "basic_info", "digital_upload", "pricing", "seo", "preview", "publish"];
       } else {
         resolvedSteps = [...defaultSteps, "basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"];
@@ -774,7 +780,7 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-      
+
       {/* Step Tracker Header */}
       <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
@@ -792,13 +798,12 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
             return (
               <div
                 key={step}
-                className={`h-2.5 rounded-full transition-all duration-300 ${
-                  isActive 
-                    ? "w-8 bg-primary-600" 
-                    : isCompleted 
-                    ? "w-4 bg-green-500" 
-                    : "w-2.5 bg-gray-200"
-                }`}
+                className={`h-2.5 rounded-full transition-all duration-300 ${isActive
+                    ? "w-8 bg-primary-600"
+                    : isCompleted
+                      ? "w-4 bg-green-500"
+                      : "w-2.5 bg-gray-200"
+                  }`}
                 title={`Step ${idx + 1}: ${step}`}
               />
             );
@@ -1223,9 +1228,8 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
             type="button"
             onClick={handleBack}
             disabled={activeStepIndex === 0}
-            className={`flex items-center gap-1.5 px-4 py-2 border rounded-xl font-semibold text-xs text-gray-700 transition-colors ${
-              activeStepIndex === 0 ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
-            }`}
+            className={`flex items-center gap-1.5 px-4 py-2 border rounded-xl font-semibold text-xs text-gray-700 transition-colors ${activeStepIndex === 0 ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"
+              }`}
           >
             <FiArrowLeft className="w-4 h-4" /> Back
           </button>

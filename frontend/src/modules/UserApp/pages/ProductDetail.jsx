@@ -856,8 +856,8 @@ const MobileProductDetail = () => {
                             type="button"
                             onClick={() => setSelectedFabric(fabric)}
                             className={`px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all ${isSelected
-                                ? "border-[#8d4b00] bg-[#fdeade]/30 text-[#8d4b00]"
-                                : "border-gray-200 hover:border-gray-300 bg-white text-gray-700"
+                              ? "border-[#8d4b00] bg-[#fdeade]/30 text-[#8d4b00]"
+                              : "border-gray-200 hover:border-gray-300 bg-white text-gray-700"
                               }`}
                           >
                             {fabric.type}
@@ -887,8 +887,8 @@ const MobileProductDetail = () => {
                                 type="button"
                                 onClick={() => setSelectedVariant(prev => ({ ...prev, [axisKey]: val }))}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${isSelected
-                                    ? "border-[#8d4b00] bg-[#fdeade]/30 text-[#8d4b00]"
-                                    : "border-gray-200 hover:border-gray-300 bg-white text-gray-700"
+                                  ? "border-[#8d4b00] bg-[#fdeade]/30 text-[#8d4b00]"
+                                  : "border-gray-200 hover:border-gray-300 bg-white text-gray-700"
                                   }`}
                               >
                                 {val}
@@ -932,8 +932,8 @@ const MobileProductDetail = () => {
                                 setSelectedVariant(prev => ({ ...prev, size: sizeVal }));
                               }}
                               className={`py-2 rounded-xl text-xs font-bold border-2 transition-all ${isSelected
-                                  ? "border-[#8d4b00] bg-[#fdeade]/30 text-[#8d4b00]"
-                                  : "border-gray-200 hover:border-[#8d4b00]/50 bg-white text-gray-700"
+                                ? "border-[#8d4b00] bg-[#fdeade]/30 text-[#8d4b00]"
+                                : "border-gray-200 hover:border-[#8d4b00]/50 bg-white text-gray-700"
                                 }`}
                             >
                               {sizeVal}
@@ -983,6 +983,7 @@ const MobileProductDetail = () => {
                       onVariantChange={setSelectedVariant}
                       currentPrice={product.price}
                       isKada={isKada}
+                      useDropdowns={isArtProduct}
                     />
                   </div>
                 )}

@@ -121,7 +121,7 @@ const normalizeVariantsPayload = (rawVariants = {}, fallbackPrice) => {
             prices[key] = priceVal !== null ? priceVal : fallbackPrice;
 
             const stockVal = toNonNegativeNumber(rawStockMap[key]);
-            stockMap[key] = stockVal !== null ? stockVal : 0;
+            if (stockVal !== null) stockMap[key] = stockVal;
 
             const imgVal = String(rawImageMap[key] || '').trim();
             if (imgVal) imageMap[key] = imgVal;
@@ -140,7 +140,7 @@ const normalizeVariantsPayload = (rawVariants = {}, fallbackPrice) => {
                 prices[key] = priceVal !== null ? priceVal : fallbackPrice;
 
                 const stockVal = toNonNegativeNumber(rawStockMap[key]);
-                stockMap[key] = stockVal !== null ? stockVal : 0;
+                if (stockVal !== null) stockMap[key] = stockVal;
 
                 const imgVal = String(rawImageMap[key] || '').trim();
                 if (imgVal) imageMap[key] = imgVal;
@@ -306,8 +306,8 @@ export const createProduct = asyncHandler(async (req, res) => {
         flashSale: rest.flashSale !== undefined ? Boolean(rest.flashSale) : undefined,
         isNewArrival: rest.isNewArrival !== undefined ? Boolean(rest.isNewArrival) : undefined,
         isFeatured: rest.isFeatured !== undefined ? Boolean(rest.isFeatured) : undefined,
-        isActive: rest.isActive !== undefined ? Boolean(rest.isActive) : undefined,
-        isVisible: rest.isVisible !== undefined ? Boolean(rest.isVisible) : undefined,
+        isActive: rest.isActive !== undefined ? Boolean(rest.isActive) : true,
+        isVisible: rest.isVisible !== undefined ? Boolean(rest.isVisible) : true,
         codAllowed: isDigital ? false : (rest.codAllowed !== undefined ? Boolean(rest.codAllowed) : undefined),
         returnable: isDigital ? false : (rest.returnable !== undefined ? Boolean(rest.returnable) : undefined),
         cancelable: isDigital ? false : (rest.cancelable !== undefined ? Boolean(rest.cancelable) : undefined),

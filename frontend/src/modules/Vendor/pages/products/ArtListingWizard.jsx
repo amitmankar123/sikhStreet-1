@@ -283,6 +283,8 @@ ${formData.readyToHang ? '- Ready to Hang' : ''}
         brandId: null,
         sku: formData.sku || undefined,
         variants: variantsPayload,
+        isActive: true,
+        isVisible: true,
         specifications: {
           medium: formData.medium,
           style: formData.style,
@@ -636,16 +638,48 @@ const StepConfig = ({ formData, updateForm }) => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h3 className="text-lg font-black text-gray-900 mb-1">Canvas & Product Type</h3>
           <p className="text-xs text-gray-500 mb-4">Select the materials available.</p>
+          {formData.selectedFrames.length > 0 && (
+            <p className="text-xs text-amber-600 font-bold mb-3">⚠️ Disabled: Frame option is already selected</p>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {CANVAS_OPTIONS.map(can => (
-              <label key={can} className={`flex items-center gap-2 p-3 border rounded-xl cursor-pointer transition-all ${formData.selectedCanvasTypes.includes(can) ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                <input type="checkbox" className="hidden" checked={formData.selectedCanvasTypes.includes(can)} onChange={() => updateForm({ selectedCanvasTypes: toggleArray(formData.selectedCanvasTypes, can) })} />
-                <div className={`w-5 h-5 rounded border flex items-center justify-center ${formData.selectedCanvasTypes.includes(can) ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300'}`}>
-                  {formData.selectedCanvasTypes.includes(can) && <FiCheck className="w-3 h-3" />}
-                </div>
-                <span className="font-bold text-sm text-gray-800">{can}</span>
-              </label>
-            ))}
+            {CANVAS_OPTIONS.map(can => {
+              const isChecked = formData.selectedCanvasTypes.includes(can);
+              const isDisabled = formData.selectedFrames.length > 0 && !isChecked;
+              return (
+                <label 
+                  key={can} 
+                  className={`flex items-center gap-2 p-3 border rounded-xl transition-all ${
+                    isChecked 
+                      ? 'border-indigo-600 bg-indigo-50 cursor-pointer' 
+                      : isDisabled
+                        ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
+                        : 'border-gray-200 hover:border-gray-300 cursor-pointer'
+                  }`}
+                >
+                  <input 
+                    type="checkbox" 
+                    className="hidden" 
+                    disabled={isDisabled}
+                    checked={isChecked} 
+                    onChange={() => {
+                      if (!isDisabled) {
+                        updateForm({ selectedCanvasTypes: toggleArray(formData.selectedCanvasTypes, can) });
+                      }
+                    }} 
+                  />
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                    isChecked 
+                      ? 'bg-indigo-600 border-indigo-600 text-white' 
+                      : isDisabled
+                        ? 'border-gray-200 bg-gray-100'
+                        : 'border-gray-300'
+                  }`}>
+                    {isChecked && <FiCheck className="w-3 h-3" />}
+                  </div>
+                  <span className="font-bold text-sm text-gray-800">{can}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
 
@@ -653,16 +687,48 @@ const StepConfig = ({ formData, updateForm }) => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h3 className="text-lg font-black text-gray-900 mb-1">Frame Types</h3>
           <p className="text-xs text-gray-500 mb-4">Select the framing options.</p>
+          {formData.selectedCanvasTypes.length > 0 && (
+            <p className="text-xs text-amber-600 font-bold mb-3">⚠️ Disabled: Canvas option is already selected</p>
+          )}
           <div className="grid grid-cols-2 gap-3">
-            {FRAME_OPTIONS.map(frame => (
-              <label key={frame} className={`flex items-center gap-2 p-3 border rounded-xl cursor-pointer transition-all ${formData.selectedFrames.includes(frame) ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                <input type="checkbox" className="hidden" checked={formData.selectedFrames.includes(frame)} onChange={() => updateForm({ selectedFrames: toggleArray(formData.selectedFrames, frame) })} />
-                <div className={`w-5 h-5 rounded border flex items-center justify-center ${formData.selectedFrames.includes(frame) ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300'}`}>
-                  {formData.selectedFrames.includes(frame) && <FiCheck className="w-3 h-3" />}
-                </div>
-                <span className="font-bold text-sm text-gray-800">{frame}</span>
-              </label>
-            ))}
+            {FRAME_OPTIONS.map(frame => {
+              const isChecked = formData.selectedFrames.includes(frame);
+              const isDisabled = formData.selectedCanvasTypes.length > 0 && !isChecked;
+              return (
+                <label 
+                  key={frame} 
+                  className={`flex items-center gap-2 p-3 border rounded-xl transition-all ${
+                    isChecked 
+                      ? 'border-indigo-600 bg-indigo-50 cursor-pointer' 
+                      : isDisabled
+                        ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
+                        : 'border-gray-200 hover:border-gray-300 cursor-pointer'
+                  }`}
+                >
+                  <input 
+                    type="checkbox" 
+                    className="hidden" 
+                    disabled={isDisabled}
+                    checked={isChecked} 
+                    onChange={() => {
+                      if (!isDisabled) {
+                        updateForm({ selectedFrames: toggleArray(formData.selectedFrames, frame) });
+                      }
+                    }} 
+                  />
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                    isChecked 
+                      ? 'bg-indigo-600 border-indigo-600 text-white' 
+                      : isDisabled
+                        ? 'border-gray-200 bg-gray-100'
+                        : 'border-gray-300'
+                  }`}>
+                    {isChecked && <FiCheck className="w-3 h-3" />}
+                  </div>
+                  <span className="font-bold text-sm text-gray-800">{frame}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
 
@@ -731,15 +797,18 @@ const StepPricingMatrix = ({ formData, updateForm }) => {
     });
   };
 
-  const handleBulkSetColumnPrice = (frameName, price) => {
+  const handleBulkSetColumnPrice = (optionName, price) => {
     const newMatrix = { ...formData.pricingMatrix };
     combinations.forEach(c => {
-      if (c.frame === frameName) {
+      if (c.frame === optionName || c.canvas === optionName) {
         newMatrix[c.key] = { ...(newMatrix[c.key] || {}), price };
       }
     });
     updateForm({ pricingMatrix: newMatrix });
   };
+
+  const hasCanvas = formData.selectedCanvasTypes.length > 0;
+  const hasFrame = formData.selectedFrames.length > 0;
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -762,14 +831,25 @@ const StepPricingMatrix = ({ formData, updateForm }) => {
         
         {/* Bulk Actions */}
         <div className="flex gap-2">
-          {frames.map(f => (
-            <button key={f} onClick={() => {
-              const val = prompt(`Set price for ALL ${f} combinations:`);
-              if (val && !isNaN(val)) handleBulkSetColumnPrice(f, val);
-            }} className="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100">
-              Set {f} Price
-            </button>
-          ))}
+          {hasFrame ? (
+            formData.selectedFrames.map(f => (
+              <button key={f} onClick={() => {
+                const val = prompt(`Set price for ALL ${f} combinations:`);
+                if (val && !isNaN(val)) handleBulkSetColumnPrice(f, val);
+              }} className="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100">
+                Set {f} Price
+              </button>
+            ))
+          ) : hasCanvas ? (
+            formData.selectedCanvasTypes.map(c => (
+              <button key={c} onClick={() => {
+                const val = prompt(`Set price for ALL ${c} combinations:`);
+                if (val && !isNaN(val)) handleBulkSetColumnPrice(c, val);
+              }} className="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100">
+                Set {c} Price
+              </button>
+            ))
+          ) : null}
         </div>
       </div>
 
@@ -778,8 +858,8 @@ const StepPricingMatrix = ({ formData, updateForm }) => {
           <thead>
             <tr className="bg-gray-50 text-gray-600">
               <th className="py-3 px-4 border-b font-bold w-1/4">Dimension</th>
-              <th className="py-3 px-4 border-b font-bold w-1/4">Canvas</th>
-              <th className="py-3 px-4 border-b font-bold w-1/4">Frame</th>
+              {hasCanvas && <th className="py-3 px-4 border-b font-bold w-1/4">Canvas</th>}
+              {hasFrame && <th className="py-3 px-4 border-b font-bold w-1/4">Frame</th>}
               <th className="py-3 px-4 border-b font-bold w-1/4">Price (₹) *</th>
             </tr>
           </thead>
@@ -789,8 +869,8 @@ const StepPricingMatrix = ({ formData, updateForm }) => {
               return (
                 <tr key={c.key} className="hover:bg-gray-50 border-b border-gray-100 transition-colors">
                   <td className="py-2 px-4 font-semibold text-gray-800">{c.dim !== "Default" ? c.dim : "-"}</td>
-                  <td className="py-2 px-4 font-medium text-gray-600">{c.canvas !== "Default" ? c.canvas : "-"}</td>
-                  <td className="py-2 px-4 font-medium text-gray-600">{c.frame !== "Default" ? c.frame : "-"}</td>
+                  {hasCanvas && <td className="py-2 px-4 font-medium text-gray-600">{c.canvas !== "Default" ? c.canvas : "-"}</td>}
+                  {hasFrame && <td className="py-2 px-4 font-medium text-gray-600">{c.frame !== "Default" ? c.frame : "-"}</td>}
                   <td className="py-2 px-4">
                     <input 
                       type="number" min="0" 
