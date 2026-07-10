@@ -7,6 +7,23 @@ import toast from "react-hot-toast";
 import Button from "../Button";
 import { uploadAdminImage } from "../../services/adminService";
 
+const WORKFLOW_STEPS_OPTIONS = [
+  { value: "basic_info", label: "Basic Info (Standard)" },
+  { value: "basic_info_art", label: "Basic Info (Art Specialized)" },
+  { value: "art_dimensions", label: "Art Dimensions Selection" },
+  { value: "art_canvas_types", label: "Art Canvas Types Selection" },
+  { value: "art_frame_types", label: "Art Frame Types Selection" },
+  { value: "pricing_matrix", label: "Art Pricing Matrix" },
+  { value: "upload_files", label: "Digital File Upload" },
+  { value: "license", label: "Digital License Details" },
+  { value: "pricing", label: "Standard Pricing" },
+  { value: "inventory", label: "Inventory / Stock" },
+  { value: "shipping", label: "Shipping & Logistics" },
+  { value: "seo", label: "SEO Settings" },
+  { value: "preview", label: "Preview" },
+  { value: "publish", label: "Publish" },
+];
+
 const CategoryForm = ({ category, onClose, onSave, parentId }) => {
   const location = useLocation();
   const isAppRoute = location.pathname.startsWith("/app");
@@ -25,11 +42,14 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
     order: 0, 
     metaTitle: "",
     metaDescription: "",
+    productType: "physical",
+    workflowSteps: ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
   });
 
   const [subCategories, setSubCategories] = useState([]);
   const [subCatName, setSubCatName] = useState("");
   const [subCatImage, setSubCatImage] = useState("");
+  const [subCatType, setSubCatType] = useState("physical");
   const [isUploadingSubImage, setIsUploadingSubImage] = useState(false);
 
   const isSubcategory = !!formData.parentId;
@@ -45,6 +65,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
         order: category.order || 0,
         metaTitle: category.metaTitle || "",
         metaDescription: category.metaDescription || "",
+        productType: category.productType || "physical",
+        workflowSteps: Array.isArray(category.workflowSteps) ? category.workflowSteps : [],
       });
 
       // Load existing subcategories from the store categories
@@ -57,6 +79,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
         id: cat.id,
         name: cat.name,
         image: cat.image || "",
+        productType: cat.productType || "physical",
+        workflowSteps: Array.isArray(cat.workflowSteps) ? cat.workflowSteps : [],
         isExisting: true
       }));
       setSubCategories(children);
@@ -70,6 +94,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
         order: 0,
         metaTitle: "",
         metaDescription: "",
+        productType: "physical",
+        workflowSteps: ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
       });
       setSubCategories([]);
     }
@@ -115,12 +141,22 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
       toast.error("Subcategory name is required");
       return;
     }
+    const defaultSteps = subCatType === 'digital'
+      ? ["basic_info", "upload_files", "license", "pricing", "seo", "preview", "publish"]
+      : ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"];
+
     setSubCategories([
       ...subCategories,
-      { name: subCatName.trim(), image: subCatImage }
+      {
+        name: subCatName.trim(),
+        image: subCatImage,
+        productType: subCatType,
+        workflowSteps: defaultSteps
+      }
     ]);
     setSubCatName("");
     setSubCatImage("");
+    setSubCatType("physical");
   };
 
   const handleRemoveSubcategory = (index) => {
@@ -237,7 +273,9 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
               isActive: true,
               order: 0,
               metaTitle: "",
-              metaDescription: ""
+              metaDescription: "",
+              productType: sub.productType || "physical",
+              workflowSteps: sub.workflowSteps || []
             });
           } else {
             await createCategory({
@@ -248,7 +286,9 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
               isActive: true,
               order: 0,
               metaTitle: "",
-              metaDescription: ""
+              metaDescription: "",
+              productType: sub.productType || "physical",
+              workflowSteps: sub.workflowSteps || []
             });
           }
         }
@@ -415,6 +455,89 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                 </div>
               </div>
 
+              {/* Product Type & Dynamic Workflow Configuration */}
+              <div className="pt-4 border-t border-gray-100 bg-gray-50/50 p-4 rounded-xl border border-gray-200/50">
+                <h3 className="text-base font-bold text-gray-800 mb-4 font-serif">
+                  Listing Workflow Settings
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Product Type
+                    </label>
+                    <select
+                      name="productType"
+                      value={formData.productType || "physical"}
+                      onChange={(e) => {
+                        const type = e.target.value;
+                        const defaultSteps = type === 'digital'
+                          ? ["basic_info", "upload_files", "license", "pricing", "seo", "preview", "publish"]
+                          : ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"];
+                        setFormData(prev => ({
+                          ...prev,
+                          productType: type,
+                          workflowSteps: defaultSteps
+                        }));
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
+                    >
+                      <option value="physical">Physical Product</option>
+                      <option value="digital">Digital Product</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Active Steps in Listing Workflow
+                    </label>
+                    <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-2 max-h-60 overflow-y-auto">
+                      {WORKFLOW_STEPS_OPTIONS.map((step) => {
+                        const isChecked = (formData.workflowSteps || []).includes(step.value);
+                        return (
+                          <label key={step.value} className="flex items-center gap-3 cursor-pointer p-1.5 hover:bg-gray-100 rounded transition-colors text-xs font-semibold text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                const current = formData.workflowSteps || [];
+                                const next = current.includes(step.value)
+                                  ? current.filter(s => s !== step.value)
+                                  : [...current, step.value];
+                                setFormData(prev => ({ ...prev, workflowSteps: next }));
+                              }}
+                              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                            />
+                            <span>{step.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          workflowSteps: ["basic_info_art", "art_dimensions", "art_canvas_types", "art_frame_types", "pricing_matrix", "inventory", "shipping", "seo", "preview", "publish"]
+                        }))}
+                        className="text-xs text-primary-600 hover:text-primary-700 font-bold bg-primary-50 px-2.5 py-1.5 rounded border border-primary-200"
+                      >
+                        Physical Art Preset
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          workflowSteps: ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
+                        }))}
+                        className="text-xs text-gray-600 hover:text-gray-700 font-bold bg-gray-100 px-2.5 py-1.5 rounded border border-gray-300"
+                      >
+                        Standard Physical Preset
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Subcategories Section (Only for Master Categories) */}
               {!isSubcategory && (
                 <div className="pt-4 border-t border-gray-100">
@@ -426,7 +549,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-4 mb-4">
                     <p className="text-xs font-semibold text-gray-500">Stage subcategories to create along with this parent category</p>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-2">
                           Subcategory Name
@@ -438,6 +561,20 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                           placeholder="e.g., Summer Collection"
                         />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-2">
+                          Subcategory Product Type
+                        </label>
+                        <select
+                          value={subCatType}
+                          onChange={(e) => setSubCatType(e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                        >
+                          <option value="physical">Physical Product</option>
+                          <option value="digital">Digital Product</option>
+                        </select>
                       </div>
                       
                       <div>
@@ -504,9 +641,14 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                           className="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-3"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full">
-                              {sub.isExisting ? "Existing Subcategory" : "New Subcategory"}
-                            </span>
+                            <div className="flex gap-1.5 items-center">
+                              <span className="text-xs font-semibold px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full">
+                                {sub.isExisting ? "Existing Subcategory" : "New Subcategory"}
+                              </span>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${sub.productType === 'digital' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {sub.productType === 'digital' ? 'Digital' : 'Physical'}
+                              </span>
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveOrDeleteSubcategory(sub, index)}

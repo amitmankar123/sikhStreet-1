@@ -126,6 +126,8 @@ export const useCategoryStore = create(
           return true;
         } catch (error) {
           set({ isLoading: false });
+          const message = error.response?.data?.message || error.message || 'Failed to delete category';
+          toast.error(message);
           return false;
         }
       },

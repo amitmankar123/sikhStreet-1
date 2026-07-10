@@ -137,7 +137,9 @@ export const useVendorProductStore = create((set, get) => ({
             }));
             toast.success('Product updated successfully');
             return updated;
-        } catch {
+        } catch (error) {
+            console.error("❌ editProduct failed. Payload:", data);
+            console.error("❌ Error details:", error.response?.data || error.message);
             set({ isSaving: false });
             return null;
         }

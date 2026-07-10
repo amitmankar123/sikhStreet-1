@@ -44,7 +44,9 @@ const ProductSchema = new mongoose.Schema({
   faqs: { type: mongoose.Schema.Types.Mixed },
   tags: { type: mongoose.Schema.Types.Mixed },
   specifications: { type: mongoose.Schema.Types.Mixed },
-  turbanConfig: { type: mongoose.Schema.Types.Mixed }
+  turbanConfig: { type: mongoose.Schema.Types.Mixed },
+  productType: { type: String, enum: ['physical', 'digital'], default: 'physical' },
+  digitalConfig: { type: mongoose.Schema.Types.Mixed }
 }, {
   timestamps: true,
   collection: 'Product'

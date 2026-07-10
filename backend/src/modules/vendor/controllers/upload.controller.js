@@ -86,3 +86,23 @@ export const uploadImages = asyncHandler(async (req, res) => {
         .status(201)
         .json(new ApiResponse(201, successfulUploads, 'Images uploaded successfully'));
 });
+
+// POST /api/vendor/uploads/digital-file
+export const uploadDigitalFile = asyncHandler(async (req, res) => {
+    if (!req.file?.path) {
+        throw new ApiError(400, 'File is required');
+    }
+
+    const folder = (req.body?.folder || 'vendors/products/digital').toString().trim();
+
+    try {
+        const uploaded = await uploadLocalFileToCloudinaryAndCleanup(req.file.path, folder, undefined, 'auto');
+        return res
+            .status(201)
+            .json(new ApiResponse(201, uploaded, 'File uploaded successfully'));
+    } catch (error) {
+        await cleanupLocalFiles([req.file.path]);
+        console.error("Digital file upload failed:", error);
+        throw new ApiError(500, 'Digital file upload failed');
+    }
+});

@@ -202,7 +202,12 @@ api.interceptors.response.use(
       error.response?.data?.message ||
       error.message ||
       'Something went wrong';
-    toast.error(message);
+      
+    if (message && typeof message === 'string' && message.includes('Route not found')) {
+      console.error(message);
+    } else {
+      toast.error(message);
+    }
 
     if (error.response?.status === 401) {
       const activeScope = pathScope;

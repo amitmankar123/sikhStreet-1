@@ -798,8 +798,8 @@ const MobileProductDetail = () => {
                   )}
                 </div>
 
-                {/* Color Selector */}
-                {(() => {
+                {/* Color Selector (Turbans Only) */}
+                {isTurbanProduct && (() => {
                   let colors = product?.variants?.colors || [];
                   if (colors.length === 0 && Array.isArray(product?.variants?.attributes)) {
                     const colorAttr = product.variants.attributes.find(
@@ -900,8 +900,8 @@ const MobileProductDetail = () => {
                     );
                   })}
 
-                {/* Length / Sizes Selector */}
-                {(() => {
+                {/* Length / Sizes Selector (Turbans Only) */}
+                {isTurbanProduct && (() => {
                   let sizes = product?.variants?.sizes || [];
                   if (sizes.length === 0 && Array.isArray(product?.variants?.attributes)) {
                     const sizeAttr = product.variants.attributes.find(

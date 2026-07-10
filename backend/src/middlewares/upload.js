@@ -159,3 +159,19 @@ export const uploadCSV = multer({
     },
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB for CSV
 }).single('file');
+
+// Digital file upload for digital products
+export const uploadDigitalFileSingle = (fieldName) =>
+    multer({
+        storage: imageDiskStorage,
+        fileFilter: (req, file, cb) => {
+            const ext = path.extname(file.originalname || '').toLowerCase();
+            const allowedExts = ['.pdf', '.zip', '.svg', '.jpeg', '.jpg', '.png', '.webp', '.mp3', '.wav', '.mp4', '.epub', '.mobi', '.txt'];
+            if (allowedExts.includes(ext)) {
+                cb(null, true);
+            } else {
+                cb(new ApiError(400, 'Unsupported digital file format. Supported extensions: ' + allowedExts.join(', ')), false);
+            }
+        },
+        limits: { fileSize: 50 * 1024 * 1024 } // 50MB
+    }).single(fieldName);

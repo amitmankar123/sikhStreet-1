@@ -538,3 +538,15 @@ export const uploadVendorVideo = (file, folder = 'vendors/products/videos', publ
     }
     return api.post('/vendor/uploads/video', formData);
 };
+
+/**
+ * Upload a single vendor digital asset (e.g. zip, pdf)
+ * @param {File} file
+ * @param {string} folder
+ */
+export const uploadVendorDigitalFile = (file, folder = 'vendors/products/digital') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+    return api.post('/vendor/uploads/digital-file', formData);
+};

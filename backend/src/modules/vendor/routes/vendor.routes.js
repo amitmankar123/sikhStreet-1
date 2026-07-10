@@ -36,7 +36,7 @@ import {
     updateProductSchema,
     productIdParamSchema,
 } from '../validators/product.validator.js';
-import { uploadSingle, uploadMultiple, uploadDocumentSingle, uploadMultipleDocumentFields, uploadVideo } from '../../../middlewares/upload.js';
+import { uploadSingle, uploadMultiple, uploadDocumentSingle, uploadMultipleDocumentFields, uploadVideo, uploadDigitalFileSingle } from '../../../middlewares/upload.js';
 
 const router = Router();
 const vendorAuth = [authenticate, authorize('vendor'), enforceAccountStatus];
@@ -142,6 +142,7 @@ router.delete('/shipping/rates/:id', ...vendorAuth, shippingController.deleteShi
 router.post('/uploads/image', ...vendorAuth, uploadSingle('image'), uploadController.uploadImage);
 router.post('/uploads/images', ...vendorAuth, uploadMultiple('images', 8), uploadController.uploadImages);
 router.post('/uploads/video', ...vendorAuth, uploadVideo('video'), uploadController.uploadVideo);
+router.post('/uploads/digital-file', ...vendorAuth, uploadDigitalFileSingle('file'), uploadController.uploadDigitalFile);
 
 // Campaigns/Promotions
 router.get('/campaigns', ...vendorAuth, campaignController.getVendorCampaigns);

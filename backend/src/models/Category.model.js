@@ -11,7 +11,9 @@ const CategorySchema = new mongoose.Schema({
   icon: { type: String },
   parentId: { type: String },
   order: { type: Number, default: 0 },
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+  productType: { type: String, enum: ['physical', 'digital'], default: 'physical' },
+  workflowSteps: { type: [String], default: [] }
 }, {
   timestamps: true,
   collection: 'Category'

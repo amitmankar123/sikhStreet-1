@@ -30,11 +30,13 @@ export const createProductSchema = Joi.object({
     taxIncluded: Joi.boolean().optional(),
     image: Joi.string().allow('').optional(),
     video: Joi.string().uri().allow('', null).optional(),
-    images: Joi.array().items(Joi.string()).optional(),
+    images: Joi.array().max(10).items(Joi.string()).optional(),
     tags: Joi.array().items(Joi.string()).optional(),
     seoTitle: Joi.string().allow('', null).optional(),
     seoDescription: Joi.string().allow('', null).optional(),
     relatedProducts: Joi.array().items(objectId).optional(),
+    productType: Joi.string().valid('physical', 'digital').optional(),
+    digitalConfig: Joi.object().optional(),
     faqs: Joi.array().items(
         Joi.object({
             question: Joi.string().trim().allow('').optional(),
@@ -58,7 +60,7 @@ export const createProductSchema = Joi.object({
             color: Joi.string().allow('').optional(),
         }).optional(),
         defaultSelection: Joi.object().optional(),
-    }).optional(),
+    }).unknown(true).optional(),
 }).unknown(true);
 
 export const updateProductSchema = Joi.object({
@@ -89,11 +91,14 @@ export const updateProductSchema = Joi.object({
     taxIncluded: Joi.boolean().optional(),
     image: Joi.string().allow('', null).optional(),
     video: Joi.string().uri().allow('', null).optional(),
-    images: Joi.array().items(Joi.string()).optional(),
+    images: Joi.array().max(10).items(Joi.string()).optional(),
     tags: Joi.array().items(Joi.string()).optional(),
     seoTitle: Joi.string().allow('', null).optional(),
     seoDescription: Joi.string().allow('', null).optional(),
     relatedProducts: Joi.array().items(objectId).optional(),
+    productType: Joi.string().valid('physical', 'digital').optional(),
+    digitalConfig: Joi.object().allow(null).optional(),
+    turbanConfig: Joi.object().allow(null).optional(),
     faqs: Joi.array().items(
         Joi.object({
             question: Joi.string().trim().allow('').optional(),
@@ -117,7 +122,7 @@ export const updateProductSchema = Joi.object({
             color: Joi.string().allow('').optional(),
         }).optional(),
         defaultSelection: Joi.object().optional(),
-    }).optional(),
+    }).unknown(true).allow(null).optional(),
 }).unknown(true);
 
 export const productIdParamSchema = Joi.object({

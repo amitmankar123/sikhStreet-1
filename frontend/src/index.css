@@ -9,18 +9,22 @@
 ───────────────────────────────────────────────────────────────── */
 :root {
   /* Vendor panel variables */
-  --vendor-bg:           250 250 250;  /* #FAFAFA */
-  --vendor-primary:      10 25 47;     /* #0A192F */
-  --vendor-accent:       212 175 55;   /* #D4AF37 */
-  --vendor-accent-hover: 184 150 43;   /* #B8962B */
+  --vendor-bg: 250 250 250;
+  /* #FAFAFA */
+  --vendor-primary: 10 25 47;
+  /* #0A192F */
+  --vendor-accent: 212 175 55;
+  /* #D4AF37 */
+  --vendor-accent-hover: 184 150 43;
+  /* #B8962B */
 
   /* Buyer brand variables */
-  --brand-bg:      #FFF8F0;
+  --brand-bg: #FFF8F0;
   --brand-surface: #FFFFFF;
-  --brand-navy:    #2C1A0E;
+  --brand-navy: #2C1A0E;
   --brand-saffron: #F1641E;
-  --brand-gold:    #C9922A;
-  --brand-border:  #EDE0D4;
+  --brand-gold: #C9922A;
+  --brand-border: #EDE0D4;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -202,6 +206,7 @@ body::-webkit-scrollbar {
    Glassmorphism & Visual Utilities
 ───────────────────────────────────────────────────────────────── */
 @layer utilities {
+
   /* Glass surfaces */
   .glass {
     background: rgba(255, 255, 255, 0.75);
@@ -238,6 +243,44 @@ body::-webkit-scrollbar {
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(237, 224, 212, 0.6);
     transform: translateZ(0);
+  }
+
+  /* Animated Glowing/Pulsing Glassmorphism */
+  .glass-animated-pulse {
+    position: relative;
+    border-radius: inherit;
+    /* Basic glass base */
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .glass-animated-pulse::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: linear-gradient(135deg, rgba(241, 100, 30, 0.8), rgba(201, 146, 42, 0.8), rgba(241, 100, 30, 0.2));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: glass-pulse 3s infinite alternate ease-in-out;
+  }
+
+  @keyframes glass-pulse {
+    0% {
+      opacity: 0.3;
+      box-shadow: 0 0 10px rgba(241, 100, 30, 0.2);
+    }
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 25px rgba(241, 100, 30, 0.7);
+    }
   }
 
   /* Gradients */
@@ -347,19 +390,22 @@ body::-webkit-scrollbar {
 
   /* Shimmer (skeleton loading) */
   .shimmer {
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.5) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
+    background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        rgba(255, 255, 255, 0) 100%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
 
   @keyframes shimmer {
-    0%   { background-position: -200% 0; }
-    100% { background-position:  200% 0; }
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
   }
 
   /* Brand button utilities */
@@ -425,14 +471,25 @@ body::-webkit-scrollbar {
    Reduced Motion
 ───────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 
-  .shimmer      { animation: none !important; }
-  .hover-lift   { transition: none !important; }
-  .btn-saffron  { transition: none !important; }
+  .shimmer {
+    animation: none !important;
+  }
+
+  .hover-lift {
+    transition: none !important;
+  }
+
+  .btn-saffron {
+    transition: none !important;
+  }
 }

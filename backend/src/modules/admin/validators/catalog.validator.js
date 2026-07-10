@@ -100,27 +100,31 @@ export const taxPricingRulesSchema = Joi.object({
 });
 
 export const categoryIdParamSchema = Joi.object({
-    id: objectId.required(),
+    id: Joi.alternatives().try(objectId, Joi.string().min(1).max(100)).required(),
 });
 
 export const createCategorySchema = Joi.object({
     name: Joi.string().trim().min(2).max(120).required(),
     description: Joi.string().trim().allow('').optional(),
-    image: Joi.string().trim().uri().allow('').optional(),
+    image: Joi.string().trim().allow('').optional(),
     icon: Joi.string().trim().allow('').optional(),
     parentId: objectId.allow(null, '').optional(),
     order: Joi.number().integer().min(0).optional(),
     isActive: Joi.boolean().optional(),
+    productType: Joi.string().valid('physical', 'digital').optional(),
+    workflowSteps: Joi.array().items(Joi.string().trim()).optional(),
 });
 
 export const updateCategorySchema = Joi.object({
     name: Joi.string().trim().min(2).max(120).optional(),
     description: Joi.string().trim().allow('').optional(),
-    image: Joi.string().trim().uri().allow('').optional(),
+    image: Joi.string().trim().allow('').optional(),
     icon: Joi.string().trim().allow('').optional(),
     parentId: objectId.allow(null, '').optional(),
     order: Joi.number().integer().min(0).optional(),
     isActive: Joi.boolean().optional(),
+    productType: Joi.string().valid('physical', 'digital').optional(),
+    workflowSteps: Joi.array().items(Joi.string().trim()).optional(),
 }).min(1);
 
 export const reorderCategoriesSchema = Joi.object({

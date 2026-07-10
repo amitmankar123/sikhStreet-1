@@ -102,12 +102,14 @@ const normalizeVariantsPayload = (rawVariants = {}, fallbackPrice) => {
     const rawPrices = rawVariants.prices || {};
     const rawStockMap = rawVariants.stockMap || {};
     const rawImageMap = rawVariants.imageMap || {};
+    const rawSkuMap = rawVariants.skuMap || {};
     const defaultVariant = rawVariants.defaultVariant || {};
     const defaultSelection = rawVariants.defaultSelection || {};
 
     const prices = {};
     const stockMap = {};
     const imageMap = {};
+    const skuMap = {};
 
     const generatedCombos = buildCombinationsFromAttributes(attributes);
     if (generatedCombos.length > 0) {
@@ -123,6 +125,9 @@ const normalizeVariantsPayload = (rawVariants = {}, fallbackPrice) => {
 
             const imgVal = String(rawImageMap[key] || '').trim();
             if (imgVal) imageMap[key] = imgVal;
+
+            const skuVal = String(rawSkuMap[key] || '').trim();
+            if (skuVal) skuMap[key] = skuVal;
         });
     } else if (sizes.length > 0 || colors.length > 0) {
         const activeSizes = sizes.length > 0 ? sizes : [''];
@@ -139,6 +144,9 @@ const normalizeVariantsPayload = (rawVariants = {}, fallbackPrice) => {
 
                 const imgVal = String(rawImageMap[key] || '').trim();
                 if (imgVal) imageMap[key] = imgVal;
+
+                const skuVal = String(rawSkuMap[key] || '').trim();
+                if (skuVal) skuMap[key] = skuVal;
             });
         });
     }
@@ -150,6 +158,7 @@ const normalizeVariantsPayload = (rawVariants = {}, fallbackPrice) => {
         prices,
         stockMap,
         imageMap,
+        skuMap,
         defaultVariant,
         defaultSelection,
     };
@@ -250,13 +259,14 @@ export const createProduct = asyncHandler(async (req, res) => {
     const randomStr = Math.random().toString(36).substring(2, 5).toUpperCase();
     const sku = `VND-${vendorPrefix}-${timestampStr}-${randomStr}`;
 
-    const stockQuantity = Number(rest.stockQuantity ?? 0);
-    const lowStockThreshold = Number(rest.lowStockThreshold ?? 10);
+    const isDigital = rest.productType === 'digital';
+    const stockQuantity = isDigital ? 999999 : Number(rest.stockQuantity ?? 0);
+    const lowStockThreshold = isDigital ? 0 : Number(rest.lowStockThreshold ?? 10);
     
-    if (!Number.isFinite(stockQuantity) || stockQuantity < 0) {
+    if (!isDigital && (!Number.isFinite(stockQuantity) || stockQuantity < 0)) {
         throw new ApiError(400, 'Invalid stock quantity.');
     }
-    if (!Number.isFinite(lowStockThreshold) || lowStockThreshold < 0) {
+    if (!isDigital && (!Number.isFinite(lowStockThreshold) || lowStockThreshold < 0)) {
         throw new ApiError(400, 'Invalid low stock threshold.');
     }
     
@@ -265,12 +275,12 @@ export const createProduct = asyncHandler(async (req, res) => {
         throw new ApiError(400, 'Invalid product price.');
     }
 
-    const normalizedVariants = normalizeVariantsPayload(rest.variants, price);
-    const variantAggregateStock = calculateVariantAggregateStock(normalizedVariants);
-    const finalStockQuantity = Number.isFinite(variantAggregateStock)
+    const normalizedVariants = isDigital ? undefined : normalizeVariantsPayload(rest.variants, price);
+    const variantAggregateStock = isDigital ? null : calculateVariantAggregateStock(normalizedVariants);
+    const finalStockQuantity = Number.isFinite(variantAggregateStock) && variantAggregateStock !== null
         ? variantAggregateStock
         : stockQuantity;
-    const stock = deriveStockStatus(finalStockQuantity, lowStockThreshold);
+    const stock = isDigital ? 'in_stock' : deriveStockStatus(finalStockQuantity, lowStockThreshold);
 
     const product = await Product.create({
         name,
@@ -280,14 +290,14 @@ export const createProduct = asyncHandler(async (req, res) => {
         price,
         description: rest.description || null,
         originalPrice: toNonNegativeNumber(rest.originalPrice),
-        unit: rest.unit || undefined,
+        unit: isDigital ? 'Download' : (rest.unit || undefined),
         images: rest.images || null,
         image: rest.image || null,
         video: rest.video || null,
         categoryId: rest.categoryId,
         brandId: rest.brandId || null,
         totalAllowedQuantity: toNonNegativeNumber(rest.totalAllowedQuantity),
-        minimumOrderQuantity: toNonNegativeNumber(rest.minimumOrderQuantity) || undefined,
+        minimumOrderQuantity: isDigital ? 1 : (toNonNegativeNumber(rest.minimumOrderQuantity) || undefined),
         lowStockThreshold,
         stockQuantity: finalStockQuantity,
         stock,
@@ -298,20 +308,22 @@ export const createProduct = asyncHandler(async (req, res) => {
         isFeatured: rest.isFeatured !== undefined ? Boolean(rest.isFeatured) : undefined,
         isActive: rest.isActive !== undefined ? Boolean(rest.isActive) : undefined,
         isVisible: rest.isVisible !== undefined ? Boolean(rest.isVisible) : undefined,
-        codAllowed: rest.codAllowed !== undefined ? Boolean(rest.codAllowed) : undefined,
-        returnable: rest.returnable !== undefined ? Boolean(rest.returnable) : undefined,
-        cancelable: rest.cancelable !== undefined ? Boolean(rest.cancelable) : undefined,
+        codAllowed: isDigital ? false : (rest.codAllowed !== undefined ? Boolean(rest.codAllowed) : undefined),
+        returnable: isDigital ? false : (rest.returnable !== undefined ? Boolean(rest.returnable) : undefined),
+        cancelable: isDigital ? false : (rest.cancelable !== undefined ? Boolean(rest.cancelable) : undefined),
         taxIncluded: rest.taxIncluded !== undefined ? Boolean(rest.taxIncluded) : undefined,
-        warrantyPeriod: rest.warrantyPeriod || null,
-        guaranteePeriod: rest.guaranteePeriod || null,
+        warrantyPeriod: isDigital ? null : (rest.warrantyPeriod || null),
+        guaranteePeriod: isDigital ? null : (rest.guaranteePeriod || null),
         hsnCode: rest.hsnCode || null,
         taxRate: toNonNegativeNumber(rest.taxRate) || undefined,
         seoTitle: rest.seoTitle || null,
         seoDescription: rest.seoDescription || null,
         relatedProducts: rest.relatedProducts || null,
         tags: rest.tags || null,
-        specifications: rest.specifications || null,
-        turbanConfig: rest.turbanConfig || null,
+        specifications: isDigital ? null : (rest.specifications || null),
+        turbanConfig: isDigital ? null : (rest.turbanConfig || null),
+        productType: rest.productType || 'physical',
+        digitalConfig: isDigital ? rest.digitalConfig : null,
     });
 
     res.status(201).json(new ApiResponse(201, product, 'Product created.'));
@@ -320,19 +332,23 @@ export const createProduct = asyncHandler(async (req, res) => {
 // PUT /api/vendor/products/:id
 export const updateProduct = asyncHandler(async (req, res) => {
     const Product = mongoose.model('Product');
+    const body = req.body;
+    const updates = {};
     const existing = await Product.findOne({ _id: req.params.id, vendorId: req.user.id });
     if (!existing) throw new ApiError(404, 'Product not found or access denied.');
 
-    const body = req.body;
-    const updates = {};
-    
+    const existingType = existing.productType || 'physical';
+    if (body.productType && body.productType !== existingType) {
+        throw new ApiError(400, 'Changing product type of an existing product is not allowed.');
+    }
+
     const fields = [
         'name', 'description', 'originalPrice', 'unit', 'images', 'image', 'video',
         'categoryId', 'brandId', 'totalAllowedQuantity', 'minimumOrderQuantity',
         'flashSale', 'isNewArrival', 'isFeatured', 'isActive', 'isVisible',
         'codAllowed', 'returnable', 'cancelable', 'taxIncluded', 'warrantyPeriod',
         'guaranteePeriod', 'hsnCode', 'taxRate', 'seoTitle', 'seoDescription',
-        'relatedProducts', 'tags', 'specifications', 'turbanConfig'
+        'relatedProducts', 'tags', 'specifications', 'turbanConfig', 'productType', 'digitalConfig'
     ];
 
     fields.forEach(field => {
@@ -340,6 +356,8 @@ export const updateProduct = asyncHandler(async (req, res) => {
             updates[field] = body[field];
         }
     });
+
+    const isDigital = (body.productType || existing.productType) === 'digital';
 
     if (body.name) {
         updates.slug = slugify(body.name) + '-' + Date.now();
@@ -359,13 +377,13 @@ export const updateProduct = asyncHandler(async (req, res) => {
     }
 
     let variants = existing.variants;
-    if (body.variants !== undefined) {
+    if (!isDigital && body.variants !== undefined) {
         variants = normalizeVariantsPayload(body.variants, price);
         updates.variants = variants;
     }
 
-    let stockQuantity = existing.stockQuantity;
-    if (body.stockQuantity !== undefined) {
+    let stockQuantity = isDigital ? 999999 : existing.stockQuantity;
+    if (!isDigital && body.stockQuantity !== undefined) {
         stockQuantity = Number(body.stockQuantity);
         if (!Number.isFinite(stockQuantity) || stockQuantity < 0) {
             throw new ApiError(400, 'Invalid stock quantity.');
@@ -373,8 +391,8 @@ export const updateProduct = asyncHandler(async (req, res) => {
         updates.stockQuantity = stockQuantity;
     }
 
-    let lowStockThreshold = existing.lowStockThreshold;
-    if (body.lowStockThreshold !== undefined) {
+    let lowStockThreshold = isDigital ? 0 : existing.lowStockThreshold;
+    if (!isDigital && body.lowStockThreshold !== undefined) {
         lowStockThreshold = Number(body.lowStockThreshold);
         if (!Number.isFinite(lowStockThreshold) || lowStockThreshold < 0) {
             throw new ApiError(400, 'Invalid low stock threshold.');
@@ -382,7 +400,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
         updates.lowStockThreshold = lowStockThreshold;
     }
 
-    if (body.variants !== undefined) {
+    if (!isDigital && body.variants !== undefined) {
         const variantAggregateStock = calculateVariantAggregateStock(variants);
         if (Number.isFinite(variantAggregateStock)) {
             stockQuantity = variantAggregateStock;
@@ -390,7 +408,21 @@ export const updateProduct = asyncHandler(async (req, res) => {
         }
     }
 
-    updates.stock = deriveStockStatus(stockQuantity, lowStockThreshold);
+    if (isDigital) {
+        updates.stockQuantity = 999999;
+        updates.stock = 'in_stock';
+        updates.lowStockThreshold = 0;
+        updates.variants = undefined;
+        updates.turbanConfig = null;
+        updates.specifications = null;
+        updates.codAllowed = false;
+        updates.returnable = false;
+        updates.cancelable = false;
+        updates.unit = 'Download';
+        updates.minimumOrderQuantity = 1;
+    } else {
+        updates.stock = deriveStockStatus(stockQuantity, lowStockThreshold);
+    }
 
     const updated = await Product.findOneAndUpdate(
         { _id: existing._id },

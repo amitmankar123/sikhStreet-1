@@ -177,7 +177,7 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
           isFlashSale
             ? "border-orange-200 hover:shadow-saffron"
             : "border-brand-border hover:shadow-card-hover"
-        } shadow-card`}
+        } shadow-card glass-animated-pulse`}
         {...longPressHandlers}>
         <div className="relative aspect-square w-full overflow-hidden rounded-t-2xl">
           {/* Favorite Icon */}

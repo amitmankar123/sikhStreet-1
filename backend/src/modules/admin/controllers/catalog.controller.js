@@ -117,9 +117,11 @@ const normalizeVariantsPayload = (rawVariants = {}, fallbackPrice) => {
     const pricesSource = Object.fromEntries(toObjectEntries(rawVariants.prices));
     const stockSource = Object.fromEntries(toObjectEntries(rawVariants.stockMap));
     const imageSource = Object.fromEntries(toObjectEntries(rawVariants.imageMap));
+    const skuSource = Object.fromEntries(toObjectEntries(rawVariants.skuMap));
     const prices = {};
     const stockMap = {};
     const imageMap = {};
+    const skuMap = {};
 
     combinations.forEach(({ selection }) => {
         const size = String(selection?.size || '');
@@ -140,6 +142,9 @@ const normalizeVariantsPayload = (rawVariants = {}, fallbackPrice) => {
 
         const image = String(imageSource[key] || '').trim();
         if (image) imageMap[key] = image;
+
+        const skuVal = String(skuSource[key] || '').trim();
+        if (skuVal) skuMap[key] = skuVal;
     });
 
     const defaultSize = String(rawVariants?.defaultVariant?.size || '').trim();
@@ -174,6 +179,7 @@ const normalizeVariantsPayload = (rawVariants = {}, fallbackPrice) => {
         prices,
         stockMap,
         imageMap,
+        skuMap,
         defaultVariant: {
             size: normalizedDefaultSize,
             color: normalizedDefaultColor,
@@ -192,7 +198,7 @@ const calculateVariantAggregateStock = (variants = {}) => {
 };
 
 const sanitizeCategoryPayload = (payload = {}) => {
-    const allowed = ['name', 'description', 'image', 'icon', 'parentId', 'order', 'isActive'];
+    const allowed = ['name', 'description', 'image', 'icon', 'parentId', 'order', 'isActive', 'productType', 'workflowSteps'];
     const sanitized = {};
     for (const key of allowed) {
         if (Object.prototype.hasOwnProperty.call(payload, key)) {

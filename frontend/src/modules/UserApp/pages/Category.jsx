@@ -655,7 +655,8 @@ const MobileCategory = () => {
     );
   }
 
-  const showTurbanLoader = isInitialLoading && isTurbanCategory;
+  // Disabled per request for now
+  const showTurbanLoader = false; // isInitialLoading && isTurbanCategory;
 
   return (
     <PageTransition>
