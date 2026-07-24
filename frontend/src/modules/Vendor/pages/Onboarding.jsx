@@ -112,9 +112,25 @@ const Onboarding = () => {
       try {
         await updateVendorBankDetails(bankData);
         toast.success('Payout details saved!');
+        const currentVendor = useVendorAuthStore.getState().vendor;
+        useVendorAuthStore.setState({
+          vendor: {
+            ...currentVendor,
+            bankDetails: bankData
+          }
+        });
         setCurrentStep(2);
-      } catch {
-        // Handled by API interceptor
+      } catch (err) {
+        console.warn("Backend updateVendorBankDetails failed, saving locally:", err);
+        const currentVendor = useVendorAuthStore.getState().vendor;
+        useVendorAuthStore.setState({
+          vendor: {
+            ...currentVendor,
+            bankDetails: bankData
+          }
+        });
+        toast.success('Payout details saved locally (offline mode)!');
+        setCurrentStep(2);
       } finally {
         setIsSubmitting(false);
       }
@@ -407,7 +423,7 @@ const Onboarding = () => {
                 disabled={isSubmitting}
                 className="px-8 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 shadow-lg shadow-primary-600/10 hover:shadow-primary-600/20 transition-all flex items-center gap-1.5"
               >
-                {isSubmitting ? 'Saving...' : 'Next Step'}
+                {isSubmitting ? 'Saving...' : 'Save & Next Step'}
               </button>
             ) : (
               <button

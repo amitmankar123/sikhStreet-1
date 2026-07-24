@@ -151,9 +151,8 @@ const Categories = () => {
 
         {/* Filter Content */}
         <div
-          className={`${
-            showFilters ? "block" : "hidden"
-          } sm:block space-y-3 sm:space-y-0`}>
+          className={`${showFilters ? "block" : "hidden"
+            } sm:block space-y-3 sm:space-y-0`}>
           {/* Search */}
           <div className="relative w-full sm:flex-1">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm sm:text-base" />
@@ -240,18 +239,16 @@ const Categories = () => {
                 onClick={() => setViewMode("tree")}
                 variant={viewMode === "tree" ? "primary" : "ghost"}
                 size="sm"
-                className={`flex-1 ${
-                  viewMode === "tree" ? "" : "text-gray-600"
-                }`}>
+                className={`flex-1 ${viewMode === "tree" ? "" : "text-gray-600"
+                  }`}>
                 Tree View
               </Button>
               <Button
                 onClick={() => setViewMode("list")}
                 variant={viewMode === "list" ? "primary" : "ghost"}
                 size="sm"
-                className={`flex-1 ${
-                  viewMode === "list" ? "" : "text-gray-600"
-                }`}>
+                className={`flex-1 ${viewMode === "list" ? "" : "text-gray-600"
+                  }`}>
                 List View
               </Button>
             </div>
@@ -308,7 +305,8 @@ const Categories = () => {
           </div>
         ) : viewMode === "tree" ? (
           <CategoryTree
-            categories={filteredCategories}
+            categories={categories}
+            rootCategories={filteredCategories}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />

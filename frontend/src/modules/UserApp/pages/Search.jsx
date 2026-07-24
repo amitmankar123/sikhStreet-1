@@ -228,51 +228,54 @@ const MobileSearch = () => {
       }
 
       try {
-        const response = await api.get('/products', { params: query });
-        const payload = response?.data ?? response;
-        const list = Array.isArray(payload?.products)
-          ? payload.products.map(normalizeProduct).filter((item) => item.id)
-          : [];
-        const page = Number(payload?.page || pageNumber || 1);
-        const pages = Number(payload?.pages || 1);
-        const total = Number(payload?.total || list.length || 0);
+        let fallback = catalogProducts.filter((product) => {
+          let match = true;
+          if (query.q) {
+            match = match && (
+              product.name.toLowerCase().includes(query.q.toLowerCase()) ||
+              (product.description && product.description.toLowerCase().includes(query.q.toLowerCase()))
+            );
+          }
+          if (query.category) {
+            const allCats = [...(storeCategories || []), ...(fallbackCategories || [])].filter(Boolean);
+            const isDescendant = (catId, targetId) => {
+              if (catId === targetId) return true;
+              const cat = allCats.find(c => normalizeId(c.id) === catId);
+              if (!cat) return false;
+              const pId = String(cat.parentId || cat.parent || "");
+              if (!pId) return false;
+              return isDescendant(pId, targetId);
+            };
+            match = match && isDescendant(String(product.categoryId || ""), query.category);
+          }
+          if (query.vendor) {
+            match = match && String(product.vendorId || "") === String(query.vendor);
+          }
+          if (query.minPrice) match = match && product.price >= parseFloat(query.minPrice);
+          if (query.maxPrice) match = match && product.price <= parseFloat(query.maxPrice);
+          if (query.minRating) match = match && product.rating >= parseFloat(query.minRating);
+          return match;
+        });
+
+        // Apply sorting
+        const activeSort = query.sort || sortBy || 'newest';
+        if (activeSort === "price-asc" || activeSort === "price_asc") fallback.sort((a, b) => a.price - b.price);
+        else if (activeSort === "price-desc" || activeSort === "price_desc") fallback.sort((a, b) => b.price - a.price);
+        else if (activeSort === "rating") fallback.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        else fallback.sort((a, b) => b.id - a.id);
+
+        // Paginate local results
+        const itemsPerPage = 15;
+        const total = fallback.length;
+        const pages = Math.max(1, Math.ceil(total / itemsPerPage));
+        const page = Math.min(pages, pageNumber);
+        const startIndex = (page - 1) * itemsPerPage;
+        const list = fallback.slice(startIndex, startIndex + itemsPerPage).map(normalizeProduct);
 
         setProducts((prev) => (append ? [...prev, ...list] : list));
         setPagination({ page, pages, total });
       } catch (err) {
-        console.warn("Backend search failed, using fallback:", err);
-        if (!append) {
-          let fallback = catalogProducts.filter((product) => {
-            let match = true;
-            if (query.q) {
-              match = match && product.name.toLowerCase().includes(query.q.toLowerCase());
-            }
-            if (query.category) {
-              const allCats = [...(storeCategories || []), ...(fallbackCategories || [])].filter(Boolean);
-              const isDescendant = (catId, targetId) => {
-                if (catId === targetId) return true;
-                const cat = allCats.find(c => normalizeId(c.id) === catId);
-                if (!cat) return false;
-                const pId = String(cat.parentId || cat.parent || "");
-                if (!pId) return false;
-                return isDescendant(pId, targetId);
-              };
-              match = match && isDescendant(String(product.categoryId || ""), query.category);
-            }
-            if (query.minPrice) match = match && product.price >= parseFloat(query.minPrice);
-            if (query.maxPrice) match = match && product.price <= parseFloat(query.maxPrice);
-            if (query.minRating) match = match && product.rating >= parseFloat(query.minRating);
-            return match;
-          });
-
-          if (query.sort === "price-asc") fallback.sort((a, b) => a.price - b.price);
-          else if (query.sort === "price-desc") fallback.sort((a, b) => b.price - a.price);
-          else if (query.sort === "rating") fallback.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-          else fallback.sort((a, b) => b.id - a.id);
-
-          setProducts(fallback.map(normalizeProduct));
-          setPagination({ page: 1, pages: 1, total: fallback.length });
-        }
+        console.error("Local search error:", err);
       } finally {
         if (append) {
           setIsLoadingMore(false);
@@ -410,9 +413,9 @@ const MobileSearch = () => {
   return (
     <PageTransition>
       <MobileLayout showBottomNav={true} showCartBar={true}>
-        <div className="w-full pb-24 lg:pb-12 max-w-7xl mx-auto min-h-screen bg-[#fff8f5]">
+        <div className="w-full pb-24 lg:pb-12 max-w-7xl mx-auto min-h-screen bg-white">
           {/* Search Header */}
-          <div className="px-4 py-4 bg-[#fff8f5] sticky top-0 z-30">
+          <div className="px-4 py-4 bg-white sticky top-0 z-30">
             <form onSubmit={handleSearch} className="mb-3 lg:hidden">
               <div className="relative">
                 <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl z-10" />
@@ -425,7 +428,7 @@ const MobileSearch = () => {
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   placeholder="Search for turbans, shawls, or artisan crafts..."
-                  className="w-full pl-12 pr-20 py-3 bg-white border border-[#e9d7cb] rounded-2xl focus:outline-none focus:ring-1 focus:ring-[#8d4b00] text-[#231a13] placeholder:text-gray-400 text-sm shadow-sm"
+                  className="w-full pl-12 pr-20 py-3 bg-white border border-black/10 rounded-2xl focus:outline-none focus:ring-1 focus:ring-[#F5A623] text-black placeholder:text-gray-400 text-sm shadow-sm"
                   autoFocus
                 />
                 <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
@@ -481,41 +484,6 @@ const MobileSearch = () => {
                 Found {pagination.total} product(s)
               </p>
               <div className="flex items-center gap-3">
-                <div className="flex items-center bg-gray-100 rounded-xl p-1.5 h-11 shadow-sm border border-slate-200">
-                  <select
-                    value={sortBy}
-                    onChange={(e) => handleSortChange(e.target.value)}
-                    className="bg-transparent border-none text-sm font-extrabold text-[#0A192F] focus:ring-0 cursor-pointer outline-none pl-2.5 pr-1.5"
-                  >
-                    <option value="newest">Newest</option>
-                    <option value="oldest">Oldest</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                    <option value="popular">Popular</option>
-                    <option value="rating">Top Rated</option>
-                  </select>
-                </div>
-                {/* View Toggle Buttons */}
-                <div className="flex items-center bg-gray-100 rounded-xl p-1.5 h-11 shadow-sm border border-slate-200">
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-lg transition-colors ${viewMode === 'list'
-                      ? 'bg-white text-primary-600 shadow-sm'
-                      : 'text-gray-600'
-                      }`}
-                  >
-                    <FiList className="text-xl" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-lg transition-colors ${viewMode === 'grid'
-                      ? 'bg-white text-primary-600 shadow-sm'
-                      : 'text-gray-600'
-                      }`}
-                  >
-                    <FiGrid className="text-xl" />
-                  </button>
-                </div>
                 <div ref={filterButtonRef} className="relative">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
@@ -569,8 +537,29 @@ const MobileSearch = () => {
 
                           {/* Filter Content */}
                           <div className="max-h-[50vh] overflow-y-auto scrollbar-hide">
-                            <div className="p-2 space-y-2">
-                              {/* Category Filter */}
+                             <div className="p-2 space-y-3">
+                               {/* Sort Options */}
+                               <div>
+                                 <h4 className="font-semibold text-gray-700 mb-1 text-xs">
+                                   Sort By
+                                 </h4>
+                                 <div className="relative">
+                                   <select
+                                     value={sortBy}
+                                     onChange={(e) => handleSortChange(e.target.value)}
+                                     className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#F5A623] text-xs font-bold text-gray-700 cursor-pointer"
+                                   >
+                                     <option value="newest">Newest</option>
+                                     <option value="oldest">Oldest</option>
+                                     <option value="price-asc">Price: Low to High</option>
+                                     <option value="price-desc">Price: High to Low</option>
+                                     <option value="popular">Popular</option>
+                                     <option value="rating">Top Rated</option>
+                                   </select>
+                                 </div>
+                               </div>
+
+                               {/* Category Filter */}
                               <div>
                                 <h4 className="font-semibold text-gray-700 mb-1 text-xs">
                                   Category
@@ -774,11 +763,11 @@ const MobileSearch = () => {
                               className="w-full py-1.5 bg-gray-200 text-gray-700 rounded-md font-semibold text-xs hover:bg-gray-300 transition-colors">
                               Clear All
                             </button>
-                            <button
-                              onClick={() => setShowFilters(false)}
-                              className="w-full py-1.5 gradient-green text-white rounded-md font-semibold text-xs hover:shadow-glow-green transition-all">
-                              Apply Filters
-                            </button>
+                             <button
+                               onClick={() => setShowFilters(false)}
+                               className="w-full py-1.5 gradient-saffron text-white rounded-md font-semibold text-xs hover:shadow-glow-saffron transition-all">
+                               Apply Filters
+                             </button>
                           </div>
                         </motion.div>
                       </>
@@ -794,10 +783,26 @@ const MobileSearch = () => {
             <div className="px-4 py-4">
                 {/* Categories Pills */}
                 <div className="mb-8">
-                  <h3 className="text-xs font-bold tracking-wider text-[#554336] mb-3 uppercase">Categories</h3>
+                  <h3 className="text-xs font-bold tracking-wider text-black mb-3 uppercase">Categories</h3>
                   <div className="flex flex-wrap gap-2">
                     {['Apparel', 'Accessories', 'Art Prints', 'Gifts', 'Home Decor'].map((cat, idx) => (
-                      <button key={idx} className="px-4 py-1.5 bg-[#fdeade] text-[#8d4b00] rounded-full text-xs font-semibold hover:bg-[#f2dfd3] transition-colors">
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          let catId = "";
+                          if (cat === "Apparel") catId = "fashion";
+                          else if (cat === "Accessories") catId = "3";
+                          else if (cat === "Art Prints") catId = "6";
+                          else if (cat === "Gifts") catId = "8";
+
+                          if (catId) {
+                            handleFilterChange("category", catId);
+                          } else {
+                            handleSuggestionSelect(cat);
+                          }
+                        }}
+                        className="px-4 py-1.5 bg-white text-black rounded-full text-xs font-semibold hover:bg-[#F5A623] hover:text-black transition-colors"
+                      >
                         {cat}
                       </button>
                     ))}
@@ -806,15 +811,15 @@ const MobileSearch = () => {
 
                 {/* Popular Searches */}
                 <div className="mb-8">
-                  <h3 className="text-xs font-bold tracking-wider text-[#554336] mb-3 uppercase">Popular Searches</h3>
+                  <h3 className="text-xs font-bold tracking-wider text-black mb-3 uppercase">Popular Searches</h3>
                   <div className="space-y-4">
                     {['Full Voile Turbans', 'Phulkari Shawls', 'Kirpan Art'].map((term, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSuggestionSelect(term)}
-                        className="flex items-center gap-3 text-sm font-semibold text-[#554336] hover:text-[#8d4b00] transition-colors w-full text-left"
+                        className="flex items-center gap-3 text-sm font-semibold text-black hover:text-[#F5A623] transition-colors w-full text-left"
                       >
-                        <FiTrendingUp className="text-[#8d4b00]" size={16} />
+                        <FiTrendingUp className="text-black" size={16} />
                         {term}
                       </button>
                     ))}
@@ -825,14 +830,14 @@ const MobileSearch = () => {
                 {recentSearches.length > 0 && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-xs font-bold tracking-wider text-[#554336] uppercase">Recent Searches</h3>
+                      <h3 className="text-xs font-bold tracking-wider text-black uppercase">Recent Searches</h3>
                     </div>
                     <div className="space-y-4">
                       {recentSearches.map((term, idx) => (
                         <button
                           key={idx}
                           onClick={() => handleSuggestionSelect(term)}
-                          className="flex items-center gap-3 text-sm font-semibold text-[#554336] hover:text-[#8d4b00] transition-colors w-full text-left"
+                          className="flex items-center gap-3 text-sm font-semibold text-black hover:text-[#F5A623] transition-colors w-full text-left"
                         >
                           <FiClock className="text-gray-400" size={16} />
                           {term}
@@ -860,12 +865,12 @@ const MobileSearch = () => {
                 <FiSearch className="text-6xl text-gray-300 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-gray-800 mb-2">No products found</h3>
                 <p className="text-gray-600 mb-6">Try adjusting your search or filters</p>
-                <button
-                  onClick={clearFilters}
-                  className="gradient-green text-white px-6 py-3 rounded-xl font-semibold"
-                >
-                  Clear Filters
-                </button>
+                 <button
+                   onClick={clearFilters}
+                   className="gradient-saffron text-white px-6 py-3 rounded-xl font-semibold hover:shadow-glow-saffron transition-all duration-300"
+                 >
+                   Clear Filters
+                 </button>
               </div>
             ) : viewMode === 'grid' ? (
               <>

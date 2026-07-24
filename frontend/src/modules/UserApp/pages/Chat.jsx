@@ -177,7 +177,7 @@ const Chat = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search order or shop..."
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm font-medium"
+                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F5A623]/20 focus:border-[#F5A623] text-sm font-medium"
                   />
                 </div>
               </div>
@@ -197,7 +197,7 @@ const Chat = () => {
                         key={threadId}
                         onClick={() => handleSelectThread(thread)}
                         className={`p-4 cursor-pointer hover:bg-slate-50/80 transition-colors flex items-start justify-between gap-3 ${
-                          isActive ? "bg-primary-50/60 border-l-4 border-primary-600" : ""
+                          isActive ? "bg-white/60 border-l-4 border-[#F5A623]" : ""
                         }`}
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -283,13 +283,13 @@ const Chat = () => {
                           <div
                             className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm border ${
                               isUser
-                                ? "bg-gradient-to-br from-primary-600 to-primary-700 text-white border-primary-500 rounded-br-none"
+                                ? "bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white border-[#F5A623] rounded-br-none"
                                 : "bg-white text-slate-800 border-slate-200 rounded-bl-none"
                             }`}
                           >
                             <p className="text-sm font-medium leading-relaxed break-words">{msg.message}</p>
                             <span className={`block text-[10px] text-right mt-1 font-semibold ${
-                              isUser ? "text-primary-100" : "text-slate-400"
+                              isUser ? "text-[#fdeade]" : "text-slate-400"
                             }`}>
                               {new Date(msg.time).toLocaleTimeString(undefined, {
                                 hour: '2-digit',
@@ -312,12 +312,12 @@ const Chat = () => {
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyDown={handleKeyPress}
                         placeholder="Ask the seller a question..."
-                        className="flex-1 px-4 py-2.5 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm font-medium"
+                        className="flex-1 px-4 py-2.5 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#F5A623]/20 focus:border-[#F5A623] text-sm font-medium"
                       />
                       <button
                         onClick={handleSendMessage}
                         disabled={isSending || !newMessage.trim()}
-                        className="p-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-full hover:shadow-md transition-all disabled:opacity-50 flex items-center justify-center flex-shrink-0"
+                        className="p-3 bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white rounded-full hover:shadow-md transition-all disabled:opacity-50 flex items-center justify-center flex-shrink-0"
                       >
                         <FiSend className="text-sm" />
                       </button>

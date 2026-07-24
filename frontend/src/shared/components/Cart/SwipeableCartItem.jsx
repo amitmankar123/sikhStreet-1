@@ -113,7 +113,7 @@ const SwipeableCartItem = ({ item, index }) => {
             onTouchStart={swipeHandlers.onTouchStart}
             onTouchMove={swipeHandlers.onTouchMove}
             onTouchEnd={swipeHandlers.onTouchEnd}>
-            <div className="flex gap-4 p-4 bg-white border border-[#e9d7cb] rounded-xl relative">
+            <div className="flex gap-4 p-4 bg-white border border-black/10 rounded-xl relative">
                 {/* Delete Background */}
                 {swipeOffset > 0 && (
                     <div className="absolute inset-0 bg-red-500 rounded-xl flex items-center justify-end pr-4">
@@ -122,7 +122,7 @@ const SwipeableCartItem = ({ item, index }) => {
                 )}
 
                 {/* Product Image */}
-                <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-[#fff8f5] relative z-10 border border-[#e9d7cb]/50">
+                <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-white relative z-10 border border-black/10">
                     <img
                         src={item.image}
                         alt={item.name}
@@ -133,16 +133,16 @@ const SwipeableCartItem = ({ item, index }) => {
                 {/* Product Info */}
                 <div className="flex-1 min-w-0 relative z-10 flex flex-col">
                     <div className="flex justify-between items-start gap-2 mb-1">
-                        <h3 className="font-bold text-[#231a13] text-sm line-clamp-2">
+                        <h3 className="font-bold text-black text-sm line-clamp-2">
                             {item.name}
                         </h3>
-                        <p className="text-sm font-extrabold text-[#8d4b00] whitespace-nowrap">
+                        <p className="text-sm font-extrabold text-black whitespace-nowrap">
                             {formatPrice(item.price)}
                         </p>
                     </div>
 
                     {formatVariantLabel(item?.variant) && (
-                        <p className="text-xs text-[#554336] mb-2 font-medium">
+                        <p className="text-xs text-black mb-2 font-medium">
                             {formatVariantLabel(item?.variant)}
                         </p>
                     )}
@@ -158,7 +158,7 @@ const SwipeableCartItem = ({ item, index }) => {
                     <div className="mt-auto"></div>
 
                     {/* Actions Row */}
-                    <div className="flex items-center justify-between pt-3 border-t border-[#e9d7cb]/50 mt-2">
+                    <div className="flex items-center justify-between pt-3 border-t border-black/10 mt-2">
                         {/* Quantity Controls */}
                         <div className="flex items-center gap-3">
                             <button
@@ -168,7 +168,7 @@ const SwipeableCartItem = ({ item, index }) => {
                                     e.stopPropagation();
                                     handleQuantityChange(item.id, item.quantity, -quantityStep, item.variant);
                                 }}
-                                className="w-7 h-7 flex items-center justify-center rounded-md border border-[#e9d7cb] text-[#554336] hover:bg-[#fff8f5] transition-colors">
+                                className="w-7 h-7 flex items-center justify-center rounded-md border border-black/10 text-black hover:bg-[#F5A623] hover:text-black hover:border-[#F5A623] transition-colors">
                                 <FiMinus className="text-xs" />
                             </button>
                             <motion.span
@@ -177,7 +177,7 @@ const SwipeableCartItem = ({ item, index }) => {
                                 animate={{ scale: 1 }}
                                 transition={{ duration: 0.2 }}
                                 style={{ willChange: "transform", transform: "translateZ(0)" }}
-                                className="text-sm font-bold text-[#231a13] min-w-[1.5rem] text-center">
+                                className="text-sm font-bold text-black min-w-[1.5rem] text-center">
                                 {item.quantity}
                             </motion.span>
                             <button
@@ -189,8 +189,8 @@ const SwipeableCartItem = ({ item, index }) => {
                                 }}
                                 disabled={isMaxQuantity(item.quantity)}
                                 className={`w-7 h-7 flex items-center justify-center rounded-md border transition-colors ${isMaxQuantity(item.quantity)
-                                    ? "bg-gray-100 border-[#e9d7cb]/50 text-gray-400 cursor-not-allowed"
-                                    : "border-[#e9d7cb] text-[#554336] hover:bg-[#fff8f5]"
+                                    ? "bg-gray-100 border-black/10 text-gray-400 cursor-not-allowed"
+                                    : "border-black/10 text-black hover:bg-[#F5A623] hover:text-black hover:border-[#F5A623]"
                                     }`}>
                                 <FiPlus className="text-xs" />
                             </button>
@@ -205,7 +205,7 @@ const SwipeableCartItem = ({ item, index }) => {
                                     e.stopPropagation();
                                     handleSaveForLater(item);
                                 }}
-                                className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-semibold text-[#554336] hover:text-[#8d4b00] hover:bg-[#fdeade]/50 rounded-md transition-colors">
+                                className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-semibold text-black hover:text-[#F5A623] hover:bg-white/50 rounded-md transition-colors">
                                 <FiHeart className="text-[13px]" />
                                 <span className="hidden sm:inline">Wishlist</span>
                             </button>

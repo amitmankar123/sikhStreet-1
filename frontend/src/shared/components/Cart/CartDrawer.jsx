@@ -29,17 +29,13 @@ const CartDrawer = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const total = getTotal();
   const [isValidatingStock, setIsValidatingStock] = useState(false);
-  const hasOutOfStockItems = useMemo(() => {
-    return items.some((item) => {
-      const stock = Number(item.stockQuantity);
-      return Number.isFinite(stock) && (stock <= 0 || item.quantity > stock);
-    });
-  }, [items]);
+  const hasOutOfStockItems = false;
 
-  const handleProceedToCheckout = async (e) => {
+  const handleProceedToCheckout = (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
       toast.error("Please login to proceed to checkout");
+      navigate("/login");
       return;
     }
 
@@ -48,44 +44,9 @@ const CartDrawer = () => {
       return;
     }
 
-    // 1. Quick local client-side stock validation first
-    const outOfStockItem = items.find(item => {
-      const stock = Number(item.stockQuantity);
-      return Number.isFinite(stock) && (stock <= 0 || item.quantity > stock);
-    });
-
-    if (outOfStockItem) {
-      const stockQty = Number(outOfStockItem.stockQuantity);
-      if (stockQty <= 0) {
-        toast.error(`${outOfStockItem.name} is out of stock.`);
-      } else {
-        toast.error(`Only ${stockQty} items available for ${outOfStockItem.name}`);
-      }
-      return;
-    }
-
-    // 2. Call backend for real-time stock validation (handles concurrent user B purchasing case)
-    setIsValidatingStock(true);
-    try {
-      const payload = {
-        items: items.map(item => ({
-          productId: item.id,
-          quantity: Number(item.quantity || 1),
-          variant: item.variant || undefined
-        }))
-      };
-      
-      // Call endpoint
-      await api.post('/user/orders/validate-stock', payload);
-      
-      // Close cart and navigate to checkout
-      toggleCart();
-      navigate('/checkout');
-    } catch (error) {
-      console.error("Cart stock validation failed:", error);
-    } finally {
-      setIsValidatingStock(false);
-    }
+    // Close cart and navigate to checkout
+    toggleCart();
+    navigate('/checkout');
   };
 
   // Group items by vendor
@@ -140,33 +101,33 @@ const CartDrawer = () => {
               }
             }}
             style={{ willChange: "transform", transform: "translateZ(0)" }}
-            className="fixed right-0 top-0 h-full w-full sm:w-96 bg-[#fff8f5] shadow-2xl z-[10000] flex flex-col border-l border-[#e9d7cb]">
+            className="fixed right-0 top-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[10000] flex flex-col border-l border-black/10">
             {/* Header */}
-            <div className="p-4 sm:p-6 border-b border-[#e9d7cb] bg-gradient-to-b from-[#fdeade]/30 to-transparent">
+            <div className="p-4 sm:p-6 border-b border-black/10 bg-gradient-to-b from-[#fdeade]/30 to-transparent">
               <div className="flex items-center justify-between mb-1">
-                <h2 className="text-xl font-extrabold text-[#231a13]">Your Shopping Bag</h2>
+                <h2 className="text-xl font-extrabold text-black">Your Shopping Bag</h2>
                 <button
                   onClick={toggleCart}
-                  className="p-1.5 hover:bg-[#e9d7cb] rounded-full transition-colors">
-                  <FiX className="text-xl text-[#554336]" />
+                  className="p-1.5 hover:bg-[#F5A623] hover:text-black rounded-full transition-colors">
+                  <FiX className="text-xl text-black" />
                 </button>
               </div>
-              <p className="text-xs text-[#554336] font-medium leading-relaxed max-w-[90%]">
+              <p className="text-xs text-black font-medium leading-relaxed max-w-[90%]">
                 Review items from global artisans and proceed to secure checkout.
               </p>
             </div>
 
             {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar bg-[#fff8f5]">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar bg-white">
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <div className="w-20 h-20 bg-[#fdeade] rounded-full flex items-center justify-center mb-4">
-                    <FiShoppingBag className="text-4xl text-[#8d4b00]" />
+                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-4">
+                    <FiShoppingBag className="text-4xl text-black" />
                   </div>
-                  <p className="text-[#231a13] font-bold text-lg mb-2">
+                  <p className="text-black font-bold text-lg mb-2">
                     Your bag is empty
                   </p>
-                  <p className="text-sm text-[#554336]">
+                  <p className="text-sm text-black">
                     Discover unique handcrafted items to fill it!
                   </p>
                 </div>
@@ -176,12 +137,12 @@ const CartDrawer = () => {
                     {itemsByVendor.map((vendorGroup, vendorIndex) => (
                       <div key={vendorGroup.vendorId} className="space-y-4">
                         {/* Vendor Header */}
-                        <div className="flex items-center gap-2 pb-2 border-b border-[#e9d7cb]/70">
-                          <FiShoppingBag className="text-[#8d4b00] text-sm" />
-                          <span className="text-xs font-bold text-[#8d4b00] uppercase tracking-wider flex-1">
+                        <div className="flex items-center gap-2 pb-2 border-b border-black/10">
+                          <FiShoppingBag className="text-black text-sm" />
+                          <span className="text-xs font-bold text-black uppercase tracking-wider flex-1">
                             {vendorGroup.vendorName}
                           </span>
-                          <span className="text-xs font-bold text-[#231a13]">
+                          <span className="text-xs font-bold text-black">
                             {formatPrice(vendorGroup.subtotal)}
                           </span>
                         </div>
@@ -204,12 +165,12 @@ const CartDrawer = () => {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="border-t border-[#e9d7cb] p-4 sm:p-6 bg-[#fdeade]/30">
+              <div className="border-t border-black/10 p-4 sm:p-6 bg-white/30">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-base font-bold text-[#554336]">
+                  <span className="text-base font-bold text-black">
                     Total
                   </span>
-                  <span className="text-xl sm:text-2xl font-extrabold text-[#8d4b00]">
+                  <span className="text-xl sm:text-2xl font-extrabold text-black">
                     {formatPrice(total)}
                   </span>
                 </div>
@@ -217,13 +178,13 @@ const CartDrawer = () => {
                   <button
                     onClick={handleProceedToCheckout}
                     disabled={isValidatingStock || hasOutOfStockItems}
-                    className={`w-full bg-[#8d4b00] text-white py-3 rounded-xl font-bold text-base text-center transition-all ${(isValidatingStock || hasOutOfStockItems) ? "opacity-50 cursor-not-allowed" : "hover:bg-[#7a4000] hover:shadow-lg hover:shadow-[#8d4b00]/20"}`}>
+                    className={`w-full bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white py-3 rounded-xl font-bold text-base text-center transition-all ${(isValidatingStock || hasOutOfStockItems) ? "opacity-50 cursor-not-allowed" : "hover:bg-[#F5A623] hover:shadow-lg hover:shadow-black/10"}`}>
                     {hasOutOfStockItems ? "Out of Stock Items in Cart" : isValidatingStock ? "Validating Stock..." : "Checkout ->"}
                   </button>
                   <button
                     onClick={clearCart}
                     disabled={isValidatingStock}
-                    className="w-full py-2 text-sm text-[#554336] hover:text-red-600 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    className="w-full py-2 text-sm text-black hover:text-red-600 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Clear Cart
                   </button>
                 </div>

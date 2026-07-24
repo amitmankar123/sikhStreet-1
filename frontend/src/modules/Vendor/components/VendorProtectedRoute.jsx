@@ -50,15 +50,49 @@ const VendorProtectedRoute = ({ children }) => {
     return <Navigate to="/vendor/login" state={{ from: location }} replace />;
   }
 
+  // ─── Admin Approval Gate ───────────────────────────────────────────────────
+  // Check vendor.status from store (populated after login or fetchProfile)
+  if (vendor) {
+    const vendorStatus = String(vendor.status || '').toLowerCase();
+
+    // Pending: blocked from dashboard; show waiting page
+    if (vendorStatus === 'pending') {
+      // Allow access to the pending-approval info page itself to avoid a redirect loop
+      if (location.pathname !== '/vendor/pending-approval') {
+        return <Navigate to="/vendor/pending-approval" replace />;
+      }
+    }
+
+    // Suspended: redirect to suspended page
+    if (vendorStatus === 'suspended') {
+      if (location.pathname !== '/vendor/suspended') {
+        return <Navigate to="/vendor/suspended" replace />;
+      }
+    }
+
+    // Rejected: redirect to rejected page (reuse suspended page with state)
+    if (vendorStatus === 'rejected') {
+      if (location.pathname !== '/vendor/suspended') {
+        return <Navigate to="/vendor/suspended" state={{ rejected: true, reason: vendor.suspensionReason }} replace />;
+      }
+    }
+  }
+
   // Onboarding enforcement
   const isOnboardingPath = location.pathname === '/vendor/onboarding';
-  if (!vendor?.isOnboarded) {
-    if (!isOnboardingPath) {
-      return <Navigate to="/vendor/onboarding" replace />;
-    }
-  } else {
-    if (isOnboardingPath) {
-      return <Navigate to="/vendor/dashboard" replace />;
+  if (isOnboardingPath) {
+    return <Navigate to="/vendor/dashboard" replace />;
+  }
+
+  // Prevent accessing selling functionality routes if not onboarded
+  if (vendor && !vendor.isOnboarded) {
+    const isSellingRoute = 
+      location.pathname.startsWith('/vendor/products') || 
+      location.pathname === '/vendor/stock-management' ||
+      location.pathname === '/vendor/promotions';
+
+    if (isSellingRoute) {
+      return <Navigate to="/vendor/dashboard" state={{ onboardingWarning: true }} replace />;
     }
   }
 
@@ -66,3 +100,4 @@ const VendorProtectedRoute = ({ children }) => {
 };
 
 export default VendorProtectedRoute;
+

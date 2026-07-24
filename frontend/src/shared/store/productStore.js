@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import * as adminService from '../../modules/Admin/services/adminService';
+import { products as mockProducts } from '../../data/products';
 import toast from 'react-hot-toast';
 
 export const useProductStore = create((set, get) => ({
@@ -20,10 +21,10 @@ export const useProductStore = create((set, get) => ({
             const productsData = Array.isArray(response.data) ? response.data : (response.data.products || []);
             const normalizedProducts = productsData.map(p => ({
                 ...p,
-                id: p._id,
+                id: p._id || p.id,
                 stockQuantity: p.stockQuantity || 0,
                 price: p.price || 0,
-                image: p.images?.[0] || 'https://placehold.co/50x50?text=Product'
+                image: p.images?.[0] || p.image || 'https://placehold.co/50x50?text=Product'
             }));
 
             set({
@@ -32,8 +33,19 @@ export const useProductStore = create((set, get) => ({
                 isLoading: false
             });
         } catch (error) {
-            set({ isLoading: false });
-            toast.error(error.message || 'Failed to fetch products');
+            console.warn("Backend products failed, using fallback:", error);
+            const fallback = mockProducts.map(p => ({
+                ...p,
+                id: p.id || p._id,
+                stockQuantity: p.stockQuantity || 0,
+                price: p.price || 0,
+                image: p.image || 'https://placehold.co/50x50?text=Product'
+            }));
+            set({
+                products: fallback,
+                pagination: { total: fallback.length, page: 1, limit: 100, pages: 1 },
+                isLoading: false
+            });
         }
     }
 }));

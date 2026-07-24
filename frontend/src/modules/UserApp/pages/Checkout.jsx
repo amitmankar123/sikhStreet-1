@@ -264,12 +264,12 @@ const MobileCheckout = () => {
         <MobileLayout showBottomNav={false} showCartBar={false}>
           <div className="flex items-center justify-center min-h-[60vh] px-4">
             <div className="text-center">
-              <h2 className="text-xl font-bold text-[#231a13] mb-4">
+              <h2 className="text-xl font-bold text-black mb-4">
                 Your cart is empty
               </h2>
               <button
                 onClick={() => navigate("/home")}
-                className="bg-[#8d4b00] text-white px-6 py-3 rounded-xl font-semibold">
+                className="bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white px-6 py-3 rounded-xl font-semibold">
                 Continue Shopping
               </button>
             </div>
@@ -349,17 +349,17 @@ const MobileCheckout = () => {
   return (
     <PageTransition>
       <MobileLayout showBottomNav={false} showCartBar={false}>
-        <div className="w-full pb-24 min-h-screen" style={{ background: 'linear-gradient(180deg, #FFF8F0 0%, #FFF3E4 60%, #FBEBD8 100%)' }}>
+        <div className="w-full pb-32 min-h-screen bg-white">
           {/* Header */}
-          <div className="bg-[#fff8f5] border-b border-[#e9d7cb] sticky top-0 z-30" style={{ boxShadow: '0 1px 8px rgba(44,26,14,0.06)' }}>
+          <div className="bg-white border-b border-black/10 sticky top-0 z-30" style={{ boxShadow: '0 1px 8px rgba(44,26,14,0.06)' }}>
             {/* Title Bar */}
             <div className="px-4 py-3 flex items-center gap-3">
               <button
                 onClick={() => navigate(-1)}
-                className="p-2 hover:bg-[#fdeade] rounded-full transition-colors">
-                <FiArrowLeft className="text-xl text-[#231a13]" />
+                className="p-2 hover:bg-white rounded-full transition-colors">
+                <FiArrowLeft className="text-xl text-black" />
               </button>
-              <h1 className="text-xl font-bold text-[#231a13]" style={{ fontFamily: "'Lora', Georgia, serif" }}>Checkout</h1>
+              <h1 className="text-xl font-bold text-black" style={{ fontFamily: "\"Times New Roman\", Times, serif" }}>Checkout</h1>
             </div>
             {/* Steps Bar */}
             <div className="px-4 pb-3">
@@ -377,15 +377,15 @@ const MobileCheckout = () => {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="px-4 py-4 lg:p-0">
-                    <h2 className="text-lg font-bold text-[#231a13] mb-4 flex items-center gap-2" style={{ fontFamily: "'Lora', Georgia, serif" }}>
-                      <FiTruck className="text-[#8d4b00]" />
+                    <h2 className="text-lg font-bold text-black mb-4 flex items-center gap-2" style={{ fontFamily: "\"Times New Roman\", Times, serif" }}>
+                      <FiTruck className="text-black" />
                       Shipping Information
                     </h2>
 
                     {/* Saved Addresses */}
                     {isAuthenticated && addresses.length > 0 && (
                       <div className="mb-4">
-                        <h3 className="text-sm font-semibold text-[#554336] mb-3">
+                        <h3 className="text-sm font-semibold text-black mb-3">
                           Saved Addresses
                         </h3>
                         <div className="space-y-2 mb-3">
@@ -394,30 +394,30 @@ const MobileCheckout = () => {
                               key={address.id}
                               onClick={() => handleSelectAddress(address)}
                               className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${selectedAddressId === address.id
-                                ? "border-[#8d4b00] bg-[#fdeade]"
-                                : "border-[#e9d7cb] bg-[#fff8f5] hover:border-[#8d4b00]/50"
+                                ? "border-[#F5A623] bg-white"
+                                : "border-black/10 bg-white hover:border-[#F5A623]/50"
                                 }`}>
                               <div className="flex items-start justify-between">
                                 <div className="flex items-start gap-2 flex-1">
-                                  <FiMapPin className="text-[#8d4b00] mt-0.5 flex-shrink-0" />
+                                  <FiMapPin className="text-black mt-0.5 flex-shrink-0" />
                                   <div className="flex-1">
-                                    <h4 className="font-bold text-[#231a13] text-sm">
+                                    <h4 className="font-bold text-black text-sm">
                                       {address.name}
                                     </h4>
-                                    <p className="text-xs text-[#554336]">
+                                    <p className="text-xs text-black">
                                       {address.fullName}
                                     </p>
-                                    <p className="text-xs text-[#554336]">
+                                    <p className="text-xs text-black">
                                       {address.address}
                                     </p>
-                                    <p className="text-xs text-[#554336]">
+                                    <p className="text-xs text-black">
                                       {address.city}, {address.state}{" "}
                                       {address.zipCode}
                                     </p>
                                   </div>
                                 </div>
                                 {selectedAddressId === address.id && (
-                                  <FiCheck className="text-[#8d4b00] text-xl flex-shrink-0" />
+                                  <FiCheck className="text-black text-xl flex-shrink-0" />
                                 )}
                               </div>
                             </div>
@@ -426,7 +426,7 @@ const MobileCheckout = () => {
                         <button
                           type="button"
                           onClick={() => setShowAddressForm(true)}
-                          className="flex items-center gap-2 text-[#8d4b00] hover:text-[#7a4000] font-semibold text-sm">
+                          className="flex items-center gap-2 text-black hover:text-[#7a4000] font-semibold text-sm">
                           <FiPlus />
                           Add New Address
                         </button>
@@ -434,9 +434,9 @@ const MobileCheckout = () => {
                     )}
 
                     {/* Address Form */}
-                    <div className="space-y-4 bg-[#fff8f5] p-4 rounded-2xl border border-[#e9d7cb] shadow-sm lg:p-6">
+                    <div className="space-y-4 bg-white p-4 rounded-2xl border border-black/10 shadow-sm lg:p-6">
                       <div>
-                        <label className="block text-sm font-semibold text-[#231a13] mb-2">
+                        <label className="block text-sm font-semibold text-black mb-2">
                           Full Name
                         </label>
                         <input
@@ -445,12 +445,12 @@ const MobileCheckout = () => {
                           value={formData.name}
                           onChange={handleInputChange}
                           required
-                          className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-[#8d4b00]/40 focus:border-[#8d4b00] text-base text-[#231a13] bg-[#fff8f5]"
+                          className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/40 focus:border-[#F5A623] text-base text-black bg-white"
                         />
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-semibold text-[#231a13] mb-2">
+                          <label className="block text-sm font-semibold text-black mb-2">
                             Email
                           </label>
                           <input
@@ -459,11 +459,11 @@ const MobileCheckout = () => {
                             value={formData.email}
                             onChange={handleInputChange}
                             required
-                            className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-[#8d4b00]/40 focus:border-[#8d4b00] text-base text-[#231a13] bg-[#fff8f5]"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/40 focus:border-[#F5A623] text-base text-black bg-white"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-[#231a13] mb-2">
+                          <label className="block text-sm font-semibold text-black mb-2">
                             Phone Number
                           </label>
                           <input
@@ -472,12 +472,12 @@ const MobileCheckout = () => {
                             value={formData.phone}
                             onChange={handleInputChange}
                             required
-                            className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-[#8d4b00]/40 focus:border-[#8d4b00] text-base text-[#231a13] bg-[#fff8f5]"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/40 focus:border-[#F5A623] text-base text-black bg-white"
                           />
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-[#231a13] mb-2">
+                        <label className="block text-sm font-semibold text-black mb-2">
                           Address
                         </label>
                         <textarea
@@ -486,12 +486,12 @@ const MobileCheckout = () => {
                           onChange={handleInputChange}
                           required
                           rows={3}
-                          className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-[#8d4b00]/40 focus:border-[#8d4b00] text-base text-[#231a13] bg-[#fff8f5]"
+                          className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/40 focus:border-[#F5A623] text-base text-black bg-white"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-sm font-semibold text-[#231a13] mb-2">
+                          <label className="block text-sm font-semibold text-black mb-2">
                             City
                           </label>
                           <input
@@ -500,11 +500,11 @@ const MobileCheckout = () => {
                             value={formData.city}
                             onChange={handleInputChange}
                             required
-                            className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-[#8d4b00]/40 focus:border-[#8d4b00] text-base text-[#231a13] bg-[#fff8f5]"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/40 focus:border-[#F5A623] text-base text-black bg-white"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-[#231a13] mb-2">
+                          <label className="block text-sm font-semibold text-black mb-2">
                             State
                           </label>
                           <input
@@ -513,13 +513,13 @@ const MobileCheckout = () => {
                             value={formData.state}
                             onChange={handleInputChange}
                             required
-                            className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-[#8d4b00]/40 focus:border-[#8d4b00] text-base text-[#231a13] bg-[#fff8f5]"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/40 focus:border-[#F5A623] text-base text-black bg-white"
                           />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-sm font-semibold text-[#231a13] mb-2">
+                          <label className="block text-sm font-semibold text-black mb-2">
                             ZIP Code
                           </label>
                           <input
@@ -528,11 +528,11 @@ const MobileCheckout = () => {
                             value={formData.zipCode}
                             onChange={handleInputChange}
                             required
-                            className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-[#8d4b00]/40 focus:border-[#8d4b00] text-base text-[#231a13] bg-[#fff8f5]"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/40 focus:border-[#F5A623] text-base text-black bg-white"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-[#231a13] mb-2">
+                          <label className="block text-sm font-semibold text-black mb-2">
                             Country
                           </label>
                           <input
@@ -541,7 +541,7 @@ const MobileCheckout = () => {
                             value={formData.country}
                             onChange={handleInputChange}
                             required
-                            className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-[#8d4b00]/40 focus:border-[#8d4b00] text-base text-[#231a13] bg-[#fff8f5]"
+                            className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/40 focus:border-[#F5A623] text-base text-black bg-white"
                           />
                         </div>
                       </div>
@@ -555,8 +555,8 @@ const MobileCheckout = () => {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="px-4 py-4 lg:p-0">
-                    <h2 className="text-lg font-bold text-[#231a13] mb-4 flex items-center gap-2" style={{ fontFamily: "'Lora', Georgia, serif" }}>
-                      <FiCreditCard className="text-[#8d4b00]" />
+                    <h2 className="text-lg font-bold text-black mb-4 flex items-center gap-2" style={{ fontFamily: "\"Times New Roman\", Times, serif" }}>
+                      <FiCreditCard className="text-black" />
                       Payment Method
                     </h2>
                     <div className="space-y-3 mb-6">
@@ -565,8 +565,8 @@ const MobileCheckout = () => {
                           key={method}
                           className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                             formData.paymentMethod === method
-                              ? "border-[#8d4b00] bg-[#fdeade]"
-                              : "border-[#e9d7cb] bg-[#fff8f5] hover:border-[#8d4b00]/40"
+                              ? "border-[#F5A623] bg-white"
+                              : "border-black/10 bg-white hover:border-[#F5A623]/40"
                           }`}>
                           <input
                             type="radio"
@@ -576,7 +576,7 @@ const MobileCheckout = () => {
                             onChange={handleInputChange}
                             className="w-5 h-5 accent-brand-saffron"
                           />
-                          <span className="font-semibold text-[#231a13] capitalize text-base">
+                          <span className="font-semibold text-black capitalize text-base">
                             {method === "card"
                               ? "Credit/Debit Card"
                               : method === "cash"
@@ -590,15 +590,15 @@ const MobileCheckout = () => {
                     {/* Shipping Options */}
                     {total < 100 && (
                       <div className="mb-6">
-                        <h3 className="text-base font-semibold text-[#231a13] mb-3">
+                        <h3 className="text-base font-semibold text-black mb-3">
                           Shipping Options
                         </h3>
                         <div className="space-y-3">
                           <label
                             className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
                               shippingOption === "standard"
-                                ? "border-[#8d4b00] bg-[#fdeade]"
-                                : "border-[#e9d7cb] bg-[#fff8f5] hover:border-[#8d4b00]/40"
+                                ? "border-[#F5A623] bg-white"
+                                : "border-black/10 bg-white hover:border-[#F5A623]/40"
                             }`}>
                             <div>
                               <input
@@ -609,22 +609,22 @@ const MobileCheckout = () => {
                                 onChange={(e) => setShippingOption(e.target.value)}
                                 className="w-5 h-5 accent-brand-saffron mr-3"
                               />
-                              <span className="font-semibold text-[#231a13] text-base">
+                              <span className="font-semibold text-black text-base">
                                 Standard Shipping
                               </span>
-                              <p className="text-xs text-[#554336]">
+                              <p className="text-xs text-black">
                                 5-7 business days
                               </p>
                             </div>
-                            <span className="font-bold text-[#8d4b00]">
+                            <span className="font-bold text-black">
                               {formatPrice(50)}
                             </span>
                           </label>
                           <label
                             className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
                               shippingOption === "express"
-                                ? "border-[#8d4b00] bg-[#fdeade]"
-                                : "border-[#e9d7cb] bg-[#fff8f5] hover:border-[#8d4b00]/40"
+                                ? "border-[#F5A623] bg-white"
+                                : "border-black/10 bg-white hover:border-[#F5A623]/40"
                             }`}>
                             <div>
                               <input
@@ -635,19 +635,19 @@ const MobileCheckout = () => {
                                 onChange={(e) => setShippingOption(e.target.value)}
                                 className="w-5 h-5 accent-brand-saffron mr-3"
                               />
-                              <span className="font-semibold text-[#231a13] text-base">
+                              <span className="font-semibold text-black text-base">
                                 Express Shipping
                               </span>
-                              <p className="text-xs text-[#554336]">
+                              <p className="text-xs text-black">
                                 2-3 business days
                               </p>
                             </div>
-                            <span className="font-bold text-[#8d4b00]">
+                            <span className="font-bold text-black">
                               {formatPrice(100)}
                             </span>
                           </label>
                         </div>
-                        <p className="text-xs text-[#554336]/80 mt-2">
+                        <p className="text-xs text-black/80 mt-2">
                           {isEstimatingShipping
                             ? "Updating shipping estimate..."
                             : `Estimated shipping: ${formatPrice(shipping)}`}
@@ -657,7 +657,7 @@ const MobileCheckout = () => {
 
                     {/* Coupon Code */}
                     <div className="mb-6">
-                      <h3 className="text-base font-semibold text-[#231a13] mb-3">
+                      <h3 className="text-base font-semibold text-black mb-3">
                         Coupon Code
                       </h3>
                       {!appliedCoupon ? (
@@ -668,19 +668,19 @@ const MobileCheckout = () => {
                               value={couponCode}
                               onChange={(e) => setCouponCode(e.target.value)}
                               placeholder="Enter code"
-                              className="flex-1 px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                              className="flex-1 px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
                             />
                             <button
                               type="button"
                               onClick={() => handleApplyCoupon()}
                               disabled={isApplyingCoupon}
-                              className="px-4 py-3 bg-[#8d4b00] text-white rounded-xl font-semibold hover:shadow-glow-green transition-all">
+                              className="px-4 py-3 bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white rounded-xl font-semibold hover:shadow-glow-green transition-all">
                               {isApplyingCoupon ? "Applying..." : "Apply"}
                             </button>
                           </div>
                           {availableCoupons.length > 0 && (
-                            <div className="mt-3 bg-[#fff8f5] rounded-xl p-3 border border-[#e9d7cb]">
-                              <h4 className="text-sm font-semibold text-[#231a13] mb-2 flex items-center gap-2">
+                            <div className="mt-3 bg-white rounded-xl p-3 border border-black/10">
+                              <h4 className="text-sm font-semibold text-black mb-2 flex items-center gap-2">
                                 <FiTag className="text-primary-600" />
                                 Available coupons
                               </h4>
@@ -691,10 +691,10 @@ const MobileCheckout = () => {
                                     type="button"
                                     onClick={() => handleApplyCoupon(coupon.code)}
                                     disabled={isApplyingCoupon}
-                                    className="w-full text-left p-2 bg-[#fff8f5] rounded-lg border border-[#e9d7cb] hover:border-primary-300 transition-colors"
+                                    className="w-full text-left p-2 bg-white rounded-lg border border-black/10 hover:border-primary-300 transition-colors"
                                   >
                                     <div className="flex items-center justify-between">
-                                      <p className="text-sm font-semibold text-[#231a13]">{coupon.code}</p>
+                                      <p className="text-sm font-semibold text-black">{coupon.code}</p>
                                       <p className="text-xs font-semibold text-primary-700">
                                         {coupon.type === "percentage"
                                           ? `${coupon.value}% OFF`
@@ -703,7 +703,7 @@ const MobileCheckout = () => {
                                             : "Free Shipping"}
                                       </p>
                                     </div>
-                                    <p className="text-xs text-[#554336]">
+                                    <p className="text-xs text-black">
                                       Min order: {formatPrice(coupon.minOrderValue || 0)}
                                     </p>
                                   </button>
@@ -755,7 +755,7 @@ const MobileCheckout = () => {
               {/* Right Column - Desktop Order Summary */}
               <div className="hidden lg:block lg:col-span-4">
                 <div className="sticky top-24 space-y-4">
-                  <div className="bg-[#fff8f5] rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <OrderSummary
                       itemsByVendor={itemsByVendor}
                       total={total}
@@ -765,18 +765,19 @@ const MobileCheckout = () => {
                       finalTotal={finalTotal}
                       formatPrice={formatPrice}
                     />
-                    <div className="p-4 border-t border-gray-100 bg-[#fff8f5]">
+                    <div className="p-4 border-t border-gray-100 bg-white">
                       <button
                         type="submit"
+                        onClick={handleSubmit}
                         disabled={step === 2 && isPlacingOrder}
-                        className="w-full bg-[#8d4b00] text-white py-3.5 rounded-xl font-bold text-lg shadow-lg hover:shadow-glow-green transition-all duration-300 transform hover:-translate-y-0.5">
+                        className="w-full gradient-saffron text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-glow-saffron transition-all duration-300 transform hover:-translate-y-0.5">
                         {step === 2 ? (isPlacingOrder ? "Placing Order..." : "Place Order") : "Continue to Payment"}
                       </button>
                       {step === 2 && (
                         <button
                           type="button"
                           onClick={() => setStep(1)}
-                          className="w-full mt-3 py-2 text-[#554336]/80 font-semibold hover:text-gray-700 transition-colors text-sm">
+                          className="w-full mt-3 py-2 text-black/80 font-semibold hover:text-gray-700 transition-colors text-sm">
                           Back to Shipping
                         </button>
                       )}
@@ -784,27 +785,28 @@ const MobileCheckout = () => {
                   </div>
 
                   {/* Trust Badges or Info */}
-                  <div className="flex justify-center gap-4 text-[#554336]/60 text-2xl pt-2 opacity-70">
+                  <div className="flex justify-center gap-4 text-black/60 text-2xl pt-2 opacity-70">
                     <FiLock className="w-6 h-6" />
-                    <span className="text-xs text-[#554336]/80">Secure Checkout</span>
+                    <span className="text-xs text-black/80">Secure Checkout</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Navigation Buttons (Mobile Fixed Bottom) */}
-            <div className="fixed bottom-16 left-0 right-0 bg-[#fff8f5] border-t border-[#e9d7cb] p-4 z-40 safe-area-bottom lg:hidden" style={{ boxShadow: '0 -2px 16px rgba(44,26,14,0.07)' }}>
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-black/10 p-4 z-40 safe-area-bottom lg:hidden" style={{ boxShadow: '0 -2px 16px rgba(44,26,14,0.07)' }}>
               <div className="flex gap-3">
                 {step > 1 && (
                   <button
                     type="button"
                     onClick={() => setStep(step - 1)}
-                    className="px-6 py-3 bg-[#fff8f5]Deep text-[#231a13] rounded-xl font-semibold hover:bg-brand-border transition-colors border border-[#e9d7cb]">
+                    className="px-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-brand-border transition-colors border border-black/10">
                     Back
                   </button>
                 )}
                 <button
                   type="submit"
+                  onClick={handleSubmit}
                   disabled={step === 2 && isPlacingOrder}
                   className="flex-1 gradient-saffron text-white py-3 rounded-xl font-semibold hover:shadow-glow-saffron transition-all duration-300">
                   {step === 2 ? (isPlacingOrder ? "Placing..." : "Place Order") : "Continue to Payment"}
@@ -862,12 +864,12 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-[#fff8f5] rounded-t-3xl p-6 w-full max-h-[90vh] overflow-y-auto">
+        className="bg-white rounded-t-3xl p-6 w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-[#231a13]">Add New Address</h3>
+          <h3 className="text-xl font-bold text-black">Add New Address</h3>
           <button
             onClick={onCancel}
-            className="p-2 hover:bg-[#fdeade]/50 rounded-full">
+            className="p-2 hover:bg-white/50 rounded-full">
             <FiX className="text-xl" />
           </button>
         </div>
@@ -882,7 +884,7 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
               value={formData.name}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+              className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
               placeholder="Home, Work, etc."
             />
           </div>
@@ -896,7 +898,7 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
               value={formData.fullName}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+              className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
             />
           </div>
           <div>
@@ -909,7 +911,7 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
               value={formData.phone}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+              className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
             />
           </div>
           <div>
@@ -922,7 +924,7 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
               value={formData.address}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+              className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
             />
           </div>
           <div className="grid grid-cols-3 gap-3">
@@ -936,7 +938,7 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
                 value={formData.city}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
               />
             </div>
             <div>
@@ -949,7 +951,7 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
                 value={formData.state}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
               />
             </div>
             <div>
@@ -962,7 +964,7 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
                 value={formData.zipCode}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+                className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
               />
             </div>
           </div>
@@ -976,19 +978,19 @@ const AddressFormModal = ({ onSubmit, onCancel }) => {
               value={formData.country}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 rounded-xl border-2 border-[#e9d7cb] focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
+              className="w-full px-4 py-3 rounded-xl border-2 border-black/10 focus:outline-none focus:ring-2 focus:ring-primary-500 text-base"
             />
           </div>
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              className="flex-1 bg-[#8d4b00] text-white py-3 rounded-xl font-semibold hover:shadow-glow-green transition-all">
+              className="flex-1 gradient-saffron text-white py-3 rounded-xl font-semibold hover:shadow-glow-saffron transition-all">
               Add Address
             </button>
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-3 bg-[#fdeade]/50 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors">
+              className="px-6 py-3 bg-white/50 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-colors">
               Cancel
             </button>
           </div>

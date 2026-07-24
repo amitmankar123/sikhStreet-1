@@ -95,11 +95,53 @@ const buildMongooseProductFilter = async (queryFilters) => {
     filter.vendorId = { $nin: suspendedIds };
 
     if (queryFilters.category) {
-        const categoryId = String(queryFilters.category);
-        const childCategories = await Category.find({ parentId: categoryId }).select('_id').lean();
-        const categoryIds = [categoryId, ...childCategories.map((cat) => String(cat._id))];
-        filter.categoryId = { $in: categoryIds };
+        const rawCategory = String(queryFilters.category).trim();
+
+        // Match categories by _id, slug, or name (case-insensitive)
+        const matchedCategories = await Category.find({
+            $or: [
+                { _id: rawCategory },
+                { slug: rawCategory },
+                { name: { $regex: `^${rawCategory}$`, $options: 'i' } }
+            ]
+        }).select('_id slug').lean();
+
+        const rootIds = matchedCategories.map(c => String(c._id));
+        const rootSlugs = matchedCategories.map(c => c.slug).filter(Boolean);
+
+        // Find child categories whose parentId matches rootId or rootSlug
+        const childCategories = await Category.find({
+            $or: [
+                { parentId: { $in: [...rootIds, ...rootSlugs, rawCategory] } }
+            ]
+        }).select('_id slug').lean();
+
+        const allCategoryKeys = [
+            ...rootIds,
+            ...rootSlugs,
+            rawCategory,
+            ...childCategories.map(c => String(c._id)),
+            ...childCategories.map(c => c.slug).filter(Boolean)
+        ];
+
+        // Alias fashion/apparel keywords
+        if (['fashion', 'apparel', 'apperal', 't-shirts', 'jackets', 'scarves', 'hoodies'].includes(rawCategory.toLowerCase())) {
+            const fashionCats = await Category.find({
+                $or: [
+                    { slug: { $in: ['fashion', 'apparel', 'apperal', 't-shirts', 'jackets', 'scarves', 'hoodies'] } },
+                    { name: { $regex: 'fashion|apparel|apperal', $options: 'i' } }
+                ]
+            }).select('_id slug').lean();
+            fashionCats.forEach(c => {
+                allCategoryKeys.push(String(c._id));
+                if (c.slug) allCategoryKeys.push(c.slug);
+            });
+            allCategoryKeys.push('fashion', 'apparel', 'apperal', 't-shirts', 'jackets', 'scarves', 'hoodies');
+        }
+
+        filter.categoryId = { $in: [...new Set(allCategoryKeys)] };
     }
+
 
     if (queryFilters.brand) filter.brandId = queryFilters.brand;
     if (queryFilters.vendor) {

@@ -3,6 +3,33 @@ import asyncHandler from '../../../utils/asyncHandler.js';
 import ApiResponse from '../../../utils/ApiResponse.js';
 import ApiError from '../../../utils/ApiError.js';
 
+const mapWishlistItems = (items, products, vendors) => {
+    return items
+        .map(item => {
+            const product = products.find(p => p._id === item.productId);
+            if (!product || product.isActive === false) return null;
+            const vendor = vendors.find(v => v._id === product.vendorId);
+            if (!vendor || vendor.status === 'suspended') return null;
+            return {
+                _id: item._id,
+                id: item._id,
+                productId: {
+                    _id: product._id,
+                    id: product._id,
+                    name: product.name,
+                    price: product.price,
+                    originalPrice: product.originalPrice,
+                    image: product.image || (product.images && product.images[0]) || '',
+                    stock: product.stock,
+                    unit: product.unit,
+                    rating: product.rating || 0
+                },
+                addedAt: item.addedAt
+            };
+        })
+        .filter(Boolean);
+};
+
 // GET /api/user/wishlist
 export const getWishlist = asyncHandler(async (req, res) => {
     const Wishlist = mongoose.model('Wishlist');
@@ -22,18 +49,7 @@ export const getWishlist = asyncHandler(async (req, res) => {
     const vendorIds = [...new Set(products.map(p => p.vendorId).filter(Boolean))];
     const vendors = await Vendor.find({ _id: { $in: vendorIds } }).lean();
 
-    const filteredItems = items
-        .map(item => {
-            const product = products.find(p => p._id === item.productId);
-            if (!product || product.isActive === false) return null;
-            const vendor = vendors.find(v => v._id === product.vendorId);
-            if (!vendor || vendor.status === 'suspended') return null;
-            return {
-                productId: product._id,
-                addedAt: item.addedAt
-            };
-        })
-        .filter(Boolean);
+    const filteredItems = mapWishlistItems(items, products, vendors);
 
     res.status(200).json(new ApiResponse(200, filteredItems, 'Wishlist fetched.'));
 });
@@ -88,18 +104,7 @@ export const addToWishlist = asyncHandler(async (req, res) => {
     const vendorIds = [...new Set(products.map(p => p.vendorId).filter(Boolean))];
     const vendors = await Vendor.find({ _id: { $in: vendorIds } }).lean();
 
-    const filteredItems = items
-        .map(item => {
-            const product = products.find(p => p._id === item.productId);
-            if (!product) return null;
-            const vendor = vendors.find(v => v._id === product.vendorId);
-            if (!vendor || vendor.status === 'suspended') return null;
-            return {
-                productId: product._id,
-                addedAt: item.addedAt
-            };
-        })
-        .filter(Boolean);
+    const filteredItems = mapWishlistItems(items, products, vendors);
 
     res.status(201).json(new ApiResponse(201, filteredItems, 'Added to wishlist.'));
 });
@@ -135,18 +140,7 @@ export const removeFromWishlist = asyncHandler(async (req, res) => {
     const vendorIds = [...new Set(products.map(p => p.vendorId).filter(Boolean))];
     const vendors = await Vendor.find({ _id: { $in: vendorIds } }).lean();
 
-    const filteredItems = items
-        .map(item => {
-            const product = products.find(p => p._id === item.productId);
-            if (!product) return null;
-            const vendor = vendors.find(v => v._id === product.vendorId);
-            if (!vendor || vendor.status === 'suspended') return null;
-            return {
-                productId: product._id,
-                addedAt: item.addedAt
-            };
-        })
-        .filter(Boolean);
+    const filteredItems = mapWishlistItems(items, products, vendors);
 
     res.status(200).json(new ApiResponse(200, filteredItems, 'Removed from wishlist.'));
 });

@@ -54,92 +54,27 @@ export const useWishlistStore = create(
     (set, get) => ({
       items: [],
       isLoading: false,
-      hasFetched: false,
+      hasFetched: true,
       ownerUserId: null,
 
       fetchWishlist: async () => {
-        const authState = useAuthStore.getState();
-        if (!authState?.isAuthenticated) {
-          set({ items: [], hasFetched: false, ownerUserId: null, isLoading: false });
-          return get().items;
-        }
-
-        const currentUserId = getCurrentAuthUserId();
-        if (currentUserId && get().ownerUserId && normalizeId(get().ownerUserId) !== currentUserId) {
-          set({ items: [], hasFetched: false });
-        }
-
-        set({ isLoading: true });
-        try {
-          const response = await api.get('/user/wishlist');
-          const payload = response?.data ?? response;
-          
-          if (Array.isArray(payload)) {
-            const list = payload.map(normalizeWishlistItem).filter((item) => item.id);
-            set({ items: list, isLoading: false, hasFetched: true, ownerUserId: currentUserId || null });
-            return list;
-          } else {
-            // Probably got HTML fallback from Vite dev server, keep local items
-            set({ isLoading: false, hasFetched: true, ownerUserId: currentUserId || null });
-            return get().items;
-          }
-        } catch {
-          set({ isLoading: false, hasFetched: true, ownerUserId: currentUserId || null });
-          return get().items;
-        }
+        set({ isLoading: false, hasFetched: true });
+        return get().items;
       },
 
       ensureHydrated: () => {
-        const authState = useAuthStore.getState();
-        const state = get();
-        const currentUserId = getCurrentAuthUserId();
-
-        if (!authState?.isAuthenticated) {
-          if (state.items.length || state.hasFetched || state.ownerUserId) {
-            set({ items: [], hasFetched: false, ownerUserId: null });
-          }
-          return;
-        }
-
-        if (
-          currentUserId &&
-          state.ownerUserId &&
-          normalizeId(state.ownerUserId) !== currentUserId
-        ) {
-          set({ items: [], hasFetched: false, ownerUserId: currentUserId });
-          return;
-        }
-
-        if (!state.hasFetched && !state.isLoading) {
-          state.fetchWishlist().catch(() => null);
-        }
+        set({ hasFetched: true });
       },
 
       // Add item to wishlist
       addItem: (item) => {
-        const authState = useAuthStore.getState();
-        if (!authState?.isAuthenticated) {
-          setPostLoginAction({
-            type: 'wishlist:add',
-            payload: item,
-          });
-          redirectToLogin();
-          return false;
-        }
-
         const normalizedItem = normalizeWishlistItem(item);
         if (!normalizedItem.id) {
           return false;
         }
-        const currentUserId = getCurrentAuthUserId();
         let added = false;
         set((state) => {
-          const ownerMismatch =
-            currentUserId &&
-            state.ownerUserId &&
-            normalizeId(state.ownerUserId) !== currentUserId;
-          const safeItems = ownerMismatch ? [] : state.items;
-          const existingItem = safeItems.find(
+          const existingItem = state.items.find(
             (i) => normalizeId(i.id) === normalizeId(normalizedItem.id)
           );
           if (existingItem) {
@@ -147,14 +82,9 @@ export const useWishlistStore = create(
           }
           added = true;
           return {
-            items: [...safeItems, normalizedItem],
-            ownerUserId: currentUserId || state.ownerUserId || null,
+            items: [...state.items, normalizedItem],
           };
         });
-
-        if (authState?.isAuthenticated && isMongoId(normalizedItem.id)) {
-          api.post('/user/wishlist', { productId: String(normalizedItem.id) }).catch(() => null);
-        }
 
         return added;
       },
@@ -162,54 +92,26 @@ export const useWishlistStore = create(
       // Remove item from wishlist
       removeItem: (id) => {
         const normalizedId = normalizeId(id);
-        const currentUserId = getCurrentAuthUserId();
         set((state) => ({
           items: state.items.filter((item) => normalizeId(item.id) !== normalizedId),
-          ownerUserId: currentUserId || state.ownerUserId || null,
         }));
-
-        const authState = useAuthStore.getState();
-        if (authState?.isAuthenticated && isMongoId(normalizedId)) {
-          api.delete(`/user/wishlist/${normalizedId}`).catch(() => null);
-        }
       },
 
       // Check if item is in wishlist
       isInWishlist: (id) => {
-        get().ensureHydrated();
         const state = get();
-        const authState = useAuthStore.getState();
-        if (!authState?.isAuthenticated || !state.hasFetched) {
-          return false;
-        }
         const normalizedId = normalizeId(id);
         return state.items.some((item) => normalizeId(item.id) === normalizedId);
       },
 
       // Clear wishlist
       clearWishlist: () => {
-        const items = [...get().items];
-        const currentUserId = getCurrentAuthUserId();
-        set({ items: [], ownerUserId: currentUserId || null });
-
-        const authState = useAuthStore.getState();
-        if (authState?.isAuthenticated) {
-          items
-            .filter((item) => isMongoId(item.id))
-            .forEach((item) => {
-              api.delete(`/user/wishlist/${item.id}`).catch(() => null);
-            });
-        }
+        set({ items: [] });
       },
 
       // Get wishlist count
       getItemCount: () => {
-        get().ensureHydrated();
         const state = get();
-        const authState = useAuthStore.getState();
-        if (!authState?.isAuthenticated || !state.hasFetched) {
-          return 0;
-        }
         return state.items.length;
       },
 
@@ -217,26 +119,18 @@ export const useWishlistStore = create(
       moveToCart: (id) => {
         const normalizedId = normalizeId(id);
         const state = get();
-        const currentUserId = getCurrentAuthUserId();
         const item = state.items.find((i) => normalizeId(i.id) === normalizedId);
         if (item) {
           set({
             items: state.items.filter((i) => normalizeId(i.id) !== normalizedId),
-            ownerUserId: currentUserId || state.ownerUserId || null,
           });
-
-          const authState = useAuthStore.getState();
-          if (authState?.isAuthenticated && isMongoId(normalizedId)) {
-            api.delete(`/user/wishlist/${normalizedId}`).catch(() => null);
-          }
-
           return item;
         }
         return null;
       },
 
       resetWishlist: () => {
-        set({ items: [], hasFetched: false, ownerUserId: null, isLoading: false });
+        set({ items: [], hasFetched: true, ownerUserId: null, isLoading: false });
       },
     }),
     {

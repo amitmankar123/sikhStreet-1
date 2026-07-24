@@ -282,7 +282,7 @@ const BannerForm = ({ banner, onClose, onSave }) => {
                       {isUploadingImage ? "Uploading..." : "Upload to Cloudinary"}
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/*, image/avif, .avif"
                         onChange={handleImageUpload}
                         className="hidden"
                         disabled={isUploadingImage}

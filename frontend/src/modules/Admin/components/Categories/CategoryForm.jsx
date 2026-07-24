@@ -29,17 +29,17 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
   const isAppRoute = location.pathname.startsWith("/app");
   const { createCategory, updateCategory, deleteCategory, categories } = useCategoryStore();
   const isEdit = !!category;
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    image: "", 
+    image: "",
     parentId: null,
     isActive: true,
-    order: 0, 
+    order: 0,
     metaTitle: "",
     metaDescription: "",
     productType: "physical",
@@ -50,9 +50,26 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
   const [subCatName, setSubCatName] = useState("");
   const [subCatImage, setSubCatImage] = useState("");
   const [subCatType, setSubCatType] = useState("physical");
+  const [subCatGroup, setSubCatGroup] = useState("");
   const [isUploadingSubImage, setIsUploadingSubImage] = useState(false);
 
-  const isSubcategory = !!formData.parentId;
+  const getCategoryDepth = (catId) => {
+    if (!catId) return 1;
+    const cat = categories.find(c => String(c.id || c._id) === String(catId));
+    if (!cat) return 1;
+    const pId = cat.parentId && typeof cat.parentId === 'object'
+      ? (cat.parentId.id || cat.parentId._id)
+      : cat.parentId;
+    if (!pId) return 2;
+    return 3;
+  };
+
+  const parentIdToUse = formData.parentId || parentId;
+  const parentDepth = getCategoryDepth(parentIdToUse);
+  const isLevel3 = parentIdToUse && parentDepth === 2;
+  const isLevel2 = parentIdToUse && parentDepth === 1;
+  const isSubcategory = !!parentIdToUse;
+  const canHaveSubcategories = !isSubcategory || (category && getCategoryDepth(category.id) === 2);
 
   useEffect(() => {
     if (category) {
@@ -61,6 +78,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
         description: category.description || "",
         image: category.image || "",
         parentId: category.parentId || null,
+        group: category.group || "",
         isActive: category.isActive !== undefined ? category.isActive : true,
         order: category.order || 0,
         metaTitle: category.metaTitle || "",
@@ -81,6 +99,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
         image: cat.image || "",
         productType: cat.productType || "physical",
         workflowSteps: Array.isArray(cat.workflowSteps) ? cat.workflowSteps : [],
+        group: cat.group || "",
         isExisting: true
       }));
       setSubCategories(children);
@@ -90,6 +109,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
         description: "",
         image: "",
         parentId: parentId || null,
+        group: "",
         isActive: true,
         order: 0,
         metaTitle: "",
@@ -138,7 +158,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
 
   const handleAddSubcategory = () => {
     if (!subCatName.trim()) {
-      toast.error("Subcategory name is required");
+      toast.error(isLevel2 ? "Topic name is required" : "Subcategory name is required");
       return;
     }
     const defaultSteps = subCatType === 'digital'
@@ -151,12 +171,14 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
         name: subCatName.trim(),
         image: subCatImage,
         productType: subCatType,
-        workflowSteps: defaultSteps
+        workflowSteps: defaultSteps,
+        group: isLevel2 ? subCatGroup.trim() : undefined
       }
     ]);
     setSubCatName("");
     setSubCatImage("");
     setSubCatType("physical");
+    setSubCatGroup("");
   };
 
   const handleRemoveSubcategory = (index) => {
@@ -251,9 +273,9 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
 
     try {
       let masterCategoryId = category?.id;
-      
+
       const payloadToSubmit = { ...formData };
-      
+
       if (isEdit) {
         await updateCategory(category.id, payloadToSubmit);
       } else {
@@ -275,7 +297,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
               metaTitle: "",
               metaDescription: "",
               productType: sub.productType || "physical",
-              workflowSteps: sub.workflowSteps || []
+              workflowSteps: sub.workflowSteps || [],
+              group: sub.group || ""
             });
           } else {
             await createCategory({
@@ -288,7 +311,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
               metaTitle: "",
               metaDescription: "",
               productType: sub.productType || "physical",
-              workflowSteps: sub.workflowSteps || []
+              workflowSteps: sub.workflowSteps || [],
+              group: sub.group || ""
             });
           }
         }
@@ -321,9 +345,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={`fixed inset-0 z-[10000] flex ${
-            isAppRoute ? "items-start pt-[10px]" : "items-end"
-          } sm:items-center justify-center p-4 pointer-events-none`}>
+          className={`fixed inset-0 z-[10000] flex ${isAppRoute ? "items-start pt-[10px]" : "items-end"
+            } sm:items-center justify-center p-4 pointer-events-none`}>
           <motion.div
             variants={{
               hidden: {
@@ -357,9 +380,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
             animate="visible"
             exit="exit"
             onClick={(e) => e.stopPropagation()}
-            className={`bg-white ${
-              isAppRoute ? "rounded-b-3xl" : "rounded-t-3xl"
-            } sm:rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-admin pointer-events-auto`}
+            className={`bg-white ${isAppRoute ? "rounded-b-3xl" : "rounded-t-3xl"
+              } sm:rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-admin pointer-events-auto`}
             style={{ willChange: "transform" }}>
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
               <div className="flex-1">
@@ -378,7 +400,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              
+
               {/* Basic Information */}
               <div>
                 <h3 className="text-lg font-bold text-gray-800 mb-4">
@@ -387,7 +409,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {isSubcategory ? "Subcategory Name" : "Category Name"} <span className="text-red-500">*</span>
+                      {isSubcategory ? (isLevel3 ? "Topic Name" : "Subcategory Name") : "Category Name"} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -399,6 +421,22 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                       placeholder={isSubcategory ? "e.g., Summer Dresses, Running Shoes" : "e.g., Clothing, Electronics"}
                     />
                   </div>
+
+                  {isLevel3 && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Topic Group Name (e.g. "Sikhism", "History", "Biographies")
+                      </label>
+                      <input
+                        type="text"
+                        name="group"
+                        value={formData.group || ""}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="Enter topic group name..."
+                      />
+                    </div>
+                  )}
 
                   {/* Category Image */}
                   <div>
@@ -419,7 +457,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                         {isUploadingImage ? "Uploading..." : "Upload Image"}
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*, image/avif, .avif"
                           onChange={handleImageUpload}
                           className="hidden"
                           disabled={isUploadingImage}
@@ -538,45 +576,64 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                 </div>
               </div>
 
-              {/* Subcategories Section (Only for Master Categories) */}
-              {!isSubcategory && (
+              {/* Subcategories Section */}
+              {canHaveSubcategories && (
                 <div className="pt-4 border-t border-gray-100">
                   <h3 className="text-lg font-bold text-gray-800 mb-4 font-serif">
-                    Add Subcategories
+                    {isLevel2 ? "Add Topics / Sub-subcategories" : "Add Subcategories"}
                   </h3>
-                  
+
                   {/* Add Subcategory Inputs */}
                   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-4 mb-4">
-                    <p className="text-xs font-semibold text-gray-500">Stage subcategories to create along with this parent category</p>
-                    
+                    <p className="text-xs font-semibold text-gray-500">
+                      {isLevel2
+                        ? "Stage topics to create along with this subcategory"
+                        : "Stage subcategories to create along with this parent category"}
+                    </p>
+
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-2">
-                          Subcategory Name
+                          {isLevel2 ? "Topic Name" : "Subcategory Name"}
                         </label>
                         <input
                           type="text"
                           value={subCatName}
                           onChange={(e) => setSubCatName(e.target.value)}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                          placeholder="e.g., Summer Collection"
+                          placeholder={isLevel2 ? "e.g. Picture Books" : "e.g., Summer Collection"}
                         />
                       </div>
-                      
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-2">
-                          Subcategory Product Type
-                        </label>
-                        <select
-                          value={subCatType}
-                          onChange={(e) => setSubCatType(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                        >
-                          <option value="physical">Physical Product</option>
-                          <option value="digital">Digital Product</option>
-                        </select>
-                      </div>
-                      
+
+                      {isLevel2 ? (
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-2">
+                            Topic Group Name
+                          </label>
+                          <input
+                            type="text"
+                            value={subCatGroup}
+                            onChange={(e) => setSubCatGroup(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            placeholder="e.g. Sikhism, History"
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-2">
+                            Subcategory Product Type
+                          </label>
+                          <select
+                            value={subCatType}
+                            onChange={(e) => setSubCatType(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                          >
+                            <option value="physical">Physical Product</option>
+                            <option value="digital">Digital Product</option>
+                          </select>
+                        </div>
+                      )}
+
                       <div>
                         <label className="block text-xs font-bold text-gray-700 mb-2">
                           Subcategory Image
@@ -593,7 +650,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                             <FiUpload className="w-4 h-4" />
                             <input
                               type="file"
-                              accept="image/*"
+                              accept="image/*, image/avif, .avif"
                               onChange={handleSubCatImageUpload}
                               className="hidden"
                               disabled={isUploadingSubImage}
@@ -602,12 +659,12 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                         </div>
                       </div>
                     </div>
-                    
+
                     {subCatImage && (
                       <div className="flex items-center gap-3">
-                        <img 
-                          src={subCatImage} 
-                          alt="Sub Preview" 
+                        <img
+                          src={subCatImage}
+                          alt="Sub Preview"
                           className="w-12 h-12 object-cover rounded-lg border border-gray-200 bg-white p-0.5"
                           onError={(e) => { e.target.style.display = 'none'; }}
                         />
@@ -620,58 +677,78 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                         </button>
                       </div>
                     )}
-                    
+
                     <button
                       type="button"
                       onClick={handleAddSubcategory}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold text-xs"
                     >
                       <FiPlus className="w-3.5 h-3.5" />
-                      Add Subcategory
+                      {isLevel2 ? "Add Topic" : "Add Subcategory"}
                     </button>
                   </div>
-                  
+
                   {/* List of staged subcategories */}
                   {subCategories.length > 0 && (
                     <div className="space-y-3 max-h-72 overflow-y-auto scrollbar-admin pr-1 mb-4">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Subcategories List</p>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        {isLevel2 ? "Topics List" : "Subcategories List"}
+                      </p>
                       {subCategories.map((sub, index) => (
-                        <div 
+                        <div
                           key={sub.id || index}
                           className="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-3"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex gap-1.5 items-center">
                               <span className="text-xs font-semibold px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full">
-                                {sub.isExisting ? "Existing Subcategory" : "New Subcategory"}
+                                {sub.isExisting
+                                  ? (isLevel2 ? "Existing Topic" : "Existing Subcategory")
+                                  : (isLevel2 ? "New Topic" : "New Subcategory")}
                               </span>
-                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${sub.productType === 'digital' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                                {sub.productType === 'digital' ? 'Digital' : 'Physical'}
-                              </span>
+                              {!isLevel2 && (
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${sub.productType === 'digital' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                  {sub.productType === 'digital' ? 'Digital' : 'Physical'}
+                                </span>
+                              )}
                             </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveOrDeleteSubcategory(sub, index)}
                               className="text-xs text-red-500 hover:text-red-700 font-semibold flex items-center gap-1"
-                              title="Delete Subcategory"
+                              title="Delete Item"
                             >
                               <FiTrash2 className="w-3.5 h-3.5" />
                               <span>Remove</span>
                             </button>
                           </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
                               <input
                                 type="text"
                                 value={sub.name}
                                 onChange={(e) => handleUpdateSubCatField(index, "name", e.target.value)}
                                 className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                placeholder="Subcategory Name"
+                                placeholder={isLevel2 ? "Topic Name" : "Subcategory Name"}
                                 required
                               />
                             </div>
-                            
+
+                            {isLevel2 ? (
+                              <div>
+                                <input
+                                  type="text"
+                                  value={sub.group || ""}
+                                  onChange={(e) => handleUpdateSubCatField(index, "group", e.target.value)}
+                                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                  placeholder="Topic Group"
+                                />
+                              </div>
+                            ) : (
+                              <div />
+                            )}
+
                             <div className="flex gap-2">
                               <input
                                 type="text"
@@ -684,18 +761,18 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                                 <FiUpload className="w-4 h-4" />
                                 <input
                                   type="file"
-                                  accept="image/*"
+                                  accept="image/*, image/avif, .avif"
                                   onChange={(e) => handleSubCatListItemImageUpload(index, e)}
                                   className="hidden"
                                 />
                               </label>
                             </div>
                           </div>
-                          
+
                           {sub.image && (
-                            <img 
-                              src={sub.image} 
-                              alt="Sub Preview" 
+                            <img
+                              src={sub.image}
+                              alt="Sub Preview"
                               className="w-10 h-10 object-cover rounded-lg border border-gray-200 bg-white"
                               onError={(e) => { e.target.style.display = 'none'; }}
                             />
@@ -753,8 +830,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                   variant="primary"
                   icon={FiSave}
                   disabled={isSubmitting}>
-                  {isEdit 
-                    ? (isSubcategory ? "Update Subcategory" : "Update Category") 
+                  {isEdit
+                    ? (isSubcategory ? "Update Subcategory" : "Update Category")
                     : (isSubcategory ? "Save Subcategory" : "Save Category")}
                 </Button>
               </div>

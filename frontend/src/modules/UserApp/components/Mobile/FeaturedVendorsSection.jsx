@@ -27,7 +27,7 @@ const FeaturedVendorsSection = ({ vendors = null }) => {
         </div>
         <Link
           to="/local-stores"
-          className="flex items-center gap-1 text-sm text-brand-saffron font-bold hover:text-orange-600 transition-colors"
+          className="flex items-center gap-1 text-sm text-[#F5A623] font-bold hover:text-orange-600 transition-colors"
         >
           <span>See All</span>
           <FiArrowRight className="text-sm" />

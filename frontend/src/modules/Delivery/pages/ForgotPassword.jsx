@@ -31,7 +31,7 @@ const DeliveryForgotPassword = () => {
 
     try {
       await forgotPassword(email.trim().toLowerCase());
-      toast.success('If the email exists, reset OTP has been sent.');
+      // toast.success('If the email exists, reset OTP has been sent.');
       setStep('verify');
     } catch {
       // Global API interceptor shows toast

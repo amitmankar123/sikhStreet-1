@@ -1,6 +1,6 @@
 import Joi from 'joi';
 
-const objectId = Joi.string().pattern(/^[a-fA-F0-9]{24}$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i);
+const objectId = Joi.string().pattern(/^[a-fA-F0-9]{24}$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$|^[a-zA-Z0-9\-_]+$/i);
 
 export const createProductSchema = Joi.object({
     name: Joi.string().trim().min(2).max(200).required(),

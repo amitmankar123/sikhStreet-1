@@ -66,11 +66,11 @@ const VendorHeader = ({ onMenuClick }) => {
 
           {/* Page Heading - Desktop Only */}
           <div className="hidden lg:block">
-            <h1 className="text-2xl font-bold text-vendor-primary tracking-tight mb-1">
+            <h1 className="text-2xl font-bold text-neutral-900 tracking-tight mb-1">
               {pageName}
             </h1>
             <p className="text-sm text-gray-500 font-medium flex items-center gap-2">
-              <FiShoppingBag className="text-vendor-accent" />
+              <FiShoppingBag className="text-neutral-500" />
               {storeName}
             </p>
           </div>
@@ -105,7 +105,7 @@ const VendorHeader = ({ onMenuClick }) => {
             variant="ghost"
             icon={FiLogOut}
             size="sm"
-            className="text-vendor-primary hover:bg-red-50 hover:text-red-600 hover:border-red-200 border border-gray-200 font-bold transition-all">
+            className="text-neutral-800 hover:bg-red-50 hover:text-red-600 hover:border-red-200 border border-gray-200 font-bold transition-all">
             Logout
           </Button>
         </div>

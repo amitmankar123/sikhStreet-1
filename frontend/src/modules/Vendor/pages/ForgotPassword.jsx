@@ -30,7 +30,7 @@ const VendorForgotPassword = () => {
 
     try {
       await forgotPassword(email.trim().toLowerCase());
-      toast.success("If the email exists, reset OTP has been sent.");
+      // toast.success("If the email exists, reset OTP has been sent.");
       setStep("verify");
     } catch {
       // Global api interceptor shows toast

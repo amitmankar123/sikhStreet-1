@@ -34,9 +34,9 @@ const DesktopHeader = () => {
     const userMenuRef = useRef(null);
 
     const { scrollY } = useScroll();
-    const headerHeight = useTransform(scrollY, [0, 100], ["7.25rem", "5.5rem"]);
+    const headerHeight = useTransform(scrollY, [0, 100], ["5rem", "4.6rem"]);
     const logoScale = useTransform(scrollY, [0, 100], [1.05, 0.85]);
-    const bgOpacity = useTransform(scrollY, [0, 100], ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 0.98)"]);
+    const bgOpacity = useTransform(scrollY, [0, 100], ["rgba(255, 255, 255, 1)", "rgba(255, 255, 255, 1)"]);
     const backdropBlur = useTransform(scrollY, [0, 100], ["blur(0px)", "blur(12px)"]);
 
     useEffect(() => {
@@ -96,26 +96,26 @@ const DesktopHeader = () => {
                     WebkitBackdropFilter: backdropBlur
                 }}
             >
-                <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 h-full flex items-center gap-4 lg:gap-8 transition-all">
+                <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 h-full flex items-center pb-3 gap-1.9 lg:gap-8 transition-all">
                     {/* Logo & Categories */}
                     <div className="flex items-center gap-5 lg:gap-8 flex-shrink-0">
-                        <Link to="/home" className="flex-shrink-0 flex items-center gap-2.5">
+                        <Link to="/" className="flex-shrink-0 flex items-center gap-2.5">
                             {appLogo.src ? (
-                                <motion.div style={{ scale: logoScale }} className="bg-white p-2 rounded-lg shadow-sm origin-left">
+                                <motion.div style={{ scale: logoScale }} className="origin-left flex items-center">
                                     <img
                                         src={appLogo.src}
                                         alt={appLogo.alt}
-                                        className="h-12 w-auto object-contain"
+                                        className="w-[180px] lg:w-[220px] h-auto object-contain mix-blend-multiply"
                                     />
                                 </motion.div>
                             ) : (
-                                <motion.span style={{ scale: logoScale }} className="text-4xl font-black text-brand-saffron tracking-tight font-serif origin-left">SikhStreet</motion.span>
+                                <motion.span style={{ scale: logoScale }} className="text-4xl font-black text-[#F5A623] tracking-tight font-serif origin-left">SikhStreet</motion.span>
                             )}
                         </Link>
 
                         <button
                             onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
-                            className="hidden lg:flex items-center gap-2.5 text-slate-700 hover:text-brand-saffron transition-colors font-extrabold text-[22px] tracking-wide group outline-none"
+                            className="hidden lg:flex items-center gap-2.5 text-slate-700 hover:text-[#F5A623] transition-colors font-extrabold text-[22px] tracking-wide group outline-none"
                         >
                             <Menu size={28} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" /> Categories
                         </button>
@@ -131,7 +131,7 @@ const DesktopHeader = () => {
                         {/* Compact Location Dropdown */}
                         <div className="relative group z-50 hidden xl:block">
                             <button className="flex items-center text-slate-700 hover:text-slate-900 transition-all font-extrabold text-lg gap-1.5 hover:bg-slate-100 px-4 py-2.5 rounded-lg">
-                                <MapPin size={24} strokeWidth={2.5} className="text-brand-saffron flex-shrink-0" />
+                                <MapPin size={24} strokeWidth={2.5} className="text-[#F5A623] flex-shrink-0" />
                                 Deliver to Location
                                 <ChevronDown size={18} strokeWidth={2.5} className="opacity-70 flex-shrink-0" />
                             </button>
@@ -139,7 +139,7 @@ const DesktopHeader = () => {
                             {/* Mock Dropdown Menu */}
                             <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-5 origin-top-right">
                                 <h4 className="text-sm font-semibold text-brand-navy mb-4 flex items-center gap-2">
-                                    <MapPin size={16} className="text-brand-saffron" />
+                                    <MapPin size={16} className="text-[#F5A623]" />
                                     Choose Location
                                 </h4>
                                 <div className="space-y-3 text-left">
@@ -159,10 +159,10 @@ const DesktopHeader = () => {
                             </div>
                         </div>
                         {/* Wishlist */}
-                        <Link to="/wishlist" className="relative p-2.5 text-slate-700 hover:text-brand-saffron transition-colors">
+                        <Link to="/wishlist" className="relative p-2.5 text-slate-700 hover:text-[#F5A623] transition-colors">
                             <Heart size={30} strokeWidth={2.5} />
                             {wishlistCount > 0 && (
-                                <span className="absolute top-0.5 right-0.5 w-[22px] h-[22px] rounded-full bg-brand-saffron text-white text-[11px] font-black flex items-center justify-center border-2 border-white">
+                                <span className="absolute top-0.5 right-0.5 w-[22px] h-[22px] rounded-full bg-black text-white text-[11px] font-black flex items-center justify-center border-2 border-white">
                                     {wishlistCount > 9 ? "9+" : wishlistCount}
                                 </span>
                             )}
@@ -171,11 +171,11 @@ const DesktopHeader = () => {
                         {/* Cart */}
                         <button
                             onClick={toggleCart}
-                            className="relative p-2.5 text-slate-700 hover:text-brand-saffron transition-colors"
+                            className="relative p-2.5 text-slate-700 hover:text-[#F5A623] transition-colors"
                         >
                             <ShoppingBag size={30} strokeWidth={2.5} />
                             {itemCount > 0 && (
-                                <span className="absolute top-0.5 right-0.5 w-[22px] h-[22px] rounded-full bg-brand-saffron text-white text-[11px] font-black flex items-center justify-center border-2 border-white">
+                                <span className="absolute top-0.5 right-0.5 w-[22px] h-[22px] rounded-full bg-black text-white text-[11px] font-black flex items-center justify-center border-2 border-white">
                                     {itemCount > 9 ? "9+" : itemCount}
                                 </span>
                             )}
@@ -184,11 +184,11 @@ const DesktopHeader = () => {
                         {/* Notifications */}
                         <Link
                             to={isAuthenticated ? "/notifications" : "/login"}
-                            className="relative p-2.5 text-slate-700 hover:text-brand-saffron transition-colors"
+                            className="relative p-2.5 text-slate-700 hover:text-[#F5A623] transition-colors"
                         >
                             <Bell size={30} strokeWidth={2.5} />
                             {isAuthenticated && unreadCount > 0 && (
-                                <span className="absolute top-0.5 right-0.5 w-[22px] h-[22px] rounded-full bg-brand-saffron text-white text-[11px] font-black flex items-center justify-center border-2 border-white">
+                                <span className="absolute top-0.5 right-0.5 w-[22px] h-[22px] rounded-full bg-black text-white text-[11px] font-black flex items-center justify-center border-2 border-white">
                                     {unreadCount > 9 ? "9+" : unreadCount}
                                 </span>
                             )}
@@ -208,7 +208,7 @@ const DesktopHeader = () => {
                                             className="w-11 h-11 rounded-full object-cover border border-slate-200"
                                         />
                                     ) : (
-                                        <div className="w-11 h-11 rounded-full bg-brand-saffron flex items-center justify-center text-white font-black text-base">
+                                        <div className="w-11 h-11 rounded-full bg-black flex items-center justify-center text-white font-black text-base">
                                             {user?.name?.charAt(0) || "U"}
                                         </div>
                                     )}
@@ -257,7 +257,7 @@ const DesktopHeader = () => {
                                                     <span className="text-slate-700 text-sm font-medium">Messages</span>
                                                 </div>
                                                 {unreadChatCount > 0 && (
-                                                    <span className="w-5 h-5 rounded-full bg-brand-saffron text-white text-[10px] font-black flex items-center justify-center">
+                                                    <span className="w-5 h-5 rounded-full bg-black text-white text-[10px] font-black flex items-center justify-center">
                                                         {unreadChatCount > 9 ? "9+" : unreadChatCount}
                                                     </span>
                                                 )}
@@ -315,12 +315,12 @@ const DesktopHeader = () => {
                                             onMouseEnter={() => setSelectedParentId(cat.id)}
                                             className={`px-6 py-3 flex items-center justify-between cursor-pointer transition-all ${
                                                 isSelected
-                                                    ? "bg-white text-brand-saffron font-bold border-l-4 border-brand-saffron"
+                                                    ? "bg-white text-[#F5A623] font-bold border-l-4 border-brand-saffron"
                                                     : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                                             }`}
                                         >
                                             <span className="text-sm tracking-wide font-sans">{cat.name}</span>
-                                            <ChevronRight size={16} className={`transition-transform opacity-60 ${isSelected ? "text-brand-saffron translate-x-1" : ""}`} />
+                                            <ChevronRight size={16} className={`transition-transform opacity-60 ${isSelected ? "text-[#F5A623] translate-x-1" : ""}`} />
                                         </div>
                                     );
                                 })}
@@ -334,7 +334,7 @@ const DesktopHeader = () => {
                                             <Link
                                                 to={`/category/${selectedParentId}`}
                                                 onClick={() => setIsCategoriesOpen(false)}
-                                                className="inline-flex items-center gap-1.5 text-base font-serif font-black text-slate-800 hover:text-brand-saffron hover:underline transition-colors"
+                                                className="inline-flex items-center gap-1.5 text-base font-serif font-black text-slate-800 hover:text-[#F5A623] hover:underline transition-colors"
                                             >
                                                 All {rootCategories.find(c => String(c.id) === String(selectedParentId))?.name} &rarr;
                                             </Link>
@@ -367,7 +367,7 @@ const DesktopHeader = () => {
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <span className="text-xs font-bold text-slate-700 group-hover:text-brand-saffron group-hover:underline line-clamp-2 leading-tight">
+                                                        <span className="text-xs font-bold text-slate-700 group-hover:text-[#F5A623] group-hover:underline line-clamp-2 leading-tight">
                                                             {sub.name}
                                                         </span>
                                                     </Link>
@@ -380,7 +380,7 @@ const DesktopHeader = () => {
                                                 <Link 
                                                     to={`/category/${selectedParentId}`}
                                                     onClick={() => setIsCategoriesOpen(false)}
-                                                    className="mt-4 px-4 py-2 bg-brand-navy text-white text-xs font-bold rounded-lg hover:bg-brand-saffron transition-colors"
+                                                    className="mt-4 px-4 py-2 bg-brand-navy text-white text-xs font-bold rounded-lg hover:bg-black transition-colors"
                                                 >
                                                     View Products Directly
                                                 </Link>

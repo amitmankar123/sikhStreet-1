@@ -1,6 +1,6 @@
 import Joi from 'joi';
 
-const objectId = Joi.string().pattern(/^[a-fA-F0-9]{24}$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i);
+const objectId = Joi.string().pattern(/^[a-fA-F0-9]{24}$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$|^[a-zA-Z0-9\-_]+$/i);
 
 const faqSchema = Joi.object({
     question: Joi.string().trim().allow('').optional(),
@@ -109,6 +109,7 @@ export const createCategorySchema = Joi.object({
     image: Joi.string().trim().allow('').optional(),
     icon: Joi.string().trim().allow('').optional(),
     parentId: objectId.allow(null, '').optional(),
+    group: Joi.string().trim().allow('').optional(),
     order: Joi.number().integer().min(0).optional(),
     isActive: Joi.boolean().optional(),
     productType: Joi.string().valid('physical', 'digital').optional(),
@@ -121,6 +122,7 @@ export const updateCategorySchema = Joi.object({
     image: Joi.string().trim().allow('').optional(),
     icon: Joi.string().trim().allow('').optional(),
     parentId: objectId.allow(null, '').optional(),
+    group: Joi.string().trim().allow('').optional(),
     order: Joi.number().integer().min(0).optional(),
     isActive: Joi.boolean().optional(),
     productType: Joi.string().valid('physical', 'digital').optional(),

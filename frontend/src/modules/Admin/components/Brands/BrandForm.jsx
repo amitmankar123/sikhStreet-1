@@ -241,7 +241,7 @@ const BrandForm = ({ brand, onClose, onSave }) => {
                       {isUploadingLogo ? "Uploading..." : "Upload to Cloudinary"}
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/*, image/avif, .avif"
                         onChange={handleLogoUpload}
                         className="hidden"
                         disabled={isUploadingLogo}

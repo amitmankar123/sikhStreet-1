@@ -36,7 +36,7 @@ const DesktopCategoryBar = () => {
                     {/* Left Scroll Button */}
                     <button 
                         onClick={() => scroll('left')}
-                        className="absolute left-0 z-10 p-1 bg-gradient-to-r from-white via-white to-transparent hover:text-brand-saffron flex-shrink-0 transition-colors h-full flex items-center opacity-70 hover:opacity-100 pr-4"
+                        className="absolute left-0 z-10 p-1 bg-gradient-to-r from-white via-white to-transparent hover:text-[#F5A623] flex-shrink-0 transition-colors h-full flex items-center opacity-70 hover:opacity-100 pr-4"
                     >
                         <ChevronLeft size={22} strokeWidth={2.5} />
                     </button>
@@ -51,7 +51,7 @@ const DesktopCategoryBar = () => {
                             <Link 
                                 key={category.id} 
                                 to={`/category/${category.id}`}
-                                className="text-base font-black text-slate-800 hover:text-brand-saffron transition-colors flex-shrink-0 px-2 py-1 rounded-full hover:bg-slate-100"
+                                className="text-base font-black text-slate-800 hover:text-[#F5A623] transition-colors flex-shrink-0 px-2 py-1 rounded-full hover:bg-slate-100"
                             >
                                 {category.name}
                             </Link>
@@ -61,7 +61,7 @@ const DesktopCategoryBar = () => {
                     {/* Right Scroll Button */}
                     <button 
                         onClick={() => scroll('right')}
-                        className="absolute right-0 z-10 p-1 bg-gradient-to-l from-white via-white to-transparent hover:text-brand-saffron flex-shrink-0 transition-colors h-full flex items-center opacity-70 hover:opacity-100 pl-4"
+                        className="absolute right-0 z-10 p-1 bg-gradient-to-l from-white via-white to-transparent hover:text-[#F5A623] flex-shrink-0 transition-colors h-full flex items-center opacity-70 hover:opacity-100 pl-4"
                     >
                         <ChevronRight size={22} strokeWidth={2.5} />
                     </button>

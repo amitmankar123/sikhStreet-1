@@ -185,39 +185,39 @@ const MobileOrderDetail = () => {
 
   return (
     <PageTransition>
-      <MobileLayout showBottomNav={false} showCartBar={true}>
-          <div className="w-full pb-24">
+      <MobileLayout showBottomNav={false} showCartBar={false}>
+          <div className="w-full pb-6 bg-white">
             {/* Header */}
-            <div className="px-4 py-4 bg-white border-b border-gray-200 sticky top-1 z-30">
+            <div className="px-4 py-4 bg-white border-b border-black/10 sticky top-0 z-30" style={{ boxShadow: '0 1px 8px rgba(44,26,14,0.06)' }}>
               <div className="flex items-center gap-3 mb-3">
                 <button
                   onClick={() => navigate(-1)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-2 hover:bg-white rounded-full transition-colors"
                 >
-                  <FiArrowLeft className="text-xl text-gray-700" />
+                  <FiArrowLeft className="text-xl text-black" />
                 </button>
                 <div className="flex-1">
-                  <h1 className="text-xl font-bold text-gray-800">Order Details</h1>
-                  <p className="text-sm text-gray-600">Order #{order.id}</p>
+                  <h1 className="text-xl font-bold text-black" style={{ fontFamily: "\"Times New Roman\", Times, serif" }}>Order Details</h1>
+                  <p className="text-sm text-black">Order #{order.id}</p>
                 </div>
-                <Badge variant={order.status}>{order.status.toUpperCase()}</Badge>
+                <Badge variant={order?.status || 'pending'}>{(order?.status || 'pending').toUpperCase()}</Badge>
               </div>
             </div>
 
             <div className="px-4 py-4 space-y-4">
               {/* Order Items */}
-              <div className="glass-card rounded-2xl p-4">
-                <h2 className="text-base font-bold text-gray-800 mb-4">Order Items</h2>
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                <h2 className="text-base font-bold text-black mb-4" style={{ fontFamily: "\"Times New Roman\", Times, serif" }}>Order Items</h2>
                 {order.vendorItems && order.vendorItems.length > 0 ? (
                   <div className="space-y-4">
                     {order.vendorItems.map((vendorGroup) => (
                       <div key={vendorGroup.vendorId} className="space-y-2">
                         {/* Vendor Header */}
-                        <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200/50">
-                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center flex-shrink-0">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#fdeade] to-[#fff8f5] rounded-lg border border-black/10">
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-black to-black flex items-center justify-center flex-shrink-0">
                             <FiShoppingBag className="text-white text-[10px]" />
                           </div>
-                          <span className="text-sm font-bold text-primary-700 flex-1">
+                          <span className="text-sm font-bold text-black flex-1">
                             {vendorGroup.vendorName}
                           </span>
                           {vendorGroup.status && (
@@ -227,21 +227,20 @@ const MobileOrderDetail = () => {
                           )}
                           <button
                             onClick={() => handleChatWithSeller(vendorGroup.vendorId, vendorGroup.vendorName)}
-                            className="p-1 px-2.5 bg-white text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-md border border-primary-200/50 flex items-center gap-1.5 transition-colors text-[11px] font-bold mr-1 shadow-sm"
+                            className="p-1 px-2.5 bg-white text-black hover:text-[#F5A623] hover:bg-white/50 rounded-md border border-black/10 flex items-center gap-1.5 transition-colors text-[11px] font-bold mr-1 shadow-sm"
                           >
                             <FiMessageSquare className="text-xs" />
                             <span>Chat</span>
                           </button>
-                          <span className="text-xs font-semibold text-primary-600 bg-white px-2 py-0.5 rounded-md">
+                          <span className="text-xs font-semibold text-black bg-white px-2 py-0.5 rounded-md border border-black/10">
                             {formatPrice(vendorGroup.subtotal)}
                           </span>
                         </div>
                         {/* Vendor Items */}
-                        {/* Vendor Items */}
                         <div className="space-y-2 pl-2">
                           {vendorGroup.items.map((item, itemIndex) => (
                             <div key={`${item.id}-${itemIndex}-${getVariantSignature(item?.variant || {})}`} className="flex items-center gap-3">
-                              <Link to={`/product/${item.productId || item.id}`} className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 hover:opacity-85 transition-opacity">
+                              <Link to={`/product/${item.productId || item.id}`} className="w-12 h-12 rounded-xl overflow-hidden bg-white border border-black/10 flex-shrink-0 hover:opacity-85 transition-opacity">
                                 <LazyImage
                                   src={item.image}
                                   alt={item.name}
@@ -249,27 +248,27 @@ const MobileOrderDetail = () => {
                                 />
                               </Link>
                               <div className="flex-1 min-w-0">
-                                <Link to={`/product/${item.productId || item.id}`} className="font-semibold text-gray-800 text-sm mb-1 hover:text-primary-600 transition-colors block truncate">
+                                <Link to={`/product/${item.productId || item.id}`} className="font-semibold text-black text-sm mb-1 hover:text-[#F5A623] transition-colors block truncate">
                                   {item.name}
                                 </Link>
-                                <p className="text-xs text-gray-600">
+                                <p className="text-xs text-black/85">
                                   {formatPrice(item.price)} x {item.quantity}
                                 </p>
                                 {formatVariantLabel(item?.variant) && (
-                                  <p className="text-[11px] text-gray-500">
+                                  <p className="text-[11px] text-black/60">
                                     {formatVariantLabel(item?.variant)}
                                   </p>
                                 )}
                                 {order.status === 'delivered' && (
                                   <Link
                                     to={`/product/${item.productId || item.id}?write-review=true#reviews-section`}
-                                    className="inline-block mt-1 text-xs font-bold text-primary-600 hover:text-primary-700 hover:underline"
+                                    className="inline-block mt-1 text-xs font-bold text-black hover:text-[#F5A623] hover:underline"
                                   >
                                     Write a Review
                                   </Link>
                                 )}
                               </div>
-                              <p className="font-bold text-gray-800 text-sm">
+                              <p className="font-bold text-black text-sm">
                                 {formatPrice(item.price * item.quantity)}
                               </p>
                             </div>
@@ -282,7 +281,7 @@ const MobileOrderDetail = () => {
                   <div className="space-y-3">
                     {orderItems.map((item, itemIndex) => (
                       <div key={`${item.id}-${itemIndex}-${getVariantSignature(item?.variant || {})}`} className="flex items-center gap-3">
-                        <Link to={`/product/${item.productId || item.id}`} className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 hover:opacity-85 transition-opacity">
+                        <Link to={`/product/${item.productId || item.id}`} className="w-16 h-16 rounded-xl overflow-hidden bg-white border border-black/10 flex-shrink-0 hover:opacity-85 transition-opacity">
                           <LazyImage
                             src={item.image}
                             alt={item.name}
@@ -290,27 +289,27 @@ const MobileOrderDetail = () => {
                           />
                         </Link>
                         <div className="flex-1 min-w-0">
-                          <Link to={`/product/${item.productId || item.id}`} className="font-semibold text-gray-800 text-sm mb-1 hover:text-primary-600 transition-colors block truncate">
+                          <Link to={`/product/${item.productId || item.id}`} className="font-semibold text-black text-sm mb-1 hover:text-[#F5A623] transition-colors block truncate">
                             {item.name}
                           </Link>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-black/85">
                             {formatPrice(item.price)} x {item.quantity}
                           </p>
                           {formatVariantLabel(item?.variant) && (
-                            <p className="text-[11px] text-gray-500">
+                            <p className="text-[11px] text-black/60">
                               {formatVariantLabel(item?.variant)}
                             </p>
                           )}
                           {order.status === 'delivered' && (
                             <Link
                               to={`/product/${item.productId || item.id}?write-review=true#reviews-section`}
-                              className="inline-block mt-1 text-xs font-bold text-primary-600 hover:text-primary-700 hover:underline"
+                              className="inline-block mt-1 text-xs font-bold text-black hover:text-[#F5A623] hover:underline"
                             >
                               Write a Review
                             </Link>
                           )}
                         </div>
-                        <p className="font-bold text-gray-800 text-sm">
+                        <p className="font-bold text-black text-sm">
                           {formatPrice(item.price * item.quantity)}
                         </p>
                       </div>
@@ -320,74 +319,77 @@ const MobileOrderDetail = () => {
               </div>
 
               {/* Shipping Address */}
-              <div className="glass-card rounded-2xl p-4">
-                <h2 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <FiMapPin className="text-primary-600" />
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                <h2 className="text-base font-bold text-black mb-3 flex items-center gap-2" style={{ fontFamily: "\"Times New Roman\", Times, serif" }}>
+                  <FiMapPin className="text-black" />
                   Shipping Address
                 </h2>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <p className="font-semibold text-gray-800">{shippingAddress.name || 'N/A'}</p>
+                <div className="text-sm text-black space-y-1">
+                  <p className="font-semibold text-black">
+                    {shippingAddress.fullName || shippingAddress.name || 'N/A'}
+                    {shippingAddress.fullName && shippingAddress.name && shippingAddress.name !== shippingAddress.fullName && ` (${shippingAddress.name})`}
+                  </p>
                   <p>{shippingAddress.address || 'N/A'}</p>
                   <p>
                     {shippingAddress.city || 'N/A'}, {shippingAddress.state || 'N/A'}{' '}
-                    {shippingAddress.zipCode || 'N/A'}
+                    {shippingAddress.zipCode || shippingAddress.pincode || shippingAddress.pinCode || shippingAddress.zip || 'N/A'}
                   </p>
                   <p>{shippingAddress.country || 'N/A'}</p>
-                  <p className="mt-2">Phone: {shippingAddress.phone || 'N/A'}</p>
+                  <p className="mt-2">Phone: {shippingAddress.phone || shippingAddress.phoneNumber || shippingAddress.mobile || 'N/A'}</p>
                 </div>
               </div>
 
               {/* Payment Info */}
-              <div className="glass-card rounded-2xl p-4">
-                <h2 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <FiCreditCard className="text-primary-600" />
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                <h2 className="text-base font-bold text-black mb-3 flex items-center gap-2" style={{ fontFamily: "\"Times New Roman\", Times, serif" }}>
+                  <FiCreditCard className="text-black" />
                   Payment Information
                 </h2>
-                <div className="text-sm text-gray-600 space-y-2">
+                <div className="text-sm text-black space-y-2">
                   <div className="flex justify-between">
                     <span>Payment Method:</span>
-                    <span className="font-semibold text-gray-800 capitalize">
+                    <span className="font-semibold text-black capitalize">
                       {order.paymentMethod}
                     </span>
                   </div>
                   {order.trackingNumber && (
                     <div className="flex justify-between">
                       <span>Tracking Number:</span>
-                      <span className="font-semibold text-gray-800">{order.trackingNumber}</span>
+                      <span className="font-semibold text-black">{order.trackingNumber}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span>Order Date:</span>
-                    <span className="font-semibold text-gray-800">{formatDate(order.date)}</span>
+                    <span className="font-semibold text-black">{formatDate(order.date)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Order Summary */}
-              <div className="glass-card rounded-2xl p-4">
-                <h2 className="text-base font-bold text-gray-800 mb-3">Order Summary</h2>
+              <div className="bg-white border border-black/10 rounded-2xl p-4 shadow-sm">
+                <h2 className="text-base font-bold text-black mb-3" style={{ fontFamily: "\"Times New Roman\", Times, serif" }}>Order Summary</h2>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-black/90">
                     <span>Subtotal</span>
                     <span>{formatPrice(order.subtotal)}</span>
                   </div>
                   {order.discount > 0 && (
-                    <div className="flex justify-between text-green-600">
+                    <div className="flex justify-between text-black font-semibold">
                       <span>Discount</span>
                       <span>-{formatPrice(order.discount)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-black/90">
                     <span>Shipping</span>
                     <span>{formatPrice(order.shipping)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-black/90">
                     <span>Tax</span>
                     <span>{formatPrice(order.tax)}</span>
                   </div>
-                  <div className="flex justify-between text-lg font-bold text-gray-800 pt-2 border-t border-gray-200">
+                  <div className="flex justify-between text-lg font-bold text-black pt-2 border-t border-black/10">
                     <span>Total</span>
-                    <span className="text-primary-600">{formatPrice(order.total)}</span>
+                    <span className="text-black">{formatPrice(order.total)}</span>
                   </div>
                 </div>
               </div>
@@ -397,14 +399,14 @@ const MobileOrderDetail = () => {
                 {['pending', 'processing'].includes(order.status) && (
                   <button
                     onClick={handleCancel}
-                    className="w-full py-3 bg-red-50 text-red-600 rounded-xl font-semibold hover:bg-red-100 transition-colors"
+                    className="w-full py-3.5 bg-[#fce8e6] text-[#c5221f] rounded-xl font-bold hover:bg-[#f9d4d0] border border-[#c5221f]/20 transition-colors"
                   >
                     Cancel Order
                   </button>
                 )}
                 <button
                   onClick={handleReorder}
-                  className="w-full py-3 gradient-green text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-glow-green transition-all"
+                  className="w-full py-3.5 bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white rounded-xl font-bold text-base hover:bg-[#F5A623] hover:text-black transition-colors shadow-md flex items-center justify-center gap-2"
                 >
                   <FiRotateCw className="text-lg" />
                   Reorder
@@ -412,7 +414,7 @@ const MobileOrderDetail = () => {
                 {order.status === 'delivered' && (
                   <button
                     onClick={openReturnModal}
-                    className="w-full py-3 bg-amber-50 text-amber-700 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-amber-100 transition-colors"
+                    className="w-full py-3.5 bg-white text-black border border-black/10 rounded-xl font-bold hover:bg-[#fbebd8] transition-colors flex items-center justify-center gap-2"
                   >
                     <FiPackage className="text-lg" />
                     Request Return
@@ -420,7 +422,7 @@ const MobileOrderDetail = () => {
                 )}
                 <button
                   onClick={() => navigate(`/track-order/${order.id}`)}
-                  className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors"
+                  className="w-full py-3.5 bg-white text-black hover:bg-white rounded-xl font-bold border border-black/10 transition-colors flex items-center justify-center gap-2"
                 >
                   <FiTruck className="text-lg" />
                   Track Order
@@ -442,13 +444,13 @@ const MobileOrderDetail = () => {
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 20, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl p-4 sm:p-5"
+                className="w-full sm:max-w-md bg-white border border-black/10 rounded-t-2xl sm:rounded-2xl p-4 sm:p-5"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-800">Request Return</h3>
+                  <h3 className="text-lg font-bold text-black" style={{ fontFamily: "\"Times New Roman\", Times, serif" }}>Request Return</h3>
                   <button
                     onClick={() => setShowReturnModal(false)}
-                    className="p-2 rounded-full hover:bg-gray-100"
+                    className="p-2 rounded-full hover:bg-white"
                   >
                     <FiX className="text-gray-600" />
                   </button>
@@ -456,13 +458,13 @@ const MobileOrderDetail = () => {
 
                 {vendorOptions.length > 1 && (
                   <div className="mb-4">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-black mb-2">
                       Select Vendor
                     </label>
                     <select
                       value={returnVendorId}
                       onChange={(e) => setReturnVendorId(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="w-full px-3 py-2.5 border-2 border-black/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F5A623]/40 focus:border-[#F5A623] text-base text-black bg-white"
                     >
                       <option value="">Choose vendor</option>
                       {vendorOptions.map((vendor) => (
@@ -475,14 +477,14 @@ const MobileOrderDetail = () => {
                 )}
 
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-black mb-2">
                     Reason
                   </label>
                   <textarea
                     value={returnReason}
                     onChange={(e) => setReturnReason(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2.5 border-2 border-black/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F5A623]/40 focus:border-[#F5A623] text-base text-black bg-white"
                     placeholder="Describe the issue briefly"
                   />
                 </div>
@@ -490,7 +492,7 @@ const MobileOrderDetail = () => {
                 <button
                   onClick={handleRequestReturn}
                   disabled={isSubmittingReturn}
-                  className="w-full py-3 gradient-green text-white rounded-xl font-semibold disabled:opacity-70"
+                  className="w-full py-3.5 bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white rounded-xl font-bold text-base hover:bg-[#F5A623] hover:text-black transition-colors shadow-md disabled:opacity-70"
                 >
                   {isSubmittingReturn ? 'Submitting...' : 'Submit Return Request'}
                 </button>

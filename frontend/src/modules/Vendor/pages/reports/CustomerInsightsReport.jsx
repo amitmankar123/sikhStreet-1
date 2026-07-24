@@ -160,6 +160,7 @@ const CustomerInsightsReport = () => {
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
         <div className="flex justify-end">
           <ExportButton
+            variant="secondary"
             data={customerData}
             headers={[
               { label: 'Customer', accessor: (row) => row.name },

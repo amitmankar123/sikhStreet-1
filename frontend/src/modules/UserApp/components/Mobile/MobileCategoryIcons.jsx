@@ -108,10 +108,10 @@ const MobileCategoryIcons = () => {
                 to={category.id === "for-you" ? "/home" : `/category/${category.id}`}
                 className="flex flex-col items-center gap-1 w-14 relative"
               >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isActive ? "bg-brand-saffron/10 shadow-sm" : "bg-slate-50 hover:bg-slate-100"}`}>
-                  <IconComponent strokeWidth={1.8} size={18} className={isActive ? "text-brand-saffron" : "text-slate-600"} />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${isActive ? "bg-black/10 shadow-sm" : "bg-slate-50 hover:bg-slate-100"}`}>
+                  <IconComponent strokeWidth={1.8} size={18} className={isActive ? "text-[#F5A623]" : "text-slate-600"} />
                 </div>
-                <span className={`text-[10px] font-bold text-center leading-tight mt-1 transition-colors ${isActive ? "text-brand-saffron" : "text-slate-500"}`}>
+                <span className={`text-[10px] font-bold text-center leading-tight mt-1 transition-colors ${isActive ? "text-[#F5A623]" : "text-slate-500"}`}>
                   {category.name}
                 </span>
               </Link>

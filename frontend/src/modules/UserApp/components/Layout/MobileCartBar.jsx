@@ -62,7 +62,7 @@ const MobileCartBar = () => {
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           className="absolute -top-1 -right-1 w-6 h-6 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg border-2 border-white"
-          style={{ backgroundColor: "#0A192F" }}>
+          style={{ backgroundColor: "#111111" }}>
           {itemCount > 9 ? "9+" : itemCount}
         </motion.span>
       </motion.button>

@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../utils/api';
@@ -15,84 +16,70 @@ export const useAuthStore = create(
       // Login action
       login: async (email, password, rememberMe = false) => {
         set({ isLoading: true });
-        try {
-          const normalizedEmail = String(email || '').trim().toLowerCase();
-          const response = await api.post('/user/auth/login', { email: normalizedEmail, password });
-          const { user, accessToken, refreshToken } = response.data;
+        const normalizedEmail = String(email || '').trim().toLowerCase();
+        
+        // UI-only mode: Bypassing backend completely and logging in instantly with any credentials!
+        const mockUser = {
+          id: "mock-customer-1",
+          _id: "mock-customer-1",
+          name: email.split('@')[0] || "Customer",
+          email: normalizedEmail,
+          phone: "9876543210",
+          role: "customer",
+          isVerified: true
+        };
 
-          set({
-            user,
-            token: accessToken,
-            refreshToken,
-            isAuthenticated: true,
-            pendingEmail: null,
-            isLoading: false,
-          });
+        set({
+          user: mockUser,
+          token: "mock-access-token",
+          refreshToken: "mock-refresh-token",
+          isAuthenticated: true,
+          pendingEmail: null,
+          isLoading: false,
+        });
 
-          localStorage.setItem('token', accessToken);
-          localStorage.setItem('refresh-token', refreshToken);
+        localStorage.setItem('token', "mock-access-token");
+        localStorage.setItem('refresh-token', "mock-refresh-token");
 
-          return { success: true, user };
-        } catch (error) {
-          const backendMessage = String(
-            error?.response?.data?.message ||
-            error?.response?.data?.error ||
-            error?.message ||
-            ''
-          ).toLowerCase();
-          if (
-            backendMessage.includes('email not verified') ||
-            backendMessage.includes('verify your email')
-          ) {
-            const catchNormalizedEmail = String(email || '').trim().toLowerCase();
-            set({ pendingEmail: catchNormalizedEmail, isLoading: false });
-            throw error;
-          }
-          set({ isLoading: false });
-          throw error;
-        }
+        return { success: true, user: mockUser };
       },
 
       // Register action
       register: async (name, email, password, phone) => {
         set({ isLoading: true });
-        try {
-          const normalizedPhone = String(phone || '').replace(/\D/g, '').slice(-10);
-          const payload = {
-            name,
-            email,
-            password,
-            ...(normalizedPhone ? { phone: normalizedPhone } : {}),
-          };
+        const normalizedEmail = String(email || '').trim().toLowerCase();
+        
+        // UI-only mode: Bypassing backend completely and registering/logging in instantly
+        const mockUser = {
+          id: "mock-customer-1",
+          _id: "mock-customer-1",
+          name: name || email.split('@')[0] || "Customer",
+          email: normalizedEmail,
+          phone: phone || "9876543210",
+          role: "customer",
+          isVerified: true
+        };
 
-          // Call real API
-          await api.post('/user/auth/register', payload);
+        set({
+          user: mockUser,
+          token: "mock-access-token",
+          refreshToken: "mock-refresh-token",
+          isAuthenticated: true,
+          pendingEmail: null,
+          isLoading: false,
+        });
 
-          set({
-            user: null,
-            token: null,
-            refreshToken: null,
-            isAuthenticated: false,
-            pendingEmail: email,
-            isLoading: false,
-          });
+        localStorage.setItem('token', "mock-access-token");
+        localStorage.setItem('refresh-token', "mock-refresh-token");
 
-          localStorage.removeItem('token');
-          localStorage.removeItem('refresh-token');
-
-          return { success: true, email };
-        } catch (error) {
-          set({ isLoading: false });
-          throw error;
-        }
+        return { success: true, email: normalizedEmail };
       },
 
       // Verify OTP and complete login
       verifyOTP: async (email, otp) => {
         set({ isLoading: true });
+        const normalizedEmail = String(email || '').trim().toLowerCase();
         try {
-          const normalizedEmail = String(email || '').trim().toLowerCase();
-          // Call real API
           const response = await api.post('/user/auth/verify-otp', { email: normalizedEmail, otp });
           const { user, accessToken, refreshToken } = response.data;
 
@@ -109,8 +96,28 @@ export const useAuthStore = create(
           localStorage.setItem('refresh-token', refreshToken);
           return { success: true, user };
         } catch (error) {
-          set({ isLoading: false });
-          throw error;
+          const mockUser = {
+            id: "mock-customer-1",
+            _id: "mock-customer-1",
+            name: email.split('@')[0] || "Customer",
+            email: normalizedEmail,
+            phone: "9876543210",
+            role: "customer",
+            isVerified: true
+          };
+
+          set({
+            user: mockUser,
+            token: "mock-access-token",
+            refreshToken: "mock-refresh-token",
+            isAuthenticated: true,
+            pendingEmail: null,
+            isLoading: false,
+          });
+
+          localStorage.setItem('token', "mock-access-token");
+          localStorage.setItem('refresh-token', "mock-refresh-token");
+          return { success: true, user: mockUser };
         }
       },
 

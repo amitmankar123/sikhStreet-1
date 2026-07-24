@@ -84,7 +84,7 @@ const MobileVerification = () => {
     if (!email) return;
     try {
       await resendOTP(email);
-      toast.success('Verification code sent to your email');
+      // toast.success('Verification code sent to your email');
     } catch (error) {
       toast.error(error?.message || 'Failed to resend code. Please try again.');
     }
@@ -149,8 +149,8 @@ const MobileVerification = () => {
                       onKeyDown={(e) => handleKeyDown(index, e)}
                       onPaste={index === 0 ? handlePaste : undefined}
                       className={`w-14 h-14 rounded-full border-2 text-center text-xl font-semibold focus:outline-none transition-all ${code
-                          ? 'border-purple-500 bg-purple-50 text-purple-700'
-                          : 'border-gray-200 focus:border-purple-500 text-gray-900'
+                          ? 'border-[#F5A623] bg-amber-50 text-black'
+                          : 'border-gray-200 focus:border-[#F5A623] text-gray-900'
                         }`}
                     />
                   ))}
@@ -160,7 +160,7 @@ const MobileVerification = () => {
                 <button
                   type="submit"
                   disabled={isLoading || codes.some(code => !code)}
-                  className="w-full bg-primary-500 hover:bg-primary-600 text-white py-3.5 rounded-xl font-semibold text-base transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white py-3.5 rounded-xl font-semibold text-base transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Verifying...' : 'Confirm'}
                 </button>
@@ -172,7 +172,7 @@ const MobileVerification = () => {
                   Didn't receive the code?{' '}
                   <button
                     onClick={handleResend}
-                    className="text-primary-600 hover:text-primary-700 font-semibold"
+                    className="text-black hover:text-[#F5A623] transition-colors font-semibold"
                   >
                     Resend
                   </button>

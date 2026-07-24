@@ -13,7 +13,8 @@ const CategorySchema = new mongoose.Schema({
   order: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   productType: { type: String, enum: ['physical', 'digital'], default: 'physical' },
-  workflowSteps: { type: [String], default: [] }
+  workflowSteps: { type: [String], default: [] },
+  group: { type: String, default: "" }
 }, {
   timestamps: true,
   collection: 'Category'

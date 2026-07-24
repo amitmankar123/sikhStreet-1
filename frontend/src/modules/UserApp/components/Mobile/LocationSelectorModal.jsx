@@ -50,7 +50,7 @@ const LocationSelectorModal = ({ isOpen, onClose }) => {
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
             <div className="flex items-center gap-2">
-              <FiMapPin className="text-brand-saffron text-xl" />
+              <FiMapPin className="text-[#F5A623] text-xl" />
               <h2 className="text-lg font-bold text-brand-navy">Choose Location</h2>
             </div>
             <button

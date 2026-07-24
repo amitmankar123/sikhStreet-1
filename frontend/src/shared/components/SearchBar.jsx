@@ -217,17 +217,15 @@ const SearchBar = ({ className = '', size = 'default' }) => {
   };
 
   // Rotate placeholders when not focused and input is empty
-
-
   const recentSearches = getRecentSearches();
   const hasSuggestions = suggestions.length > 0 || recentSearches.length > 0 || popularSearches.length > 0;
 
   const inputClasses = size === 'large'
-    ? "w-full pl-6 pr-16 py-3.5 bg-gray-100 border border-gray-300 hover:border-gray-400 focus:border-gray-900 focus:bg-white rounded-full outline-none transition-all duration-200 text-gray-800 placeholder:text-gray-500 text-base font-medium shadow-inner"
-    : "w-full pl-6 pr-14 py-2.5 bg-gray-100 border border-gray-300 hover:border-gray-400 focus:border-gray-900 focus:bg-white rounded-full outline-none transition-all duration-200 text-gray-800 placeholder:text-gray-500 text-sm font-medium";
+    ? "w-full pl-6 pr-16 py-3.5 bg-white border-2 border-gray-900 rounded-full outline-none transition-all duration-200 text-gray-800 placeholder:text-gray-500 text-base font-medium shadow-sm"
+    : "w-full pl-5 pr-14 py-2.5 bg-white border-2 border-gray-900 rounded-full outline-none transition-all duration-200 text-gray-800 placeholder:text-gray-500 text-sm font-medium shadow-sm";
 
   const buttonSize = size === 'large' ? "44px" : "36px";
-  const buttonRightClass = size === 'large' ? "right-2" : "right-1.5";
+  const buttonRightClass = size === 'large' ? "right-1.5" : "right-1";
   const searchIconSize = size === 'large' ? 22 : 18;
 
   return (
@@ -247,7 +245,7 @@ const SearchBar = ({ className = '', size = 'default' }) => {
           />
           <button
             type="submit"
-            className={`absolute ${buttonRightClass} bg-brand-saffron hover:bg-orange-600 text-white rounded-full transition-colors flex items-center justify-center shadow-sm`}
+            className={`absolute ${buttonRightClass} bg-[#F1641E] hover:bg-[#D54B0E] text-white rounded-full transition-colors flex items-center justify-center shadow-sm`}
             style={{ width: buttonSize, height: buttonSize }}
           >
             <FiSearch size={searchIconSize} className="stroke-[2.5]" />

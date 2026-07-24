@@ -882,7 +882,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                           <div className="relative">
                             <input
                               type="file"
-                              accept="image/*"
+                              accept="image/*, image/avif, .avif"
                               onChange={handleImageUpload}
                               className="hidden"
                               id="main-image-upload-modal"
@@ -936,7 +936,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                           <div className="relative">
                             <input
                               type="file"
-                              accept="image/*"
+                              accept="image/*, image/avif, .avif"
                               multiple
                               onChange={handleGalleryUpload}
                               className="hidden"
@@ -1298,7 +1298,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/*, image/avif, .avif"
                                     id={`admin-variant-image-${combo.key}`}
                                     className="hidden"
                                     onChange={(e) => {

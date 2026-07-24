@@ -214,7 +214,7 @@ const ColorInputPanel = ({ onAdd, isTurbanCategory = false, onTurbanColorAdd }) 
             className="w-full px-2.5 py-1.5 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 text-xs bg-white"
           />
           <div className="flex items-center gap-2">
-            <input type="file" accept="image/*" id="turban-color-img-pf" className="hidden" onChange={handleImageSelect} />
+            <input type="file" accept="image/*, image/avif, .avif" id="turban-color-img-pf" className="hidden" onChange={handleImageSelect} />
             <label htmlFor="turban-color-img-pf" className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 border-2 border-dashed border-amber-400 rounded-lg cursor-pointer hover:bg-amber-100 text-xs font-medium text-amber-700 transition-colors">
               {imagePreview ? "Change Photo" : "Upload Color Photo *"}
             </label>
@@ -539,6 +539,14 @@ const ProductForm = () => {
   const { categories, initialize: initCategories } = useCategoryStore();
   const { brands, initialize: initBrands } = useBrandStore();
 
+  const getParentId = (cat) => {
+    if (!cat || !cat.parentId) return "";
+    if (typeof cat.parentId === 'object') {
+      return cat.parentId.id || cat.parentId._id || "";
+    }
+    return String(cat.parentId);
+  };
+
   const [formData, setFormData] = useState({
     name: "",
     unit: "",
@@ -549,6 +557,8 @@ const ProductForm = () => {
     video: "",
     categoryId: null,
     subcategoryId: null,
+    topicId: null,
+    topic: "",
     brandId: null,
     stock: "in_stock",
     stockQuantity: "",
@@ -648,11 +658,36 @@ const ProductForm = () => {
     const normalizedCategoryId = normalizeId(product.categoryId);
     const normalizedBrandId = normalizeId(product.brandId);
     const normalizedSubcategoryId = normalizeId(product.subcategoryId);
-    const category = cats.find(
-      (cat) => String(cat._id ?? cat.id) === String(normalizedCategoryId)
-    );
-    const normalizedParentCategoryId = normalizeId(category?.parentId);
-    const isSubcategory = Boolean(normalizedParentCategoryId);
+
+    // Helper to resolve 3-level categories recursively
+    let mainId = null;
+    let subId = null;
+    let topicId = null;
+
+    const leafCat = (cats || []).find(c => String(c._id ?? c.id) === String(normalizedCategoryId));
+    if (leafCat) {
+      const pId = leafCat.parentId ? normalizeId(leafCat.parentId) : null;
+      if (pId) {
+        const parentCat = (cats || []).find(c => String(c._id ?? c.id) === String(pId));
+        const gpId = parentCat?.parentId ? normalizeId(parentCat.parentId) : null;
+        if (gpId) {
+          // 3-level: grandparent exists
+          mainId = gpId;
+          subId = pId;
+          topicId = normalizedCategoryId;
+        } else {
+          // 2-level
+          mainId = pId;
+          subId = normalizedCategoryId;
+        }
+      } else {
+        // 1-level
+        mainId = normalizedCategoryId;
+      }
+    } else {
+      mainId = normalizedCategoryId || null;
+      subId = normalizedSubcategoryId || null;
+    }
 
     const normalizedVariants = normalizeVariantStateForForm(
       product.variants || {},
@@ -667,12 +702,10 @@ const ProductForm = () => {
       image: product.image || "",
       images: product.images || [],
       video: product.video || "",
-      categoryId: isSubcategory
-        ? normalizedParentCategoryId
-        : normalizedCategoryId || null,
-      subcategoryId: isSubcategory
-        ? normalizedCategoryId
-        : normalizedSubcategoryId || null,
+      categoryId: mainId,
+      subcategoryId: subId,
+      topicId: topicId,
+      topic: leafCat && topicId ? leafCat.name : (product.topic || ""),
       brandId: normalizedBrandId || null,
       stock: product.stock || "in_stock",
       stockQuantity: product.stockQuantity || "",
@@ -1198,6 +1231,16 @@ const ProductForm = () => {
     }
   };
 
+  const handleTopicChange = (e) => {
+    const value = e.target.value || null;
+    const topicCategory = (categories || []).find((cat) => String(cat.id || cat._id) === String(value));
+    setFormData((prev) => ({
+      ...prev,
+      topicId: value,
+      topic: topicCategory ? topicCategory.name : ""
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -1236,7 +1279,7 @@ const ProductForm = () => {
       }
     }
 
-    const finalCategoryId = formData.subcategoryId ?? formData.categoryId ?? null;
+    const finalCategoryId = formData.topicId ?? formData.subcategoryId ?? formData.categoryId ?? null;
 
     const parsedPrice = parseFloat(formData.price);
     const parsedOriginalPrice = formData.originalPrice
@@ -1274,6 +1317,8 @@ const ProductForm = () => {
       minimumOrderQuantity: parsedMinimumOrderQuantity,
       categoryId: finalCategoryId,
       subcategoryId: formData.subcategoryId ? formData.subcategoryId : null,
+      topicId: formData.topicId ? formData.topicId : null,
+      topic: formData.topic || undefined,
       brandId: formData.brandId ?? null,
       faqs: (formData.faqs || [])
         .map((faq) => ({
@@ -1355,7 +1400,7 @@ const ProductForm = () => {
                 placeholder="Select Main Category"
                 options={[
                   ...(categories || [])
-                    .filter((cat) => !cat.parentId && cat.isActive !== false)
+                    .filter((cat) => !getParentId(cat) && cat.isActive !== false)
                     .map((cat) => ({ value: String(cat.id || cat._id), label: cat.name })),
                 ]}
               />
@@ -1368,20 +1413,50 @@ const ProductForm = () => {
               <AnimatedSelect
                 name="subcategoryId"
                 value={formData.subcategoryId || ""}
-                onChange={handleChange}
+                onChange={(e) => {
+                  handleChange(e);
+                  setFormData((prev) => ({ ...prev, topicId: null, topic: "" }));
+                }}
                 placeholder="Select Subcategory"
                 options={[
                   ...(categories || [])
                     .filter(
                       (cat) =>
-                        cat.parentId &&
-                        String(cat.parentId) === String(formData.categoryId) &&
+                        getParentId(cat) === String(formData.categoryId) &&
                         cat.isActive !== false
                     )
                     .map((cat) => ({ value: String(cat.id || cat._id), label: cat.name })),
                 ]}
               />
             </div>
+
+            {(() => {
+              const topics = (categories || []).filter(
+                (cat) =>
+                  getParentId(cat) === String(formData.subcategoryId) &&
+                  cat.isActive !== false
+              );
+              if (topics.length === 0) return null;
+              return (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Topic / Sub-subcategory
+                  </label>
+                  <AnimatedSelect
+                    name="topicId"
+                    value={formData.topicId || ""}
+                    onChange={handleTopicChange}
+                    disabled={!formData.subcategoryId}
+                    placeholder={
+                      !formData.subcategoryId
+                        ? "First choose subcategory"
+                        : "Select Topic"
+                    }
+                    options={topics.map((cat) => ({ value: String(cat.id || cat._id), label: cat.name }))}
+                  />
+                </div>
+              );
+            })()}
 
             {!isArtCategory && (
               <>
@@ -1510,7 +1585,7 @@ const ProductForm = () => {
                     <div className="relative">
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/*, image/avif, .avif"
                         onChange={handleImageUpload}
                         className="hidden"
                         id="main-image-upload"
@@ -1559,7 +1634,7 @@ const ProductForm = () => {
                     <div className="relative">
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/*, image/avif, .avif"
                         multiple
                         onChange={handleGalleryUpload}
                         className="hidden"
@@ -1938,7 +2013,7 @@ const ProductForm = () => {
                           <div className="flex items-center gap-2">
                             <input
                               type="file"
-                              accept="image/*"
+                              accept="image/*, image/avif, .avif"
                               id={`variant-image-${combo.key}`}
                               className="hidden"
                               onChange={(e) => {

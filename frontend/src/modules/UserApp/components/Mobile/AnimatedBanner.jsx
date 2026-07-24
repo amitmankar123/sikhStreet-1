@@ -288,7 +288,7 @@ const AnimatedBanner = ({ banners = null }) => {
                         willChange: "transform",
                         transform: "translateZ(0)",
                       }}
-                      className="inline-flex items-center gap-2 bg-brand-saffron hover:bg-orange-600 px-6 py-3 md:px-8 md:py-4 rounded-xl shadow-xl hover:shadow-2xl transition-all relative overflow-hidden mt-2 md:mt-4 group-hover:scale-105"
+                      className="inline-flex items-center gap-2 bg-black hover:bg-orange-600 px-6 py-3 md:px-8 md:py-4 rounded-xl shadow-xl hover:shadow-2xl transition-all relative overflow-hidden mt-2 md:mt-4 group-hover:scale-105"
                       whileTap={{ scale: 0.95 }}>
                       <span className="text-white font-bold text-sm md:text-lg relative z-10">
                         {banner.discount}

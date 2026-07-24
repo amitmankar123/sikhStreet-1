@@ -474,7 +474,7 @@ const StepBasicInfo = ({ formData, updateForm }) => {
                 <img src={formData.image instanceof File ? URL.createObjectURL(formData.image) : formData.image} alt="Primary" className="w-24 h-24 object-cover rounded-xl border border-gray-200 shadow-sm" />
               )}
               <div className="flex-1 relative">
-                <input type="file" accept="image/*" onChange={(e) => {
+                <input type="file" accept="image/*, image/avif, .avif" onChange={(e) => {
                   if (e.target.files[0]) updateForm({ image: e.target.files[0] });
                 }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                 <div className="w-full flex flex-col items-center justify-center px-4 py-6 border-2 border-dashed border-gray-300 rounded-xl hover:bg-gray-50 transition-colors bg-white">
@@ -488,7 +488,7 @@ const StepBasicInfo = ({ formData, updateForm }) => {
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Additional Angles / Detail Shots</label>
             <div className="relative">
-              <input type="file" accept="image/*" multiple onChange={(e) => {
+              <input type="file" accept="image/*, image/avif, .avif" multiple onChange={(e) => {
                 if (e.target.files.length) {
                   const currentCount = formData.images.length;
                   if (currentCount >= 10) {

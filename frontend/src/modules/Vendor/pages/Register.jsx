@@ -6,6 +6,7 @@ import { useVendorAuthStore } from "../store/vendorAuthStore";
 import toast from 'react-hot-toast';
 import SearchablePhoneInput, { COUNTRIES } from "../../../shared/components/SearchablePhoneInput";
 import { checkVendorAvailability } from '../services/vendorService';
+import { appLogo } from "../../../data/logos";
 
 const getGovernmentIdLabel = (country) => {
   switch (country) {
@@ -30,7 +31,7 @@ const getBusinessDocumentLabel = (country) => {
   }
 };
 
-const VendorRegister = () => {
+const VendorRegister = ({ isModal = false, onClose }) => {
   const navigate = useNavigate();
   const { register: registerVendor, isLoading } = useVendorAuthStore();
 
@@ -43,6 +44,7 @@ const VendorRegister = () => {
     confirmPassword: '',
     vendorType: 'Individual',
     vendorCountry: '',
+    shopCurrency: '',
     storeName: '',
     address: {
       street: '',
@@ -53,8 +55,12 @@ const VendorRegister = () => {
     },
     businessName: '',
     businessType: '',
-    businessCountry: '',
-    businessAddress: '',
+    businessAddress: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+    },
   });
   const [kycDocument, setKycDocument] = useState(null);
   const [governmentIdDocument, setGovernmentIdDocument] = useState(null);
@@ -71,6 +77,15 @@ const VendorRegister = () => {
         ...formData,
         address: {
           ...formData.address,
+          [addressField]: value,
+        },
+      });
+    } else if (name.startsWith('businessAddress.')) {
+      const addressField = name.split('.')[1];
+      setFormData({
+        ...formData,
+        businessAddress: {
+          ...formData.businessAddress,
           [addressField]: value,
         },
       });
@@ -94,9 +109,18 @@ const VendorRegister = () => {
       }
     }
 
+    const defaultCurrency = selectedName === 'US' ? 'USD' :
+                            selectedName === 'CANADA' ? 'CAD' :
+                            selectedName === 'UK' ? 'GBP' :
+                            selectedName === 'AUSTRALIA' ? 'AUD' :
+                            selectedName === 'SINGAPORE' ? 'SGD' :
+                            selectedName === 'DUBAI' ? 'AED' :
+                            selectedName === 'INDIA' ? 'INR' : '';
+
     setFormData({
       ...formData,
       vendorCountry: selectedName,
+      shopCurrency: defaultCurrency,
       phone: countryObj ? `${countryObj.code} ${currentPhoneNum}`.trim() : currentPhoneNum
     });
   };
@@ -105,6 +129,10 @@ const VendorRegister = () => {
     // Validate Step 1
     if (!formData.vendorCountry) {
       toast.error('Please select a country');
+      return;
+    }
+    if (!formData.shopCurrency) {
+      toast.error('Please select a shop currency');
       return;
     }
     if (!formData.name || !formData.email || !formData.phone) {
@@ -139,7 +167,7 @@ const VendorRegister = () => {
       return;
     }
 
-    if (formData.vendorType === 'Business' && (!formData.businessName || !formData.businessType || !formData.businessCountry || !formData.businessAddress)) {
+    if (formData.vendorType === 'Business' && (!formData.businessName || !formData.businessType || !formData.businessAddress.street || !formData.businessAddress.city || !formData.businessAddress.state || !formData.businessAddress.zipCode)) {
       toast.error('Please fill in all business verification fields');
       return;
     }
@@ -175,12 +203,14 @@ const VendorRegister = () => {
       submitData.append('phone', formData.phone.trim());
       submitData.append('vendorType', formData.vendorType);
       submitData.append('vendorCountry', formData.vendorCountry);
+      submitData.append('currency', formData.shopCurrency);
       submitData.append('storeName', formData.storeName.trim());
       submitData.append('address', JSON.stringify(formData.address));
       
       if (formData.vendorType === 'Business') {
         submitData.append('businessName', formData.businessName.trim());
         submitData.append('businessType', formData.businessType.trim());
+        submitData.append('businessAddress', JSON.stringify(formData.businessAddress));
         submitData.append('kycDocumentType', getBusinessDocumentLabel(formData.vendorCountry));
         submitData.append('kycDocument', kycDocument);
       }
@@ -195,18 +225,32 @@ const VendorRegister = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900 flex items-center justify-center p-4 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-card rounded-3xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
-      >
+  const cardContent = (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-card rounded-3xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto relative bg-white border border-slate-200"
+    >
+      {isModal && onClose && (
+        <button
+          onClick={onClose}
+          type="button"
+          className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 transition-colors p-1.5 rounded-full hover:bg-gray-100 z-50 animate-fadeIn"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 gradient-green rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow-green">
-            <FiShoppingBag className="text-white text-2xl" />
-          </div>
+          <Link to="/vendor" className="inline-block">
+            <img
+              src={appLogo.src}
+              alt={appLogo.alt || "SikhStreet Logo"}
+              className="h-12 sm:h-14 w-auto mx-auto mb-4 object-contain mix-blend-multiply"
+            />
+          </Link>
           <h1 className="text-3xl font-extrabold text-gray-800 mb-2">Become a Vendor</h1>
           <p className="text-gray-600">Step {step} of 2: {step === 1 ? 'General Information' : 'Business & Documents'}</p>
         </div>
@@ -229,23 +273,44 @@ const VendorRegister = () => {
               >
                 {/* Vendor Country */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Country</h3>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Country <span className="text-red-500">*</span></label>
-                    <select
-                      name="vendorCountry"
-                      value={formData.vendorCountry}
-                      onChange={handleCountryChange}
-                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800"
-                      required
-                    >
-                      <option value="" disabled>Select Country</option>
-                      {COUNTRIES.map((country, idx) => (
-                        <option key={idx} value={country.name}>
-                          {country.name}
-                        </option>
-                      ))}
-                    </select>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Country & Currency</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Country <span className="text-red-500">*</span></label>
+                      <select
+                        name="vendorCountry"
+                        value={formData.vendorCountry}
+                        onChange={handleCountryChange}
+                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800"
+                        required
+                      >
+                        <option value="" disabled>Select Country</option>
+                        {COUNTRIES.map((country, idx) => (
+                          <option key={idx} value={country.name}>
+                            {country.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Shop Currency <span className="text-red-500">*</span></label>
+                      <select
+                        name="shopCurrency"
+                        value={formData.shopCurrency}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800"
+                        required
+                      >
+                        <option value="" disabled>Select Shop Currency</option>
+                        <option value="USD">USD ($) - US Dollar</option>
+                        <option value="CAD">CAD ($) - Canadian Dollar</option>
+                        <option value="GBP">GBP (£) - British Pound</option>
+                        <option value="AUD">AUD ($) - Australian Dollar</option>
+                        <option value="SGD">SGD ($) - Singapore Dollar</option>
+                        <option value="AED">AED (د.إ) - UAE Dirham</option>
+                        <option value="INR">INR (₹) - Indian Rupee</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -311,7 +376,7 @@ const VendorRegister = () => {
                     disabled={isValidating}
                     className="flex items-center gap-2 gradient-green text-white px-8 py-3 rounded-xl font-semibold hover:shadow-glow-green transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isValidating ? 'Checking...' : 'Next Step'} <FiArrowRight />
+                    {isValidating ? 'Checking...' : 'Save & Next Step'} <FiArrowRight />
                   </button>
                 </div>
                 
@@ -495,36 +560,61 @@ const VendorRegister = () => {
                           <option value="Other">Other</option>
                         </select>
                       </div>
-                      <div>
+                      <div className="md:col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Business Country <span className="text-red-500">*</span>
+                          Street Address <span className="text-red-500">*</span>
                         </label>
-                        <select
-                          name="businessCountry"
-                          value={formData.businessCountry}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800"
-                          required={formData.vendorType === 'Business'}
-                        >
-                          <option value="" disabled>Select Country</option>
-                          <option value="USA">United States</option>
-                          <option value="Canada">Canada</option>
-                          <option value="UK">United Kingdom</option>
-                          <option value="India">India</option>
-                          <option value="Australia">Australia</option>
-                          <option value="Other">Other</option>
-                        </select>
+                        <div className="relative">
+                          <FiMapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <input
+                            type="text"
+                            name="businessAddress.street"
+                            value={formData.businessAddress.street}
+                            onChange={handleChange}
+                            placeholder="Registered Street Address"
+                            className="w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800 placeholder:text-gray-400"
+                            required={formData.vendorType === 'Business'}
+                          />
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Business Address <span className="text-red-500">*</span>
+                          City <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
-                          name="businessAddress"
-                          value={formData.businessAddress}
+                          name="businessAddress.city"
+                          value={formData.businessAddress.city}
                           onChange={handleChange}
-                          placeholder="Registered Address"
+                          placeholder="City"
+                          className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800 placeholder:text-gray-400"
+                          required={formData.vendorType === 'Business'}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          State/Province <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="businessAddress.state"
+                          value={formData.businessAddress.state}
+                          onChange={handleChange}
+                          placeholder="State"
+                          className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800 placeholder:text-gray-400"
+                          required={formData.vendorType === 'Business'}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Zip/Postal Code <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="businessAddress.zipCode"
+                          value={formData.businessAddress.zipCode}
+                          onChange={handleChange}
+                          placeholder="Zip Code"
                           className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800 placeholder:text-gray-400"
                           required={formData.vendorType === 'Business'}
                         />
@@ -647,7 +737,16 @@ const VendorRegister = () => {
             )}
           </AnimatePresence>
         </form>
-      </motion.div>
+    </motion.div>
+  );
+
+  if (isModal) {
+    return cardContent;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900 flex items-center justify-center p-4 py-8">
+      {cardContent}
     </div>
   );
 };

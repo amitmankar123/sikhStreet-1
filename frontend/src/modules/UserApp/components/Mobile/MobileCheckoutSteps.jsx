@@ -15,20 +15,20 @@ const MobileCheckoutSteps = ({ currentStep, totalSteps = 3 }) => {
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
                     isCompleted
-                      ? "bg-[#8d4b00] text-white"
+                      ? "bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white"
                       : isCurrent
-                      ? "bg-[#8d4b00] text-white ring-4 ring-[#fdeade]"
-                      : "bg-[#e9d7cb] text-[#554336]/60"
+                      ? "bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white ring-4 ring-[#fdeade]"
+                      : "bg-[#e9d7cb] text-black/60"
                   }`}>
                   {isCompleted ? <FiCheck className="text-lg" /> : step}
                 </div>
                 <span
                   className={`text-xs font-semibold mt-2 ${
                     isCurrent
-                      ? "text-[#8d4b00]"
+                      ? "text-black"
                       : isCompleted
-                      ? "text-[#231a13]"
-                      : "text-[#554336]/60"
+                      ? "text-black"
+                      : "text-black/60"
                   }`}>
                   Step {step}
                 </span>
@@ -36,7 +36,7 @@ const MobileCheckoutSteps = ({ currentStep, totalSteps = 3 }) => {
               {step < totalSteps && (
                 <div
                   className={`h-1 w-28 ml-10 mr-0 -mt-6 transition-all ${
-                    isCompleted ? "bg-[#8d4b00]" : "bg-[#e9d7cb]"
+                    isCompleted ? "bg-black hover:bg-[#F5A623] hover:text-black transition-colors" : "bg-[#e9d7cb]"
                   }`}
                 />
               )}

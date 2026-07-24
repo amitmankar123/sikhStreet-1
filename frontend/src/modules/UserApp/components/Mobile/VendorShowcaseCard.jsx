@@ -74,7 +74,7 @@ const VendorShowcaseCard = ({ vendor, index = 0 }) => {
 
         {/* Visit Store Button */}
         <div className="mt-auto w-full">
-          <div className="flex items-center justify-center gap-1 md:gap-2 text-brand-saffron text-xs md:text-sm font-bold group-hover:text-orange-600 transition-colors">
+          <div className="flex items-center justify-center gap-1 md:gap-2 text-[#F5A623] text-xs md:text-sm font-bold group-hover:text-orange-600 transition-colors">
             <span>Visit Store</span>
             <FiArrowRight className="text-xs md:text-sm group-hover:translate-x-1 transition-transform" />
           </div>

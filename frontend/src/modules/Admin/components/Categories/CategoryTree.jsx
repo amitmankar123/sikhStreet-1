@@ -5,7 +5,7 @@ import Badge from '../../../../shared/components/Badge';
 import toast from 'react-hot-toast';
 import Button from '../Button';
 
-const CategoryTree = ({ categories, onEdit, onDelete, onAddSubcategory, level = 0 }) => {
+const CategoryTree = ({ categories, rootCategories, onEdit, onDelete, onAddSubcategory, level = 0 }) => {
   const { toggleCategoryStatus } = useCategoryStore();
   const [expanded, setExpanded] = useState({});
 
@@ -28,19 +28,31 @@ const CategoryTree = ({ categories, onEdit, onDelete, onAddSubcategory, level = 
     });
   };
 
-  const renderCategory = (category) => {
+  const getCategoryDepth = (cat) => {
+    const parentId = getParentId(cat);
+    if (!parentId) return 1;
+    const parent = categories.find(c => String(c.id || c._id) === String(parentId));
+    if (!parent) return 2;
+    const gpId = getParentId(parent);
+    if (!gpId) return 2;
+    return 3;
+  };
+
+  const renderCategory = (category, currentLevel = 0) => {
     const children = getChildren(category.id);
     const hasChildren = children.length > 0;
     const isExpanded = expanded[category.id] !== false;
+
+    const depth = getCategoryDepth(category);
+    const showAddSubcategoryButton = onAddSubcategory && depth < 3;
 
     return (
       <div key={category.id} className="select-none">
         {/* Mobile Card Design */}
         <div className="sm:hidden">
           <div
-            className={`bg-white border border-gray-200 rounded-2xl p-3.5 mb-2.5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] ${
-              level > 0 ? 'ml-3' : ''
-            }`}
+            className={`bg-white border border-gray-200 rounded-2xl p-3.5 mb-2.5 shadow-sm hover:shadow-md transition-all active:scale-[0.98] ${currentLevel > 0 ? 'ml-3' : ''
+              }`}
           >
             {/* Header Section - Image, Name, Badge, Expand */}
             <div className="flex items-start gap-3 mb-3">
@@ -77,17 +89,17 @@ const CategoryTree = ({ categories, onEdit, onDelete, onAddSubcategory, level = 
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 text-base leading-tight line-clamp-1">
-                    {category.name}
-                  </h3>
+                    <h3 className="font-bold text-gray-900 text-base leading-tight line-clamp-1">
+                      {category.name}
+                    </h3>
                     {hasChildren && (
                       <p className="text-[10px] text-gray-500 mt-0.5">
                         {children.length} subcategor{children.length !== 1 ? 'ies' : 'y'}
                       </p>
                     )}
                   </div>
-                  <Badge 
-                    variant={category.isActive ? 'success' : 'error'} 
+                  <Badge
+                    variant={category.isActive ? 'success' : 'error'}
                     className="flex-shrink-0 text-[10px] px-2 py-0.5"
                   >
                     {category.isActive ? 'Active' : 'Inactive'}
@@ -103,7 +115,7 @@ const CategoryTree = ({ categories, onEdit, onDelete, onAddSubcategory, level = 
 
             {/* Action Buttons - Horizontal Layout */}
             <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
-              {onAddSubcategory && (
+              {showAddSubcategoryButton && (
                 <Button
                   onClick={() => onAddSubcategory(category.id)}
                   variant="ghostBlue"
@@ -151,9 +163,8 @@ const CategoryTree = ({ categories, onEdit, onDelete, onAddSubcategory, level = 
 
         {/* Desktop Design */}
         <div
-          className={`hidden sm:flex items-center gap-2 p-3 rounded-lg hover:bg-gray-50 transition-colors ${
-            level > 0 ? 'ml-6' : ''
-          }`}
+          className={`hidden sm:flex items-center gap-2 p-3 rounded-lg hover:bg-gray-50 transition-colors ${currentLevel > 0 ? 'ml-6' : ''
+            }`}
         >
           {hasChildren && (
             <Button
@@ -178,7 +189,7 @@ const CategoryTree = ({ categories, onEdit, onDelete, onAddSubcategory, level = 
             )}
             <div className="flex-1">
               <div className="flex items-center gap-2">
-              <p className="font-semibold text-gray-800">{category.name}</p>
+                <p className="font-semibold text-gray-800">{category.name}</p>
                 {hasChildren && (
                   <Badge variant="info" className="text-[10px] px-1.5 py-0.5">
                     {children.length}
@@ -193,7 +204,7 @@ const CategoryTree = ({ categories, onEdit, onDelete, onAddSubcategory, level = 
               {category.isActive ? 'Active' : 'Inactive'}
             </Badge>
             <div className="flex items-center gap-2">
-              {onAddSubcategory && (
+              {showAddSubcategoryButton && (
                 <Button
                   onClick={() => onAddSubcategory(category.id)}
                   variant="iconBlue"
@@ -225,28 +236,28 @@ const CategoryTree = ({ categories, onEdit, onDelete, onAddSubcategory, level = 
 
         {/* Children - Mobile */}
         {hasChildren && isExpanded && (
-          <div className={`sm:hidden ${level > 0 ? 'ml-4' : 'ml-0'} mt-2`}>
-            {children.map((child) => renderCategory(child))}
+          <div className={`sm:hidden ${currentLevel > 0 ? 'ml-4' : 'ml-0'} mt-2`}>
+            {children.map((child) => renderCategory(child, currentLevel + 1))}
           </div>
         )}
 
         {/* Children - Desktop */}
         {hasChildren && isExpanded && (
           <div className="hidden sm:block ml-4 border-l-2 border-gray-200">
-            {children.map((child) => renderCategory(child))}
+            {children.map((child) => renderCategory(child, currentLevel + 1))}
           </div>
         )}
       </div>
     );
   };
 
-  const rootCategories = categories
+  const rootList = (rootCategories || categories)
     .filter((cat) => !getParentId(cat))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   return (
     <div className="space-y-2 sm:space-y-1">
-      {rootCategories.map((category) => renderCategory(category))}
+      {rootList.map((category) => renderCategory(category))}
     </div>
   );
 };

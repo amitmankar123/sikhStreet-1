@@ -174,7 +174,7 @@ const ReviewForm = ({ productId, onSubmit }) => {
                 <FiUpload className="text-gray-400 text-xl" />
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*, image/avif, .avif"
                   multiple
                   onChange={handleImageUpload}
                   className="hidden"

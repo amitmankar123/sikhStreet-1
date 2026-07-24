@@ -222,6 +222,7 @@ const SalesReport = () => {
           </div>
 
           <ExportButton
+            variant="secondary"
             data={filteredOrders}
             headers={[
               { label: 'Order ID', accessor: (row) => row.orderId ?? row._id },

@@ -7,6 +7,8 @@ export default {
   theme: {
     extend: {
       colors: {
+        black: '#111111', // Mapped to RGB 17, 17, 17
+
         // ── Vendor Panel ────────────────────────────────────────────────
         vendor: {
           bg: 'rgb(var(--vendor-bg) / <alpha-value>)',
@@ -17,146 +19,148 @@ export default {
 
         // ── Buyer Brand System (Figma-aligned) ──────────────────────────
         brand: {
-          // Backgrounds (warm cream from Figma)
-          bg:       '#FFF8F0',      // Warm cream page background
-          bgDeep:   '#FFF3E4',      // Slightly deeper cream for sections
+          // Backgrounds
+          bg:       '#FFFFFF',      // Pure white page background
+          bgDeep:   '#FFFFFF',      // Pure white deep background
           surface:  '#FFFFFF',      // Pure white card/surface
           card:     '#FFFFFF',
 
           // Text
-          text:     '#2C1A0E',      // Deep warm brown for body text
-          navy:     '#2C1A0E',      // Primary headings (rich dark brown)
-          muted:    '#7A6152',      // Muted warm brown for secondary text
-          subtle:   '#BFA99A',      // Very light warm grey for placeholders
+          text:     '#111111',      // Mapped to RGB 17, 17, 17
+          navy:     '#111111',      
+          muted:    '#111111',      
+          subtle:   'rgba(17, 17, 17, 0.4)',
 
-          // Primary accent – Saffron orange (Figma brand color)
-          saffron:  '#F1641E',      // Primary CTA, badges, highlights
-          saffronLight: '#FFF0E8',  // Saffron tint for backgrounds
-          saffronDark:  '#D4521A',  // Hover state for saffron
+          // Primary accent – Saffron orange mapped to Amber (rgba(245, 166, 35))
+          saffron:  '#F5A623',      // Primary CTA, badges, highlights
+          saffronLight: 'rgba(245, 166, 35, 0.1)',  // Amber tint
+          saffronDark:  '#F5A623',  // Hover state
 
-          // Heritage gold (accent tier 2)
-          gold:     '#C9922A',      // Luxury gold for premium labels
-          goldLight:'#FDF3DC',      // Gold tint background
+          // Heritage gold mapped to Amber
+          gold:     '#F5A623',      
+          goldLight:'rgba(245, 166, 35, 0.1)',
 
           // Status
-          sale:     '#E53E3E',      // Red for sale/discount badges
-          wishlist: '#F1641E',      // Saffron for wishlist/heart
-          success:  '#2E7D52',      // Green for success states
-          successLight: '#EAF5EE',
+          sale:     '#111111',      
+          wishlist: '#F5A623',      // Amber for wishlist
+          success:  '#111111',      
+          successLight: '#FFFFFF',
 
           // Borders
-          border:   '#EDE0D4',      // Warm beige border
-          borderLight: '#F5EDE4',   // Lighter warm border
+          border:   'rgba(17, 17, 17, 0.15)', // Light transparent charcoal border
+          borderLight: 'rgba(17, 17, 17, 0.08)',
         },
 
         // ── Redesign Theme Colors (HTML reference 100% match) ──────────
-        "surface": "#fff8f5",
-        "surface-dim": "#e9d7cb",
-        "surface-bright": "#fff8f5",
+        "surface": "#ffffff",
+        "surface-dim": "rgba(17, 17, 17, 0.1)",
+        "surface-bright": "#ffffff",
         "surface-container-lowest": "#ffffff",
-        "surface-container-low": "#fff1e9",
-        "surface-container": "#fdeade",
-        "surface-container-high": "#f7e5d9",
-        "surface-container-highest": "#f2dfd3",
-        "on-surface": "#231a13",
-        "on-surface-variant": "#554336",
-        "inverse-surface": "#392e26",
-        "inverse-on-surface": "#ffede3",
-        "outline": "#887364",
-        "outline-variant": "#dbc2b0",
-        "surface-tint": "#904d00",
+        "surface-container-low": "#ffffff",
+        "surface-container": "#ffffff",
+        "surface-container-high": "#ffffff",
+        "surface-container-highest": "#ffffff",
+        "on-surface": "#111111",
+        "on-surface-variant": "#111111",
+        "inverse-surface": "#111111",
+        "inverse-on-surface": "#ffffff",
+        "outline": "rgba(17, 17, 17, 0.2)",
+        "outline-variant": "rgba(17, 17, 17, 0.1)",
+        "surface-tint": "#111111",
         "on-primary": "#ffffff",
-        "primary-container": "#b15f00",
-        "on-primary-container": "#fffbff",
-        "inverse-primary": "#ffb77d",
+        "primary-container": "#ffffff",
+        "on-primary-container": "#111111",
+        "inverse-primary": "#111111",
         "on-secondary": "#ffffff",
-        "secondary-container": "#a0f399",
-        "on-secondary-container": "#217128",
+        "secondary-container": "#ffffff",
+        "on-secondary-container": "#111111",
         "on-tertiary": "#ffffff",
-        "tertiary-container": "#007abd",
-        "on-tertiary-container": "#fdfcff",
+        "tertiary-container": "#ffffff",
+        "on-tertiary-container": "#111111",
         "on-error": "#ffffff",
-        "error-container": "#ffdad6",
-        "on-error-container": "#93000a",
-        "primary-fixed": "#ffdcc3",
-        "primary-fixed-dim": "#ffb77d",
-        "on-primary-fixed": "#2f1500",
-        "on-primary-fixed-variant": "#6e3900",
-        "secondary-fixed": "#a3f69c",
-        "secondary-fixed-dim": "#88d982",
-        "on-secondary-fixed": "#002204",
-        "on-secondary-fixed-variant": "#005312",
-        "tertiary-fixed": "#cee5ff",
-        "tertiary-fixed-dim": "#96ccff",
-        "on-tertiary-fixed": "#001d32",
-        "on-tertiary-fixed-variant": "#004a75",
-        "background": "#fff8f5",
-        "on-background": "#231a13",
-        "surface-variant": "#f2dfd3",
+        "error-container": "#ffffff",
+        "on-error-container": "#111111",
+        "primary-fixed": "#ffffff",
+        "primary-fixed-dim": "#ffffff",
+        "on-primary-fixed": "#111111",
+        "on-primary-fixed-variant": "#111111",
+        "secondary-fixed": "#ffffff",
+        "secondary-fixed-dim": "#ffffff",
+        "on-secondary-fixed": "#111111",
+        "on-secondary-fixed-variant": "#111111",
+        "tertiary-fixed": "#ffffff",
+        "tertiary-fixed-dim": "#ffffff",
+        "on-tertiary-fixed": "#111111",
+        "on-tertiary-fixed-variant": "#111111",
+        "background": "#ffffff",
+        "on-background": "#111111",
+        "surface-variant": "#ffffff",
 
-        // ── Extended Primary (purple – admin/vendor UI) ─────────────────
+        // ── Extended Primary (purple/brown – admin/vendor/buyer UI) ──────
         primary: {
-          DEFAULT: '#8d4b00',
-          50:  '#F5F3FF',
-          100: '#EDE9FE',
-          200: '#DDD6FE',
-          300: '#C4B5FD',
-          400: '#A78BFA',
-          500: '#7C3AED',
-          600: '#6D28D9',
-          700: '#5B21B6',
-          800: '#4C1D95',
-          900: '#3B0764',
+          DEFAULT: '#111111',
+          50:  '#ffffff',
+          100: '#ffffff',
+          200: '#ffffff',
+          300: '#ffffff',
+          400: '#ffffff',
+          500: '#F5A623',
+          600: '#F5A623',
+          700: '#111111',
+          800: '#111111',
+          900: '#111111',
         },
 
-        // ── Secondary (warm green DEFAULT, orange ramp admin/vendor) ───
+        // ── Secondary ───────────────────────────────────────────────────
         secondary: {
-          DEFAULT: '#1b6d24',
-          50:  '#FFF7ED',
-          100: '#FFEDD5',
-          200: '#FED7AA',
-          300: '#FDBA74',
-          400: '#FB923C',
-          500: '#F97316',
-          600: '#EA580C',
-          700: '#C2410C',
-          800: '#9A3412',
-          900: '#7C2D12',
+          DEFAULT: '#111111',
+          50:  '#ffffff',
+          100: '#ffffff',
+          200: '#ffffff',
+          300: '#ffffff',
+          400: '#ffffff',
+          500: '#F5A623',
+          600: '#F5A623',
+          700: '#111111',
+          800: '#111111',
+          900: '#111111',
         },
 
         // ── Tertiary (blue) ─────────────────────────────────────────────
         tertiary: {
-          DEFAULT: '#006096',
+          DEFAULT: '#111111',
         },
 
         // ── Accent (green ramp) ─────────────────────────────────────────
         accent: {
-          50:  '#ECFDF5',
-          100: '#D1FAE5',
-          200: '#A7F3D0',
-          300: '#6EE7B7',
-          400: '#34D399',
-          500: '#10B981',
-          600: '#059669',
-          700: '#047857',
-          800: '#065F46',
-          900: '#064E3B',
+          50:  '#ffffff',
+          100: '#ffffff',
+          200: '#ffffff',
+          300: '#ffffff',
+          400: '#ffffff',
+          500: '#F5A623',
+          600: '#F5A623',
+          700: '#F5A623',
+          800: '#F5A623',
+          900: '#F5A623',
         },
 
         // ── Error (red) ─────────────────────────────────────────────────
         error: {
-          DEFAULT: '#ba1a1a',
+          DEFAULT: '#111111',
         },
       },
 
       // ── Typography ────────────────────────────────────────────────────
       fontFamily: {
-        // Body font (clean, modern)
-        sans:    ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
-        // Display/heading font (Figma uses Lora – elegant serif)
-        heading: ['Lora', 'Georgia', 'serif'],
-        // Brand logo font (Playfair for the hero brand name)
-        brand:   ['Playfair Display', 'Lora', 'Georgia', 'serif'],
+        // Body font (clean, modern Inter)
+        sans:    ['Inter', '"Poppins"', '"Segoe UI"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        // Display/heading font (Poppins to match UserApp headings)
+        heading: ['"Poppins"', 'Inter', '-apple-system', 'sans-serif'],
+        // Brand logo font
+        brand:   ['"Poppins"', 'Inter', 'sans-serif'],
+        // Standard serif override
+        serif:   ['"Playfair Display"', 'Lora', 'serif'],
       },
 
       fontSize: {

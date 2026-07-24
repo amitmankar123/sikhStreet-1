@@ -345,7 +345,7 @@ const HomeSliders = () => {
                     {isUploadingImage ? "Uploading..." : "Upload to Cloudinary"}
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*, image/avif, .avif"
                       onChange={handleSliderImageUpload}
                       className="hidden"
                       disabled={isUploadingImage}

@@ -199,6 +199,7 @@ const ProductPerformanceReport = () => {
 
           <div className="flex items-end">
             <ExportButton
+              variant="secondary"
               data={productPerformance}
               headers={[
                 { label: "Product", accessor: (row) => row.name },

@@ -16,6 +16,14 @@ const normalizeReview = (review) => ({
   notHelpfulCount: review?.notHelpfulCount || 0,
 });
 
+
+const DEFAULT_MOCK_REVIEWS = [
+  { id: 'mock-1', user: 'Zolton', rating: 5, comment: 'Great Gift - Good Material - Good Quality!', date: '2026-07-08T00:00:00.000Z', helpfulCount: 3 },
+  { id: 'mock-2', user: 'jessica', rating: 5, comment: 'Exactly what I ordered. Thank you', date: '2026-03-07T00:00:00.000Z', helpfulCount: 1 },
+  { id: 'mock-3', user: 'Shelby', rating: 5, comment: 'The feel of this fabric is wonderful, and it is still very sturdy. Great price and swift delivery, as well. Customer service has been exceptional and wonderfully kind. Cannot praise them enough!', date: '2025-07-31T00:00:00.000Z', helpfulCount: 2 },
+  { id: 'mock-4', user: 'Drew', rating: 5, comment: 'This was EXACTLY what I was looking for! The seller was super helpful and friendly and answered all of my questions. It came super fast and the quality is top notch! I would 100% recommend anyone looking for turbans to buy from this seller! I will be back for sure - can\'t wait to try the other colors and patterns! Thanks again!!', date: '2025-07-25T00:00:00.000Z', helpfulCount: 4 }
+];
+
 export const useReviewsStore = create(
   persist(
     (set, get) => ({
@@ -61,7 +69,10 @@ export const useReviewsStore = create(
 
         if (!isMongoObjectId(normalizedProductId)) {
           set((state) => {
-            const productReviews = state.reviews[normalizedProductId] || [];
+            let productReviews = state.reviews[normalizedProductId] || [];
+          if (productReviews.length === 0 && (!normalizedProductId || !isMongoObjectId(String(normalizedProductId)))) {
+            productReviews = DEFAULT_MOCK_REVIEWS.map(r => normalizeReview(r));
+          }
             const newReview = normalizeReview({
               ...review,
               id: Date.now().toString(),
@@ -178,7 +189,10 @@ export const useReviewsStore = create(
             return state; // Already voted
           }
 
-          const productReviews = state.reviews[productId] || [];
+          let productReviews = state.reviews[productId] || [];
+          if (productReviews.length === 0 && (!productId || !isMongoObjectId(String(productId)))) {
+            productReviews = DEFAULT_MOCK_REVIEWS.map(r => normalizeReview(r));
+          }
           const updatedReviews = productReviews.map((review) =>
             review.id === reviewId
               ? { ...review, notHelpfulCount: (review.notHelpfulCount || 0) + 1 }
@@ -208,7 +222,10 @@ export const useReviewsStore = create(
       // Sort reviews
       sortReviews: (productId, sortBy) => {
         const state = get();
-        const reviews = state.reviews[productId] || [];
+        let reviews = state.reviews[productId] || [];
+        if (reviews.length === 0 && (!productId || !isMongoObjectId(String(productId)))) {
+          reviews = DEFAULT_MOCK_REVIEWS.map(r => normalizeReview(r));
+        }
         let sorted = [...reviews];
 
         switch (sortBy) {

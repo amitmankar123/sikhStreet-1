@@ -15,37 +15,56 @@ const seedVendor = async () => {
 
     const Vendor = mongoose.model('Vendor');
 
-    const email = 'fashionhub@example.com';
-    const password = 'vendor123';
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const vendorsToSeed = [
+      {
+        name: 'Fashion Hub',
+        email: 'fashionhub@example.com',
+        password: 'vendor123',
+        phone: '+1234567890',
+        storeName: 'Fashion Hub Store',
+        storeDescription: 'Seeded vendor account',
+        status: 'approved',
+        isVerified: true,
+        commissionRate: 10,
+        governmentIdDocumentUrl: '',
+      },
+      {
+        name: 'Amit mankar',
+        email: 'amitmankar1052@gmail.com',
+        password: 'vendor123',
+        phone: '+91 7999810233',
+        storeName: 'Appzeto',
+        storeDescription: 'Seeded Amit Mankar vendor account',
+        status: 'approved',
+        isVerified: true,
+        commissionRate: 15,
+        governmentIdDocumentUrl: '',
+      }
+    ];
 
-    const existing = await Vendor.findOne({ email });
+    for (const data of vendorsToSeed) {
+      const { email, password, ...rest } = data;
+      const hashedPassword = await bcrypt.hash(password, 12);
+      const existing = await Vendor.findOne({ email });
 
-    if (existing) {
-      existing.name = 'Fashion Hub';
-      existing.storeName = existing.storeName || 'Fashion Hub Store';
-      existing.phone = existing.phone || '+1234567890';
-      existing.password = hashedPassword;
-      existing.status = 'approved';
-      existing.isVerified = true;
-      existing.commissionRate = 10;
-      existing.governmentIdDocumentUrl = existing.governmentIdDocumentUrl || '';
-      await existing.save();
-      console.log('✅ Vendor credentials updated: fashionhub@example.com / vendor123');
-    } else {
-      await Vendor.create({
-          name: 'Fashion Hub',
+      if (existing) {
+        existing.password = hashedPassword;
+        existing.status = 'approved';
+        existing.isVerified = true;
+        existing.name = existing.name || rest.name;
+        existing.storeName = existing.storeName || rest.storeName;
+        existing.phone = existing.phone || rest.phone;
+        existing.commissionRate = existing.commissionRate || rest.commissionRate;
+        await existing.save();
+        console.log(`✅ Vendor credentials updated: ${email} / ${password}`);
+      } else {
+        await Vendor.create({
           email,
           password: hashedPassword,
-          phone: '+1234567890',
-          storeName: 'Fashion Hub Store',
-          storeDescription: 'Seeded vendor account',
-          status: 'approved',
-          isVerified: true,
-          commissionRate: 10,
-          governmentIdDocumentUrl: '',
-      });
-      console.log('✅ Vendor created: fashionhub@example.com / vendor123');
+          ...rest
+        });
+        console.log(`✅ Vendor created: ${email} / ${password}`);
+      }
     }
   } catch (err) {
     console.error('❌ Seed failed:', err.message);

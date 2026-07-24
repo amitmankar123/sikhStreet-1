@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -9,22 +9,21 @@
 ───────────────────────────────────────────────────────────────── */
 :root {
   /* Vendor panel variables */
-  --vendor-bg: 250 250 250;
-  /* #FAFAFA */
-  --vendor-primary: 10 25 47;
-  /* #0A192F */
-  --vendor-accent: 212 175 55;
-  /* #D4AF37 */
-  --vendor-accent-hover: 184 150 43;
-  /* #B8962B */
+  --vendor-bg: 255 255 255;
+  /* #FFFFFF */
+  --vendor-primary: 17 17 17;
+  /* #111111 */
+  --vendor-accent: 245 166 35;
+  /* rgba(245, 166, 35) */
+  --vendor-accent-hover: 245 166 35;
 
   /* Buyer brand variables */
-  --brand-bg: #FFF8F0;
+  --brand-bg: rgb(250, 248, 245);
   --brand-surface: #FFFFFF;
-  --brand-navy: #2C1A0E;
-  --brand-saffron: #F1641E;
-  --brand-gold: #C9922A;
-  --brand-border: #EDE0D4;
+  --brand-navy: #111111;
+  --brand-saffron: #111111;
+  --brand-gold: #111111;
+  --brand-border: rgba(17, 17, 17, 0.15);
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -39,23 +38,25 @@
 /* ─────────────────────────────────────────────────────────────────
    Typography
 ───────────────────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
 
-/* ─────────────────────────────────────────────────────────────────
-   Root Layout
-───────────────────────────────────────────────────────────────── */
 html {
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
 }
 
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+body, input, button, select, textarea {
+  font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
 
+body {
   /* Figma warm cream background */
   background: var(--brand-bg);
   color: var(--brand-navy);
@@ -83,13 +84,38 @@ body::-webkit-scrollbar {
 /* ─────────────────────────────────────────────────────────────────
    Scrollbar Utilities
 ───────────────────────────────────────────────────────────────── */
-.scrollbar-hide {
+.scrollbar-hide,
+.hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-.scrollbar-hide::-webkit-scrollbar {
+.scrollbar-hide::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 99px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .scrollbar-responsive {
@@ -113,17 +139,17 @@ body::-webkit-scrollbar {
   }
 
   .scrollbar-responsive::-webkit-scrollbar-track {
-    background: #F5EDE4;
+    background: #ffffff;
     border-radius: 4px;
   }
 
   .scrollbar-responsive::-webkit-scrollbar-thumb {
-    background: #BFA99A;
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 4px;
   }
 
   .scrollbar-responsive::-webkit-scrollbar-thumb:hover {
-    background: #7A6152;
+    background: rgba(245, 166, 35, 1);
   }
 }
 
@@ -285,55 +311,55 @@ body::-webkit-scrollbar {
 
   /* Gradients */
   .gradient-primary {
-    background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+    background: #111111;
   }
 
   .gradient-secondary {
-    background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+    background: #111111;
   }
 
   .gradient-saffron {
-    background: linear-gradient(135deg, #F1641E 0%, #F97B3C 100%);
+    background: #111111;
   }
 
   .gradient-gold {
-    background: linear-gradient(135deg, #C9922A 0%, #E8B84B 100%);
+    background: #111111;
   }
 
   .gradient-accent {
-    background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+    background: #111111;
   }
 
   .gradient-green {
-    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    background: #111111;
   }
 
   .gradient-saffron {
-    background: linear-gradient(135deg, #F1641E 0%, #D94E0A 100%);
+    background: #111111;
   }
 
   .gradient-red {
-    background: linear-gradient(135deg, #EF4444 0%, #F97316 100%);
+    background: #111111;
   }
 
   /* Brand warm cream gradient (page backgrounds) */
   .gradient-brand-bg {
-    background: linear-gradient(180deg, #FFF8F0 0%, #FFF3E4 50%, #FBEBD8 100%);
+    background: #FFFFFF;
   }
 
   /* Text gradients */
   .text-gradient {
-    background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    background: #111111;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: currentColor;
+    background-clip: unset;
   }
 
   .text-gradient-saffron {
-    background: linear-gradient(135deg, #F1641E 0%, #C9922A 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    background: #111111;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: currentColor;
+    background-clip: unset;
   }
 
   /* Shadows */
@@ -410,16 +436,19 @@ body::-webkit-scrollbar {
 
   /* Brand button utilities */
   .btn-saffron {
-    background: #F1641E;
+    background: #111111;
     color: #ffffff;
     border-radius: 9999px;
     font-weight: 600;
     transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+    border: 1px solid #111111;
   }
 
   .btn-saffron:hover {
-    background: #D4521A;
-    box-shadow: 0 4px 16px rgba(241, 100, 30, 0.35);
+    background: rgba(245, 166, 35, 1);
+    color: #000000;
+    border-color: rgba(245, 166, 35, 1);
+    box-shadow: 0 4px 16px rgba(245, 166, 35, 0.35);
     transform: translateY(-1px);
   }
 
@@ -430,9 +459,9 @@ body::-webkit-scrollbar {
 
   /* Saffron pill badge */
   .badge-saffron {
-    background: #FFF0E8;
-    color: #F1641E;
-    border: 1px solid #F1641E22;
+    background: #ffffff;
+    color: #111111;
+    border: 1px solid rgba(17, 17, 17, 0.15);
     border-radius: 9999px;
     font-size: 0.7rem;
     font-weight: 700;
@@ -442,14 +471,14 @@ body::-webkit-scrollbar {
   /* Heritage card style */
   .card-heritage {
     background: #FFFFFF;
-    border: 1px solid #EDE0D4;
+    border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 1rem;
-    box-shadow: 0 2px 12px 0 rgba(44, 26, 14, 0.07);
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
     transition: box-shadow 0.3s ease, transform 0.3s ease;
   }
 
   .card-heritage:hover {
-    box-shadow: 0 8px 30px 0 rgba(44, 26, 14, 0.13);
+    box-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.1);
     transform: translateY(-3px);
   }
 

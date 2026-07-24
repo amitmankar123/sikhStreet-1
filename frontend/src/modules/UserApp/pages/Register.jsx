@@ -60,28 +60,39 @@ const MobileRegister = () => {
   return (
     <PageTransition>
       <MobileLayout showBottomNav={false} showCartBar={false}>
-        <div className="w-full min-h-screen flex items-start justify-center px-4 pt-6 pb-8">
+        <div className="w-full min-h-screen bg-white flex items-start justify-center px-4 pt-8 pb-12 relative overflow-hidden font-sans">
+          {/* Decorative Saffron Blurs */}
+          <div className="hidden" />
+          <div className="hidden" />
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="w-full max-w-md"
+            className="w-full max-w-md relative z-10"
           >
-            <div className="bg-white rounded-2xl p-6 shadow-sm">
-              {/* Header */}
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Get Started Now</h1>
-                <p className="text-sm text-gray-600">Create an account or log in to explore about our app</p>
+            <div className="bg-white border border-black/10 rounded-3xl p-6 shadow-sm">
+              {/* Logo & Header */}
+              <div className="text-center mb-6 flex flex-col items-center">
+                <div className="w-48 flex items-center justify-center mb-4">
+                  <img
+                    className="w-full h-auto object-contain mix-blend-multiply"
+                    alt="sikhSTREET logo"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_QtluDyTyyTERMfRfd830u3RcIkF7aJHRbM37FYnRFNCY01_N74tx3WAK0zGIr3PEXlqhIdcITnhHLXC5x87LHZKdO0BvuQbZI88UlL9d0hYbgyyGowhWYN-gBgtlmM2Rr0o6e4YSkF9e4x6vS7jZY4SqZ65AXuXlAHqSnNDUs613UTccW7ylV1CyRVm_9MFrt9ceJxGerEQ2cFT2rZUFNVaq3a900_TuKdoUrotAgb_cjLr3F4-CNsxx4qut7UFp75j3KGaXtxvHxG8"
+                  />
+                </div>
+                <h1 className="text-2xl font-black text-gray-900 font-serif tracking-wide" style={{ fontFamily: "\"Times New Roman\", Times, serif" }}>Get Started Now</h1>
+                <p className="text-xs text-black/80 mt-1">Create an account to join sikhSTREET</p>
               </div>
 
               {/* Sign Up / Log In Toggle */}
               <div className="mb-6">
-                <div className="flex bg-gray-100 rounded-lg p-1">
+                <div className="flex bg-black/5 rounded-lg p-1">
                   <button
                     type="button"
                     onClick={() => handleModeChange('signup')}
                     className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all duration-200 ${formMode === 'signup'
-                        ? 'bg-primary-500 text-white shadow-sm'
+                        ? 'bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white shadow-sm font-bold'
                         : 'text-gray-600 hover:text-gray-900'
                       }`}
                   >
@@ -91,7 +102,7 @@ const MobileRegister = () => {
                     type="button"
                     onClick={() => handleModeChange('login')}
                     className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all duration-200 ${formMode === 'login'
-                        ? 'bg-primary-500 text-white shadow-sm'
+                        ? 'bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white shadow-sm font-bold'
                         : 'text-gray-600 hover:text-gray-900'
                       }`}
                   >
@@ -118,9 +129,9 @@ const MobileRegister = () => {
                           message: 'First name must be at least 2 characters',
                         },
                       })}
-                      className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 ${errors.firstName
+                      className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 bg-white/50 backdrop-blur-sm ${errors.firstName
                           ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200 focus:border-primary-500'
+                          : 'border-gray-200/80 focus:border-[#F5A623]'
                         } focus:outline-none transition-colors text-base`}
                       placeholder="Raj"
                     />
@@ -146,9 +157,9 @@ const MobileRegister = () => {
                           message: 'Last name must be at least 2 characters',
                         },
                       })}
-                      className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 ${errors.lastName
+                      className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 bg-white/50 backdrop-blur-sm ${errors.lastName
                           ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200 focus:border-primary-500'
+                          : 'border-gray-200/80 focus:border-[#F5A623]'
                         } focus:outline-none transition-colors text-base`}
                       placeholder="Sarkar"
                     />
@@ -172,9 +183,9 @@ const MobileRegister = () => {
                         validate: (value) =>
                           isValidEmail(value) || 'Please enter a valid email',
                       })}
-                      className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 ${errors.email
+                      className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 bg-white/50 backdrop-blur-sm ${errors.email
                           ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200 focus:border-primary-500'
+                          : 'border-gray-200/80 focus:border-[#F5A623]'
                         } focus:outline-none transition-colors text-base`}
                       placeholder="sarkarraj0766@gmail.com"
                     />
@@ -192,7 +203,7 @@ const MobileRegister = () => {
                   <div className="flex gap-2">
                     <select
                       {...register('countryCode', { required: true })}
-                      className="w-24 px-3 py-3 rounded-xl border-2 border-gray-200 focus:border-primary-500 focus:outline-none text-sm"
+                      className="w-24 px-3 py-3 rounded-xl border-2 bg-white/50 border-gray-200/80 focus:border-[#F5A623] focus:outline-none text-sm font-semibold text-gray-700"
                     >
                       <option value="+880">+880</option>
                       <option value="+1">+1</option>
@@ -208,9 +219,9 @@ const MobileRegister = () => {
                           validate: (value) =>
                             isValidPhone(value) || 'Please enter a valid phone number',
                         })}
-                        className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 ${errors.phone
+                        className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 bg-white/50 backdrop-blur-sm ${errors.phone
                             ? 'border-red-300 focus:border-red-500'
-                            : 'border-gray-200 focus:border-primary-500'
+                            : 'border-gray-200/80 focus:border-[#F5A623]'
                           } focus:outline-none transition-colors text-base`}
                         placeholder="4547260592"
                       />
@@ -237,9 +248,9 @@ const MobileRegister = () => {
                           message: 'Password must be at least 6 characters',
                         },
                       })}
-                      className={`w-full pl-12 pr-12 py-3 rounded-xl border-2 ${errors.password
+                      className={`w-full pl-12 pr-12 py-3 rounded-xl border-2 bg-white/50 backdrop-blur-sm ${errors.password
                           ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200 focus:border-primary-500'
+                          : 'border-gray-200/80 focus:border-[#F5A623]'
                         } focus:outline-none transition-colors text-base`}
                       placeholder="Create a password"
                     />
@@ -260,7 +271,7 @@ const MobileRegister = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-primary-500 hover:bg-primary-600 text-white py-3.5 rounded-xl font-semibold text-base transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-black text-white hover:bg-[#F5A623] hover:text-black transition-colors text-white py-3.5 rounded-xl font-bold text-base transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Creating Account...' : 'Sign Up'}
                 </button>
@@ -272,7 +283,7 @@ const MobileRegister = () => {
                   Already have an account?{' '}
                   <Link
                     to="/login"
-                    className="text-primary-600 hover:text-primary-700 font-semibold"
+                    className="text-black hover:text-[#F5A623] font-semibold"
                   >
                     Sign In
                   </Link>

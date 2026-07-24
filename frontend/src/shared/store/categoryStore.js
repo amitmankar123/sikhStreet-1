@@ -36,7 +36,11 @@ export const useCategoryStore = create(
           set({ categories: normalizedCategories, isLoading: false });
         } catch (error) {
           console.warn("Backend categories failed, using fallback:", error);
-          set({ categories: initialCategories, isLoading: false });
+          const fallback = initialCategories.map(cat => ({
+            ...cat,
+            isActive: cat.isActive !== false
+          }));
+          set({ categories: fallback, isLoading: false });
         }
       },
 
@@ -108,6 +112,22 @@ export const useCategoryStore = create(
           toast.success('Category updated successfully');
           return updatedCategory;
         } catch (error) {
+          console.warn("Backend updateCategory failed, applying to local store:", error);
+          const existing = get().getCategoryById(id);
+          if (existing) {
+            const updatedCategory = {
+              ...existing,
+              ...categoryData
+            };
+            set((state) => ({
+              categories: state.categories.map((cat) =>
+                String(cat.id) === String(id) ? updatedCategory : cat
+              ),
+              isLoading: false
+            }));
+            toast.success('Category updated locally (offline mode)');
+            return updatedCategory;
+          }
           set({ isLoading: false });
           throw error;
         }

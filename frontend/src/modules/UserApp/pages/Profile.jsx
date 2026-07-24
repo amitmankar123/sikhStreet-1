@@ -121,7 +121,7 @@ const MobileProfile = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const isValidType = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type);
+    const isValidType = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'].includes(file.type);
     if (!isValidType) {
       toast.error('Only JPEG, PNG, WEBP and GIF images are allowed.');
       event.target.value = '';
@@ -144,15 +144,15 @@ const MobileProfile = () => {
   };
 
   const menuOptions = [
-    { id: 'personal', label: 'Personal Information', icon: FiUser, color: 'text-[#8d4b00]', bg: 'bg-[#fdeade]' },
-    { id: 'orders', label: 'My Orders', icon: FiPackage, color: 'text-[#8d4b00]', bg: 'bg-[#fdeade]', link: '/orders' },
-    { id: 'addresses', label: 'My Addresses', icon: FiMapPin, color: 'text-[#8d4b00]', bg: 'bg-[#fdeade]', link: '/addresses' },
+    { id: 'personal', label: 'Personal Information', icon: FiUser, color: 'text-black', bg: 'bg-white' },
+    { id: 'orders', label: 'My Orders', icon: FiPackage, color: 'text-black', bg: 'bg-white', link: '/orders' },
+    { id: 'addresses', label: 'My Addresses', icon: FiMapPin, color: 'text-black', bg: 'bg-white', link: '/addresses' },
     {
       id: 'notifications',
       label: 'Notifications',
       icon: FiBell,
-      color: 'text-[#8d4b00]',
-      bg: 'bg-[#fdeade]',
+      color: 'text-black',
+      bg: 'bg-white',
       link: '/notifications',
       badge: unreadNotificationCount > 0 ? unreadNotificationCount : null,
     },
@@ -160,43 +160,43 @@ const MobileProfile = () => {
       id: 'chats',
       label: 'Seller Messages',
       icon: FiMessageCircle,
-      color: 'text-[#8d4b00]',
-      bg: 'bg-[#fdeade]',
+      color: 'text-black',
+      bg: 'bg-white',
       link: '/chat',
       badge: unreadChatCount > 0 ? unreadChatCount : null,
     },
-    { id: 'password', label: 'Change Password', icon: FiLock, color: 'text-[#8d4b00]', bg: 'bg-[#fdeade]' },
+    { id: 'password', label: 'Change Password', icon: FiLock, color: 'text-black', bg: 'bg-white' },
   ];
 
   return (
     <PageTransition>
       <MobileLayout showBottomNav={true} showCartBar={true}>
-          <div className="w-full pb-24 lg:pb-12 max-w-7xl mx-auto min-h-screen bg-[#fff8f5]">
+          <div className="w-full pb-24 lg:pb-12 max-w-7xl mx-auto min-h-screen bg-white">
             {/* Desktop Header */}
             <div className="hidden lg:block px-4 py-8">
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => navigate(-1)}
-                  className="p-2 hover:bg-[#e9d7cb] rounded-full transition-colors bg-white shadow-sm border border-[#e9d7cb]"
+                  className="p-2 hover:bg-[#F5A623] hover:text-black rounded-full transition-colors bg-white shadow-sm border border-black/10"
                 >
-                  <FiArrowLeft className="text-xl text-[#554336]" />
+                  <FiArrowLeft className="text-xl text-black" />
                 </button>
                 <div>
-                  <h1 className="text-3xl font-bold text-[#231a13]">My Profile</h1>
-                  <p className="text-[#554336]/70 mt-1">Manage your personal information and security settings</p>
+                  <h1 className="text-3xl font-bold text-black">My Profile</h1>
+                  <p className="text-black/70 mt-1">Manage your personal information and security settings</p>
                 </div>
               </div>
             </div>
 
-            <div className="lg:hidden px-4 py-4 bg-white border-b border-[#e9d7cb] sticky top-0 z-30">
+            <div className="lg:hidden px-4 py-4 bg-white border-b border-black/10 sticky top-0 z-30">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => activeTab === 'menu' ? navigate(-1) : setActiveTab('menu')}
-                  className="p-2 hover:bg-[#fdeade] rounded-full transition-colors"
+                  className="p-2 hover:bg-white rounded-full transition-colors"
                 >
-                  <FiArrowLeft className="text-xl text-[#554336]" />
+                  <FiArrowLeft className="text-xl text-black" />
                 </button>
-                <h1 className="text-xl font-bold text-[#231a13]">
+                <h1 className="text-xl font-bold text-black">
                   {activeTab === 'menu' ? 'My Account' : activeTab === 'personal' ? 'Personal Info' : 'Security'}
                 </h1>
               </div>
@@ -205,28 +205,74 @@ const MobileProfile = () => {
             <div className="lg:grid lg:grid-cols-12 lg:gap-8 lg:px-4">
               {/* Desktop Sidebar */}
               <div className="hidden lg:block lg:col-span-3">
-                <div className="bg-white rounded-2xl border border-[#e9d7cb] overflow-hidden shadow-sm sticky top-24">
-                  <div className="p-2 space-y-1">
-                    <button
-                      onClick={() => setActiveTab('personal')}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium ${activeTab === 'personal'
-                        ? 'bg-[#fdeade] text-[#8d4b00]'
-                        : 'text-gray-600 hover:bg-[#fff8f5]'
-                        }`}
-                    >
-                      <FiUser className="text-lg" />
-                      Personal Info
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('password')}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left font-medium ${activeTab === 'password'
-                        ? 'bg-[#fdeade] text-[#8d4b00]'
-                        : 'text-gray-600 hover:bg-[#fff8f5]'
-                        }`}
-                    >
-                      <FiLock className="text-lg" />
-                      Password
-                    </button>
+                <div className="bg-white rounded-2xl border border-black/10 overflow-hidden shadow-sm sticky top-24">
+                  <div className="p-3 space-y-1">
+                    <p className="px-3 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Account Settings</p>
+                    {menuOptions.map((option) => {
+                      const isActive = activeTab === option.id;
+                      const Icon = option.icon;
+                      
+                      if (option.link) {
+                        return (
+                          <Link
+                            key={option.id}
+                            to={option.link}
+                            className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-left font-medium text-gray-600 hover:bg-white hover:text-[#F5A623] group"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-9 h-9 rounded-full ${option.bg} ${option.color} flex items-center justify-center`}>
+                                <Icon className="text-base" />
+                              </div>
+                              <span className="text-sm font-semibold text-gray-700 group-hover:text-[#F5A623]">{option.label}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {option.badge ? (
+                                <span className="min-w-[18px] h-4.5 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                                  {option.badge > 99 ? '99+' : option.badge}
+                                </span>
+                              ) : null}
+                              <FiChevronRight className="text-gray-400 text-xs" />
+                            </div>
+                          </Link>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={option.id}
+                          onClick={() => setActiveTab(option.id)}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-left font-medium group ${
+                            isActive
+                              ? 'bg-white text-black'
+                              : 'text-gray-600 hover:bg-white hover:text-[#F5A623]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-full ${option.bg} ${isActive ? 'text-black' : option.color} flex items-center justify-center`}>
+                              <Icon className="text-base" />
+                            </div>
+                            <span className={`text-sm font-semibold ${isActive ? 'text-black' : 'text-gray-700 group-hover:text-[#F5A623]'}`}>{option.label}</span>
+                          </div>
+                          <FiChevronRight className={`text-xs ${isActive ? 'text-black' : 'text-gray-400'}`} />
+                        </button>
+                      );
+                    })}
+                    
+                    {/* Divider */}
+                    <div className="border-t border-black/10 my-2 pt-2">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-left font-medium text-black hover:bg-[#F5A623] hover:text-black group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-black/5 text-black flex items-center justify-center group-hover:bg-black/10">
+                            <FiLogOut className="text-base" />
+                          </div>
+                          <span className="text-sm font-semibold text-gray-700 group-hover:text-black">Sign Out</span>
+                        </div>
+                        <FiChevronRight className="text-gray-400 text-xs group-hover:text-black" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -257,12 +303,12 @@ const MobileProfile = () => {
                           user?.name?.charAt(0).toUpperCase() || 'U'
                         )}
                       </div>
-                      <h2 className="text-xl font-extrabold text-[#231a13] mb-1">{user?.name}</h2>
-                      <p className="text-[#554336]/70 text-sm mb-4 font-medium">{user?.email}</p>
+                      <h2 className="text-xl font-extrabold text-black mb-1">{user?.name}</h2>
+                      <p className="text-black/70 text-sm mb-4 font-medium">{user?.email}</p>
                       <div className="flex gap-2 w-full">
                         <button
                           onClick={() => setActiveTab('personal')}
-                          className="flex-1 py-3 rounded-xl bg-[#fdeade] text-[#8d4b00] font-bold text-sm border border-[#e9d7cb]"
+                          className="flex-1 py-3 rounded-xl bg-white text-black font-bold text-sm border border-black/10"
                         >
                           View Profile
                         </button>
@@ -272,19 +318,19 @@ const MobileProfile = () => {
                     {/* Menu Options */}
                     <div className="space-y-3">
                       <p className="px-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Account Settings</p>
-                      <div className="glass-card rounded-2xl overflow-hidden divide-y divide-gray-50 shadow-sm border border-[#e9d7cb]">
+                      <div className="glass-card rounded-2xl overflow-hidden divide-y divide-gray-50 shadow-sm border border-black/10">
                         {menuOptions.map((option) => (
                           option.link ? (
                             <Link
                               key={option.id}
                               to={option.link}
-                              className="w-full flex items-center justify-between p-4 hover:bg-[#fff8f5] transition-colors bg-white"
+                              className="w-full flex items-center justify-between p-4 hover:bg-white transition-colors bg-white"
                             >
                               <div className="flex items-center gap-4">
                                 <div className={`w-10 h-10 rounded-xl ${option.bg} ${option.color} flex items-center justify-center`}>
                                   <option.icon className="text-lg" />
                                 </div>
-                                <span className="font-bold text-[#554336] text-sm">{option.label}</span>
+                                <span className="font-bold text-black text-sm">{option.label}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 {option.badge ? (
@@ -299,13 +345,13 @@ const MobileProfile = () => {
                             <button
                               key={option.id}
                               onClick={() => setActiveTab(option.id)}
-                              className="w-full flex items-center justify-between p-4 hover:bg-[#fff8f5] transition-colors bg-white"
+                              className="w-full flex items-center justify-between p-4 hover:bg-white transition-colors bg-white"
                             >
                               <div className="flex items-center gap-4">
                                 <div className={`w-10 h-10 rounded-xl ${option.bg} ${option.color} flex items-center justify-center`}>
                                   <option.icon className="text-lg" />
                                 </div>
-                                <span className="font-bold text-[#554336] text-sm">{option.label}</span>
+                                <span className="font-bold text-black text-sm">{option.label}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 {option.badge ? (
@@ -325,7 +371,7 @@ const MobileProfile = () => {
                     <div className="pt-2">
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center justify-center gap-3 p-4 glass-card rounded-2xl text-red-600 font-bold text-sm shadow-sm border border-red-50 hover:bg-red-50 transition-colors bg-white"
+                        className="w-full flex items-center justify-center gap-3 p-4 glass-card rounded-2xl text-black font-bold text-sm shadow-sm border border-black/10 hover:bg-[#F5A623] hover:text-black transition-colors bg-white"
                       >
                         <FiLogOut className="text-lg" />
                         <span>Sign Out</span>
@@ -361,7 +407,7 @@ const MobileProfile = () => {
                         <input
                           ref={avatarInputRef}
                           type="file"
-                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          accept="image/jpeg,image/png,image/webp,image/gif,image/avif,.avif"
                           onChange={handleAvatarChange}
                           className="hidden"
                         />
@@ -369,20 +415,20 @@ const MobileProfile = () => {
                           type="button"
                           onClick={handleAvatarPick}
                           disabled={isLoading}
-                          className="absolute bottom-0 right-0 w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white hover:bg-primary-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                          className="absolute bottom-0 right-0 w-8 h-8 bg-black rounded-full flex items-center justify-center text-white hover:bg-[#F5A623] hover:text-black transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           <FiCamera className="text-sm" />
                         </button>
                       </div>
                       <div>
                         <p className="text-gray-600 text-sm mb-1">Profile Picture</p>
-                        <p className="text-xs text-[#554336]/70">JPG, PNG or GIF. Max size 5MB</p>
+                        <p className="text-xs text-black/70">JPG, PNG or GIF. Max size 5MB</p>
                       </div>
                     </div>
 
                     <form onSubmit={handleSubmitPersonal(onPersonalSubmit)} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-semibold text-[#554336] mb-2">
+                        <label className="block text-sm font-semibold text-black mb-2">
                           Full Name
                         </label>
                         <div className="relative">
@@ -398,7 +444,7 @@ const MobileProfile = () => {
                             })}
                             className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 ${personalErrors.name
                               ? 'border-red-300 focus:border-red-500'
-                              : 'border-[#e9d7cb] focus:border-[#8d4b00]'
+                              : 'border-black/10 focus:border-[#F5A623]'
                               } focus:outline-none transition-colors text-base`}
                             placeholder="Your full name"
                           />
@@ -418,7 +464,7 @@ const MobileProfile = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-[#554336] mb-2">
+                        <label className="block text-sm font-semibold text-black mb-2">
                           Email Address
                         </label>
                         <div className="relative">
@@ -433,12 +479,12 @@ const MobileProfile = () => {
                             readOnly
                             className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 ${personalErrors.email
                               ? 'border-red-300 focus:border-red-500'
-                              : 'border-[#e9d7cb] focus:border-[#8d4b00]'
-                              } focus:outline-none transition-colors text-base bg-[#fff8f5] text-[#554336]/70 cursor-not-allowed`}
+                              : 'border-black/10 focus:border-[#F5A623]'
+                              } focus:outline-none transition-colors text-base bg-white text-black/70 cursor-not-allowed`}
                             placeholder="your.email@example.com"
                           />
                         </div>
-                        <p className="mt-1 text-xs text-[#554336]/70">
+                        <p className="mt-1 text-xs text-black/70">
                           Email cannot be changed from profile settings.
                         </p>
                         <AnimatePresence>
@@ -456,7 +502,7 @@ const MobileProfile = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-[#554336] mb-2">
+                        <label className="block text-sm font-semibold text-black mb-2">
                           Phone Number
                         </label>
                         <div className="relative">
@@ -469,7 +515,7 @@ const MobileProfile = () => {
                             })}
                             className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 ${personalErrors.phone
                               ? 'border-red-300 focus:border-red-500'
-                              : 'border-[#e9d7cb] focus:border-[#8d4b00]'
+                              : 'border-black/10 focus:border-[#F5A623]'
                               } focus:outline-none transition-colors text-base`}
                             placeholder="1234567890"
                           />
@@ -491,7 +537,7 @@ const MobileProfile = () => {
                       <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-[#f2dfd3] text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-glow-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
                       >
                         <FiSave />
                         {isLoading ? 'Saving...' : 'Save Changes'}
@@ -510,11 +556,11 @@ const MobileProfile = () => {
                     transition={{ duration: 0.2 }}
                     className="glass-card rounded-2xl p-4 lg:p-8"
                   >
-                    <h2 className="text-lg font-bold text-[#231a13] mb-4">Change Password</h2>
+                    <h2 className="text-lg font-bold text-black mb-4">Change Password</h2>
 
                     <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-semibold text-[#554336] mb-2">
+                        <label className="block text-sm font-semibold text-black mb-2">
                           Current Password
                         </label>
                         <div className="relative">
@@ -526,7 +572,7 @@ const MobileProfile = () => {
                             })}
                             className={`w-full pl-12 pr-12 py-3 rounded-xl border-2 ${passwordErrors.currentPassword
                               ? 'border-red-300 focus:border-red-500'
-                              : 'border-[#e9d7cb] focus:border-[#8d4b00]'
+                              : 'border-black/10 focus:border-[#F5A623]'
                               } focus:outline-none transition-colors text-sm sm:text-base`}
                             placeholder="Current Password"
                           />
@@ -546,7 +592,7 @@ const MobileProfile = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-[#554336] mb-2">
+                        <label className="block text-sm font-semibold text-black mb-2">
                           New Password
                         </label>
                         <div className="relative">
@@ -562,7 +608,7 @@ const MobileProfile = () => {
                             })}
                             className={`w-full pl-12 pr-12 py-3 rounded-xl border-2 ${passwordErrors.newPassword
                               ? 'border-red-300 focus:border-red-500'
-                              : 'border-[#e9d7cb] focus:border-[#8d4b00]'
+                              : 'border-black/10 focus:border-[#F5A623]'
                               } focus:outline-none transition-colors text-sm sm:text-base`}
                             placeholder="New Password"
                           />
@@ -587,7 +633,7 @@ const MobileProfile = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-semibold text-[#554336] mb-2">
+                        <label className="block text-sm font-semibold text-black mb-2">
                           Confirm New Password
                         </label>
                         <div className="relative">
@@ -601,7 +647,7 @@ const MobileProfile = () => {
                             })}
                             className={`w-full pl-12 pr-12 py-3 rounded-xl border-2 ${passwordErrors.confirmPassword
                               ? 'border-red-300 focus:border-red-500'
-                              : 'border-[#e9d7cb] focus:border-[#8d4b00]'
+                              : 'border-black/10 focus:border-[#F5A623]'
                               } focus:outline-none transition-colors text-sm sm:text-base`}
                             placeholder="Confirm Password"
                           />
@@ -623,7 +669,7 @@ const MobileProfile = () => {
                       <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-[#f2dfd3] text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-glow-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
                       >
                         <FiSave />
                         {isLoading ? 'Changing Password...' : 'Change Password'}

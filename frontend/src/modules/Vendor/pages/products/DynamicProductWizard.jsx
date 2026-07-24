@@ -315,7 +315,7 @@ const TurbanColorPanel = ({ colors = [], colorHexMap = {}, imageMap = {}, onChan
           ) : (
             <label className="flex-1 flex items-center justify-center border border-dashed border-indigo-300 rounded-lg cursor-pointer hover:bg-indigo-50 text-[10px] font-bold py-2 px-1 bg-white text-indigo-750">
               {isUploading ? "Uploading..." : "Upload Photo"}
-              <input type="file" onChange={handlePhotoUpload} className="hidden" accept="image/*" />
+              <input type="file" onChange={handlePhotoUpload} className="hidden" accept="image/*, image/avif, .avif" />
             </label>
           )}
         </div>
@@ -374,6 +374,8 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
     video: "",
     categoryId: null,
     subcategoryId: null,
+    topicId: null,
+    topic: "",
     brandId: null,
     stock: "in_stock",
     stockQuantity: "",
@@ -449,6 +451,8 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
               video: product.video || "",
               categoryId: product.categoryId?.id || product.categoryId?._id || product.categoryId || null,
               subcategoryId: product.subcategoryId?.id || product.subcategoryId?._id || product.subcategoryId || null,
+              topicId: product.topicId || null,
+              topic: product.topic || "",
               brandId: product.brandId?.id || product.brandId?._id || product.brandId || null,
               stock: product.stock || "in_stock",
               stockQuantity: product.stockQuantity || "",
@@ -511,22 +515,38 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
     }
   }, [isEdit, productId]);
 
-  // Resolve parent and subcategory from DB categoryId once categories load
+  // Resolve parent, subcategory and topic from DB categoryId once categories load
   useEffect(() => {
-    if (categories && categories.length > 0 && formData.categoryId && !formData.subcategoryId) {
+    if (categories && categories.length > 0 && formData.categoryId && !formData.subcategoryId && !formData.topicId) {
       const matchedCat = categories.find(c => String(c.id || c._id) === String(formData.categoryId));
       if (matchedCat && matchedCat.parentId) {
-        const parentId = typeof matchedCat.parentId === 'object'
+        const pId = typeof matchedCat.parentId === 'object'
           ? (matchedCat.parentId.id || matchedCat.parentId._id)
           : matchedCat.parentId;
-        setFormData(prev => ({
-          ...prev,
-          categoryId: parentId,
-          subcategoryId: prev.categoryId
-        }));
+        const parentCat = categories.find(c => String(c.id || c._id) === String(pId));
+        const gpId = parentCat && parentCat.parentId
+          ? (typeof parentCat.parentId === 'object' ? (parentCat.parentId.id || parentCat.parentId._id) : parentCat.parentId)
+          : null;
+        if (gpId) {
+          // 3-level
+          setFormData(prev => ({
+            ...prev,
+            categoryId: gpId,
+            subcategoryId: pId,
+            topicId: prev.categoryId,
+            topic: matchedCat.name
+          }));
+        } else {
+          // 2-level
+          setFormData(prev => ({
+            ...prev,
+            categoryId: pId,
+            subcategoryId: prev.categoryId
+          }));
+        }
       }
     }
-  }, [categories, formData.categoryId, formData.subcategoryId]);
+  }, [categories, formData.categoryId, formData.subcategoryId, formData.topicId]);
 
   // Industry detection helpers
   const isTurban = useMemo(() => {
@@ -631,12 +651,18 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
         return;
       }
       // Check if this category has subcategories
-      const hasSubs = categories.some(cat => String(cat.parentId || "") === String(formData.categoryId));
+      const getPid = (cat) => {
+        if (!cat || !cat.parentId) return "";
+        if (typeof cat.parentId === 'object') return String(cat.parentId.id || cat.parentId._id || "");
+        return String(cat.parentId);
+      };
+      const hasSubs = categories.some(cat => getPid(cat) === String(formData.categoryId) && cat.isActive !== false);
       if (hasSubs && !formData.subcategoryId) {
         toast.error("Please select subcategory");
         return;
       }
     }
+
     if (activeStep === "basic_info") {
       if (!formData.name.trim()) { toast.error("Product name is required"); return; }
       if (!formData.image) { toast.error("Main product image is required"); return; }
@@ -707,12 +733,10 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
         price: Number(formData.price),
         originalPrice: formData.originalPrice ? Number(formData.originalPrice) : undefined,
         unit: formData.unit || "Piece",
-        categoryId: typeof formData.categoryId === 'object' && formData.categoryId !== null
-          ? (formData.categoryId.id || formData.categoryId._id)
-          : formData.categoryId,
-        subcategoryId: (typeof formData.subcategoryId === 'object' && formData.subcategoryId !== null
-          ? (formData.subcategoryId.id || formData.subcategoryId._id)
-          : formData.subcategoryId) || undefined,
+        categoryId: formData.topicId ?? formData.subcategoryId ?? formData.categoryId,
+        subcategoryId: formData.subcategoryId || undefined,
+        topicId: formData.topicId || undefined,
+        topic: formData.topic || undefined,
         brandId: (typeof formData.brandId === 'object' && formData.brandId !== null
           ? (formData.brandId.id || formData.brandId._id)
           : formData.brandId) || undefined,
@@ -911,7 +935,7 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
                         <label className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
                           <FiUpload className="w-6 h-6 text-gray-400" />
                           <span className="text-[10px] text-gray-500 mt-1 font-bold">Upload</span>
-                          <input type="file" onChange={handleImageUpload} className="hidden" accept="image/*" />
+                          <input type="file" onChange={handleImageUpload} className="hidden" accept="image/*, image/avif, .avif" />
                         </label>
                       )}
                       <p className="text-xs text-gray-400 leading-relaxed">
@@ -940,7 +964,7 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
                       <label className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
                         <FiUpload className="w-4 h-4 text-gray-400" />
                         <span className="text-[9px] text-gray-500 font-bold">Add</span>
-                        <input type="file" multiple onChange={handleGalleryUpload} className="hidden" accept="image/*" />
+                        <input type="file" multiple onChange={handleGalleryUpload} className="hidden" accept="image/*, image/avif, .avif" />
                       </label>
                     </div>
                   </div>

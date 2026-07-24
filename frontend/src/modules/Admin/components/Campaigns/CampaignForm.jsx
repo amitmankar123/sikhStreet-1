@@ -982,7 +982,7 @@ const CampaignForm = ({ campaign, onClose, onSave }) => {
                             <div className="relative">
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/*, image/avif, .avif"
                                 onChange={handleBannerImageUpload}
                                 className="hidden"
                                 id="banner-image-upload"

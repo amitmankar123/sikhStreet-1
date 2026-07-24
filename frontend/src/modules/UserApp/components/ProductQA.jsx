@@ -67,9 +67,9 @@ const ProductQA = ({ productId }) => {
   }
 
   return (
-    <div className="mt-12 mb-8" id="qa-section">
-      <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-        <FiMessageSquare className="text-brand-saffron" /> Community Q&A
+    <div className="mt-4 mb-4" id="qa-section">
+      <h3 className="text-xl lg:text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <FiMessageSquare className="text-[#F5A623]" /> Community Q&A
       </h3>
 
       {isAuthenticated ? (
@@ -104,7 +104,7 @@ const ProductQA = ({ productId }) => {
             <div key={q._id} className="border-b border-gray-100 pb-6 last:border-0">
               <div className="mb-3">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-brand-saffronLight text-brand-saffron flex items-center justify-center font-bold text-sm shrink-0 mt-1">
+                  <div className="w-8 h-8 rounded-full bg-blackLight text-[#F5A623] flex items-center justify-center font-bold text-sm shrink-0 mt-1">
                     Q
                   </div>
                   <div>
@@ -135,7 +135,7 @@ const ProductQA = ({ productId }) => {
                 {isAuthenticated && answeringId !== q._id && (
                   <button
                     onClick={() => setAnsweringId(q._id)}
-                    className="text-xs font-semibold text-brand-saffron hover:text-brand-saffronDark underline"
+                    className="text-xs font-semibold text-[#F5A623] hover:text-[#F5A623]Dark underline"
                   >
                     Add an answer
                   </button>
@@ -154,7 +154,7 @@ const ProductQA = ({ productId }) => {
                     <button
                       type="submit"
                       disabled={!newAnswer.trim()}
-                      className="px-4 py-2 bg-brand-saffron text-white rounded-md font-semibold text-xs hover:bg-brand-saffronDark transition-colors disabled:opacity-50"
+                      className="px-4 py-2 bg-black text-white rounded-md font-semibold text-xs hover:bg-blackDark transition-colors disabled:opacity-50"
                     >
                       Submit
                     </button>

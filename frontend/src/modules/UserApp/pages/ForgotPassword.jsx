@@ -32,7 +32,7 @@ const MobileForgotPassword = () => {
 
     try {
       await forgotPassword(email.trim().toLowerCase());
-      toast.success('If the email exists, reset OTP has been sent.');
+      // toast.success('If the email exists, reset OTP has been sent.');
       setStep('verify');
     } catch (error) {
       const message = String(
@@ -124,7 +124,7 @@ const MobileForgotPassword = () => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="your.email@example.com"
-                        className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-primary-500 focus:outline-none transition-colors text-base"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-[#F5A623] focus:outline-none transition-colors text-base"
                         required
                       />
                     </div>
@@ -132,7 +132,7 @@ const MobileForgotPassword = () => {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-primary-500 hover:bg-primary-600 text-white py-3.5 rounded-xl font-semibold text-base transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white py-3.5 rounded-xl font-semibold text-base transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? 'Sending OTP...' : 'Send OTP'}
                   </button>
@@ -151,7 +151,7 @@ const MobileForgotPassword = () => {
                         onChange={(e) => handleCodeChange(index, e.target.value)}
                         onKeyDown={(e) => handleKeyDown(index, e)}
                         onPaste={index === 0 ? handlePaste : undefined}
-                        className="w-11 h-11 text-center text-lg font-bold bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-primary-500 text-gray-800"
+                        className="w-11 h-11 text-center text-lg font-bold bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#F5A623] text-gray-800"
                       />
                     ))}
                   </div>
@@ -161,7 +161,7 @@ const MobileForgotPassword = () => {
                       type="button"
                       onClick={handleRequestOtp}
                       disabled={isLoading}
-                      className="text-sm text-primary-600 hover:text-primary-700 font-medium disabled:text-gray-400 inline-flex items-center gap-2"
+                      className="text-sm text-black hover:text-[#F5A623] font-medium disabled:text-gray-400 inline-flex items-center gap-2"
                     >
                       <FiRefreshCw />
                       Resend OTP
@@ -178,7 +178,7 @@ const MobileForgotPassword = () => {
                   <button
                     type="submit"
                     disabled={isLoading || codes.some((c) => !c)}
-                    className="w-full bg-primary-500 hover:bg-primary-600 text-white py-3.5 rounded-xl font-semibold text-base transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white py-3.5 rounded-xl font-semibold text-base transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isLoading ? 'Verifying...' : <><FiCheck /> Verify OTP</>}
                   </button>

@@ -68,8 +68,8 @@ const LocalStores = () => {
                 Showing allocated shops for
               </span>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-brand-saffron/20 flex items-center justify-center">
-                  <FiMapPin className="text-brand-saffron" />
+                <div className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
+                  <FiMapPin className="text-[#F5A623]" />
                 </div>
                 <h2 className="text-2xl font-bold font-heading text-white truncate">
                   {locationHeading}

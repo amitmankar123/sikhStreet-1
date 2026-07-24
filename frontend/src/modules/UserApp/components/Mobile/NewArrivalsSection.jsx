@@ -169,8 +169,8 @@ const NewArrivalsSection = ({ products = null }) => {
                         <span className="text-white text-xs md:text-sm font-bold truncate drop-shadow-md">
                           {product.name}
                         </span>
-                        <span className="text-brand-saffron text-xs font-bold">
-                          ₹{product.price}
+                        <span className="text-[#F5A623] text-xs font-bold">
+                          ${product.price}
                         </span>
                       </div>
                     </div>

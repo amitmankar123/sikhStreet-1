@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { FiCheck } from "react-icons/fi";
+import { FiCheck, FiChevronDown } from "react-icons/fi";
 import { formatPrice } from "../../utils/helpers";
 import KadaMeasurementTool from "./KadaMeasurementTool";
 import { getVariantSignature, resolveVariantPrice } from "../../utils/variant";
@@ -22,30 +22,12 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
   const [isMeasurementToolOpen, setIsMeasurementToolOpen] = useState(false);
 
   const handleKadaSizeConfirm = (recommendedSize) => {
-    // Try to auto-select the best match for the recommended size
     const sizeAxis = axes.find(a => a.key === 'size' || a.key === 'sizes');
     if (sizeAxis) {
-      let match = null;
-      // Try exact match with the inner size first (e.g., "2.6")
-      match = sizeAxis.values.find(v => String(v) === recommendedSize.inner);
-
-      if (!match) {
-        // Try fuzzy match with the letter size (e.g., "Medium", "M")
-        match = sizeAxis.values.find(v => {
-          const s = String(v).toLowerCase();
-          const target = recommendedSize.size.toLowerCase();
-          return s === target || s === target[0];
-        });
-      }
-
-      if (!match && sizeAxis.values.length > 0) {
-        // If no match but there are sizes, just pick the first one and let them adjust
-        match = sizeAxis.values[0];
-      }
-
-      if (match) {
-        handleOptionSelect(sizeAxis.key, match);
-      }
+      setSelectedVariant((prev) => ({
+        ...(prev || {}),
+        [sizeAxis.key]: recommendedSize.inner,
+      }));
     }
     setIsMeasurementToolOpen(false);
   };
@@ -57,19 +39,29 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
         .map((attr) => ({
           label: String(attr?.name || "").trim(),
           key: normalizeAxisName(attr?.name),
-          values: Array.isArray(attr?.values) ? attr.values : [],
+          values: Array.isArray(attr?.values) ? [...attr.values] : [],
         }))
         .filter((attr) => attr.label && attr.key && attr.values.length > 0)
       : [];
-    if (dynamicAxes.length) return dynamicAxes;
 
     const fallback = [];
     const sizes = Array.isArray(variants?.sizes) ? variants.sizes : [];
     const colors = Array.isArray(variants?.colors) ? variants.colors : [];
-    if (sizes.length) fallback.push({ label: "Size", key: "size", values: sizes });
-    if (colors.length) fallback.push({ label: "Color", key: "color", values: colors });
-    return fallback;
-  }, [variants]);
+    if (sizes.length) fallback.push({ label: "Size", key: "size", values: [...sizes] });
+    if (colors.length) fallback.push({ label: "Color", key: "color", values: [...colors] });
+
+    const resolved = dynamicAxes.length ? dynamicAxes : fallback;
+
+    // Check if the currently selected variant value is missing from the values, and add it
+    resolved.forEach(axis => {
+      const selectedValue = selectedVariant?.[axis.key];
+      if (selectedValue && !axis.values.includes(selectedValue)) {
+        axis.values.push(selectedValue);
+      }
+    });
+
+    return resolved;
+  }, [variants, selectedVariant]);
 
   const getVariantStockValue = (selection) => {
     const entries = toEntries(variants?.stockMap);
@@ -113,8 +105,14 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
 
       if (selected) nextSelection[axis.key] = selected;
     });
-    setSelectedVariant(nextSelection);
-  }, [axes, variants]);
+
+    const isSelectionChanged = Object.keys(nextSelection).length !== Object.keys(selectedVariant || {}).length ||
+      Object.keys(nextSelection).some((k) => nextSelection[k] !== selectedVariant?.[k]);
+
+    if (isSelectionChanged) {
+      setSelectedVariant(nextSelection);
+    }
+  }, [axes, variants, selectedVariant]);
 
   useEffect(() => {
     onVariantChange?.(selectedVariant || {});
@@ -127,7 +125,11 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
       const isSame = String(prev?.[axisKey] || "") === String(value || "");
       const next = { ...(prev || {}) };
       if (isSame) {
-        delete next[axisKey];
+        if (useDropdowns) {
+          next[axisKey] = value;
+        } else {
+          delete next[axisKey];
+        }
       } else {
         next[axisKey] = value;
       }
@@ -150,45 +152,52 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
       {axes.map((axis) => (
         <div key={axis.key}>
 
-          <div className="flex items-center gap-4 mb-3 flex-wrap">
-            <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <span>{axis.label}:</span>
-              <span className="font-normal text-gray-600">
-                {selectedVariant?.[axis.key] || `Select ${axis.label.toLowerCase()}`}
-              </span>
-              {isKada && (axis.key === 'size' || axis.key === 'sizes') && (
-                <button
-                  type="button"
-                  onClick={() => setIsMeasurementToolOpen(true)}
-                  className="ml-2 text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 bg-primary-50 px-2 py-1.5 rounded-lg border border-primary-100 transition-colors shadow-sm"
-                >
-                  📏 Measure Size
-                </button>
-              )}
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
+            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">
+              {axis.label}
             </label>
+            {selectedVariant?.[axis.key] && (
+              <span className="text-xs font-bold text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-full border border-gray-200">
+                {selectedVariant[axis.key]}
+              </span>
+            )}
+            {isKada && (axis.key === 'size' || axis.key === 'sizes') && (
+              <button
+                type="button"
+                onClick={() => setIsMeasurementToolOpen(true)}
+                className="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 bg-primary-50 px-2 py-1 rounded-lg border border-primary-100 transition-colors"
+              >
+                📏 Measure Size
+              </button>
+            )}
           </div>
 
           <div className="w-full">
             {useDropdowns ? (
-              <select
-                value={selectedVariant?.[axis.key] || ""}
-                onChange={(e) => handleOptionSelect(axis.key, e.target.value)}
-                className="w-full max-w-md px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-xs font-semibold text-gray-700 shadow-sm transition-all"
-              >
-                <option value="">{`Select ${axis.label}...`}</option>
-                {axis.values.map((option) => {
-                  const isAvailable = isOptionAvailable(axis.key, option);
-                  return (
-                    <option
-                      key={`${axis.key}-${option}`}
-                      value={option}
-                      disabled={!isAvailable}
-                    >
-                      {option} {!isAvailable ? "(Unavailable)" : ""}
-                    </option>
-                  );
-                })}
-              </select>
+              <div className="relative">
+                <select
+                  value={selectedVariant?.[axis.key] || ""}
+                  onChange={(e) => handleOptionSelect(axis.key, e.target.value)}
+                  className="w-full px-4 py-3.5 bg-white border-2 border-gray-200 rounded-2xl text-sm font-semibold text-gray-900 appearance-none focus:outline-none focus:border-gray-900 focus:shadow-[0_0_0_3px_rgba(17,24,39,0.08)] cursor-pointer shadow-sm hover:border-gray-400 transition-all"
+                >
+                  <option value="">Select {axis.label}...</option>
+                  {axis.values.map((option) => {
+                    const isAvailable = isOptionAvailable(axis.key, option);
+                    return (
+                      <option
+                        key={`${axis.key}-${option}`}
+                        value={option}
+                        disabled={!isAvailable}
+                      >
+                        {option} {!isAvailable ? "(Unavailable)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                  <FiChevronDown className="text-gray-500 text-base" />
+                </div>
+              </div>
             ) : (
               <div className="flex flex-wrap gap-3">
                 {axis.values.map((option) => {
@@ -230,7 +239,7 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
                           <span className="text-xs">{option}</span>
                           {optionPrice !== undefined && optionPrice !== "" && (
                             <span className="text-[10px] text-gray-500 font-normal">
-                              ₹{Number(optionPrice).toLocaleString('en-IN')}
+                              ${Number(optionPrice).toLocaleString('en-US')}
                             </span>
                           )}
                         </div>
@@ -283,6 +292,7 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
           isOpen={isMeasurementToolOpen}
           onClose={() => setIsMeasurementToolOpen(false)}
           onConfirm={handleKadaSizeConfirm}
+          availableSizes={axes.find(a => a.key === 'size' || a.key === 'sizes')?.values || []}
         />
       )}
     </div>

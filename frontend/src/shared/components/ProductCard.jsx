@@ -170,45 +170,39 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
   return (
     <>
       <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
         whileTap={{ scale: 0.98 }}
         whileHover={{ y: -4 }}
         style={{ willChange: "transform", transform: "translateZ(0)" }}
-        className={`bg-brand-surface rounded-2xl overflow-hidden group cursor-pointer h-full flex flex-col border transition-all duration-300 ${
-          isFlashSale
-            ? "border-orange-200 hover:shadow-saffron"
-            : "border-brand-border hover:shadow-card-hover"
-        } shadow-card glass-animated-pulse`}
+        className="bg-transparent group cursor-pointer h-full flex flex-col justify-between"
         {...longPressHandlers}>
-        <div className="relative aspect-square w-full overflow-hidden rounded-t-2xl">
+        <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-50">
           {/* Favorite Icon */}
-          <div className={`absolute top-2 right-2 z-10 transition-opacity duration-300 ${isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+          <div className="absolute top-2 right-2 z-10">
             <button
               onClick={handleFavorite}
-              className="p-2 bg-white/95 rounded-full shadow-md transition-all duration-300 hover:scale-110 flex items-center justify-center">
+              className="w-7 h-7 bg-white/90 rounded-full shadow flex items-center justify-center hover:scale-110 active:scale-95 transition-all text-neutral-600 hover:text-red-500">
               <FiHeart
-                className={`text-sm md:text-base transition-all duration-300 ${
-                  isFavorite
-                    ? "text-brand-saffron fill-brand-saffron scale-110"
-                    : "text-brand-muted hover:text-brand-saffron"
-                }`}
+                className={`w-3.5 h-3.5 transition-all duration-300 ${isFavorite
+                    ? "text-red-500 fill-red-500 scale-110"
+                    : "text-neutral-600 hover:text-red-500"
+                  }`}
               />
             </button>
           </div>
 
           {/* Discount Badge */}
           {product.originalPrice > 0 && (
-            <div className={`absolute top-2 left-2 text-white text-[8px] md:text-[10px] font-extrabold px-2 py-0.5 rounded-full z-10 shadow-sm ${
-              isFlashSale
-                ? "bg-gradient-to-r from-red-600 to-orange-500"
-                : "bg-brand-sale"
-            }`}>
+            <div className="absolute top-2 left-2 bg-black text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm">
               {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
             </div>
           )}
 
           {/* New Badge */}
           {product.isNew && !product.originalPrice && (
-            <div className="absolute top-2 left-2 text-white text-[8px] md:text-[10px] font-extrabold px-2 py-0.5 rounded-full z-10 shadow-sm bg-brand-gold">
+            <div className="absolute top-2 left-2 bg-[#F5A623] text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full z-10 shadow-sm">
               NEW
             </div>
           )}
@@ -218,7 +212,7 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
             <LazyImage
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-106 transition-transform duration-500"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
               style={{ willChange: "transform", transform: "translateZ(0)" }}
               onError={(e) => {
                 e.target.src = getPlaceholderImage(300, 300, "Product Image");
@@ -228,22 +222,27 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
         </div>
 
         {/* Product Info */}
-        <div className="p-2.5 md:p-3 flex-1 flex flex-col bg-brand-surface">
-          <Link to={productLink} className="block mb-1.5">
-            <h3 className="font-semibold text-brand-navy line-clamp-2 text-sm md:text-sm leading-snug transition-colors group-hover:text-brand-saffron" style={{ fontFamily: "'Lora', Georgia, serif" }}>
+        <div className="pt-2 text-left flex flex-col justify-between flex-1 bg-transparent">
+          <Link to={productLink} className="block mb-1">
+            <span className="text-[11px] sm:text-xs md:text-sm font-normal text-neutral-800 hover:underline line-clamp-2 block leading-snug">
               {product.name}
-            </h3>
+            </span>
           </Link>
 
           {/* Price */}
-          <div className="flex items-center gap-1.5 mt-auto flex-wrap">
-            <span className="text-sm md:text-base font-bold text-brand-saffron">
+          <div className="flex items-baseline gap-1 mt-auto flex-wrap">
+            <span className="text-xs sm:text-sm md:text-base font-bold text-neutral-900">
               {formatPrice(product.price)}
             </span>
             {product.originalPrice > 0 && (
-              <span className="text-xs text-brand-subtle line-through font-medium">
-                {formatPrice(product.originalPrice)}
-              </span>
+              <>
+                <span className="text-[10px] sm:text-xs text-neutral-400 line-through">
+                  {formatPrice(product.originalPrice)}
+                </span>
+                <span className="text-[9px] sm:text-[10px] font-bold text-red-600">
+                  ({Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF)
+                </span>
+              </>
             )}
           </div>
         </div>

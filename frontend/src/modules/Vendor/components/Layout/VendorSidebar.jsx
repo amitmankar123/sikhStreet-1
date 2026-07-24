@@ -182,7 +182,7 @@ const VendorSidebar = ({ isOpen, onClose }) => {
             group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 cursor-pointer border border-transparent
             ${
               active
-                ? "bg-vendor-accent/10 text-vendor-accent border-vendor-accent/20 shadow-[0_0_15px_rgba(212,175,55,0.05)]"
+                ? "bg-white/10 text-white border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.05)]"
                 : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
             }
           `}
@@ -195,7 +195,7 @@ const VendorSidebar = ({ isOpen, onClose }) => {
           }}>
           <Icon
             className={`text-xl flex-shrink-0 transition-colors ${
-              active ? "text-vendor-accent" : "text-gray-400 group-hover:text-gray-300"
+              active ? "text-white" : "text-gray-400 group-hover:text-gray-300"
             }`}
           />
           <span className="font-medium flex-1 text-sm">{item.title}</span>
@@ -235,7 +235,7 @@ const VendorSidebar = ({ isOpen, onClose }) => {
                         px-3 py-2 text-xs rounded-lg transition-all duration-300 cursor-pointer border border-transparent
                         ${
                           isChildActive
-                            ? "bg-vendor-accent/10 text-vendor-accent font-medium border-vendor-accent/20"
+                            ? "bg-white/10 text-white font-medium border-white/20"
                             : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
                         }
                       `}>
@@ -253,15 +253,15 @@ const VendorSidebar = ({ isOpen, onClose }) => {
 
   // Sidebar content
   const sidebarContent = (
-    <div className="h-full flex flex-col bg-vendor-primary shadow-[4px_0_24px_rgba(10,25,47,0.15)] border-r border-white/5">
+    <div className="h-full flex flex-col bg-neutral-950 shadow-[4px_0_24px_rgba(0,0,0,0.2)] border-r border-white/5">
       {/* Header Section */}
-      <div className="p-4 border-b border-white/10 bg-vendor-primary/80 backdrop-blur-md">
+      <div className="p-4 border-b border-white/10 bg-neutral-950/80 backdrop-blur-md">
         {/* Header with Close Button and Vendor Info */}
         <div className="flex items-center justify-between gap-3">
           {/* Vendor User Info */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-12 h-12 bg-gradient-to-br from-vendor-accent to-vendor-accentHover rounded-xl flex items-center justify-center shadow-[0_4px_12px_rgba(212,175,55,0.3)] flex-shrink-0 border border-vendor-accent/30">
-              <FiShoppingBag className="text-vendor-primary text-xl" />
+            <div className="w-12 h-12 bg-gradient-to-br from-neutral-800 to-neutral-700 rounded-xl flex items-center justify-center shadow-[0_4px_12px_rgba(255,255,255,0.05)] flex-shrink-0 border border-white/10">
+              <FiShoppingBag className="text-white text-xl" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-semibold text-white text-sm truncate">

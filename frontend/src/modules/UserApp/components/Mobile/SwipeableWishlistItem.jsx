@@ -76,7 +76,7 @@ const SwipeableWishlistItem = ({ item, index, onMoveToCart, onRemove }) => {
         stiffness: 300,
         damping: 30,
       }}
-      className="glass-card rounded-2xl p-4 mb-3 relative"
+      className="backdrop-blur-md bg-white/50 border border-white/40 rounded-2xl p-4 mb-3 relative shadow-md hover:shadow-lg transition-all duration-300"
       onTouchStart={swipeHandlers.onTouchStart}
       onTouchMove={swipeHandlers.onTouchMove}
       onTouchEnd={swipeHandlers.onTouchEnd}>
@@ -109,7 +109,7 @@ const SwipeableWishlistItem = ({ item, index, onMoveToCart, onRemove }) => {
               {item.name}
             </h3>
           </Link>
-          <p className="text-lg font-bold text-primary-600 mb-3">
+          <p className="text-lg font-black text-black mb-3">
             {formatPrice(item.price)}
           </p>
 
@@ -125,7 +125,7 @@ const SwipeableWishlistItem = ({ item, index, onMoveToCart, onRemove }) => {
             ) : (
               <button
                 onClick={() => onMoveToCart(item)}
-                className="flex-1 py-2 sm:py-2.5 gradient-green text-white rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap hover:shadow-glow-green transition-all">
+                className="flex-1 py-2 sm:py-2.5 bg-black text-white hover:bg-[#F5A623] hover:text-black transition-colors text-white rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap hover:shadow-lg hover:scale-[1.01] transition-all">
                 <FiShoppingBag className="text-sm sm:text-base" />
                 Add to Cart
               </button>

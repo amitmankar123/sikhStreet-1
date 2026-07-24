@@ -32,7 +32,7 @@ export const useCartStore = create(
     (set, get) => ({
       items: [],
       ownerUserId: null,
-      addItem: (item) => {
+      addItem: (item, triggerAnimation = true) => {
         const authState = useAuthStore.getState();
         if (!authState?.isAuthenticated) {
           setPostLoginAction({
@@ -125,8 +125,10 @@ export const useCartStore = create(
         });
 
         // Trigger cart animation
-        const { triggerCartAnimation } = useUIStore.getState();
-        triggerCartAnimation();
+        if (triggerAnimation) {
+          const { triggerCartAnimation } = useUIStore.getState();
+          triggerCartAnimation();
+        }
         return true;
       },
       removeItem: (id, variant = null) =>

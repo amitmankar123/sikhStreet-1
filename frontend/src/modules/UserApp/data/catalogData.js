@@ -109,7 +109,7 @@ export const getCatalogProducts = () => {
   // if (Array.isArray(cached) && cached.length > 0) {
   //   return cached.map(normalizeProduct).filter((p) => p.id);
   // }
-  return []; // staticProducts;
+  return staticProducts;
 };
 
 export const getCatalogVendors = () => {
@@ -117,7 +117,7 @@ export const getCatalogVendors = () => {
   // if (Array.isArray(cached) && cached.length > 0) {
   //   return cached.map(normalizeVendor).filter((v) => v.id);
   // }
-  return []; // staticVendors;
+  return staticVendors;
 };
 
 export const getCatalogBrands = () => {
@@ -125,7 +125,7 @@ export const getCatalogBrands = () => {
   // if (Array.isArray(cached) && cached.length > 0) {
   //   return cached.map(normalizeBrand).filter((b) => b.id);
   // }
-  return []; // staticBrands;
+  return staticBrands;
 };
 
 export const getProductById = (id) =>

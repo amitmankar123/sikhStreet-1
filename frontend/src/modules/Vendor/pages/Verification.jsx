@@ -79,7 +79,7 @@ const VendorVerification = () => {
     if (resendCooldown > 0 || !email) return;
     try {
       await resendVendorOTP(email);
-      toast.success('OTP resent! Please check your email.');
+      // toast.success('OTP resent! Please check your email.');
       // Start 30 second cooldown
       setResendCooldown(30);
       const timer = setInterval(() => {

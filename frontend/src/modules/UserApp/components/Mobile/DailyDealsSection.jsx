@@ -65,7 +65,7 @@ const DailyDealsSection = ({ products = null }) => {
         </div>
         <Link
           to="/daily-deals"
-          className="text-sm font-semibold text-brand-saffron hover:text-orange-600 transition-colors flex items-center gap-1"
+          className="text-sm font-semibold text-[#F5A623] hover:text-orange-600 transition-colors flex items-center gap-1"
         >
           See All Deals <FiArrowRight size={14} />
         </Link>
@@ -87,7 +87,7 @@ const DailyDealsSection = ({ products = null }) => {
           ))}
           {dailyDeals.length < 3 && (
             <div className="w-[200px] md:w-[250px] shrink-0 border border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-400 p-6 text-center">
-              <FiZap className="text-3xl mb-2 text-brand-saffron animate-bounce" />
+              <FiZap className="text-3xl mb-2 text-[#F5A623] animate-bounce" />
               <p className="font-semibold text-xs">More deals coming soon!</p>
             </div>
           )}

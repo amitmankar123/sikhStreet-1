@@ -1,9 +1,9 @@
 /**
  * Format price with currency symbol
  */
-export const formatPrice = (price, currency = "₹") => {
+export const formatPrice = (price, currency = "$") => {
   const numPrice = price ?? 0;
-  return `${currency}${numPrice.toLocaleString("en-IN")}`;
+  return `${currency}${numPrice.toLocaleString("en-US")}`;
 };
 
 /**

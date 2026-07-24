@@ -141,7 +141,7 @@ export default function StepDigitalUpload({ formData, onChange }) {
             className="hidden"
             onChange={handlePreviewUpload}
             disabled={isUploadingPreview}
-            accept="image/*"
+            accept="image/*, image/avif, .avif"
           />
 
           <label

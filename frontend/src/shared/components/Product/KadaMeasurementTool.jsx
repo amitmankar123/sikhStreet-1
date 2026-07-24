@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiCheck } from "react-icons/fi";
+import { FiX, FiCheck, FiChevronRight } from "react-icons/fi";
+import { createPortal } from "react-dom";
 
 const getMmForSize = (sizeStr) => {
   if (!sizeStr) return null;
@@ -20,8 +21,8 @@ const getMmForSize = (sizeStr) => {
       const inches = whole + (fraction / 16);
       return Math.round(inches * 25.4);
     }
-    if (num > 3 && num < 10) return Math.round(num * 25.4); // inches to mm
-    if (num >= 40 && num <= 110) return Math.round(num); // raw mm
+    if (num > 3 && num < 10) return Math.round(num * 25.4);
+    if (num >= 40 && num <= 110) return Math.round(num);
   }
   return null;
 };
@@ -32,7 +33,7 @@ const KadaMeasurementTool = ({ isOpen, onClose, onConfirm, selectedSize, availab
       const mm = getMmForSize(selectedSize);
       if (mm) return mm;
     }
-    return 62;
+    return 64; // Default to standard Medium (64mm)
   };
 
   const [diameter, setDiameter] = useState(getInitialDiameter());
@@ -43,7 +44,8 @@ const KadaMeasurementTool = ({ isOpen, onClose, onConfirm, selectedSize, availab
     }
   }, [isOpen, selectedSize]);
 
-  const MM_TO_PX = 3.78; 
+  // Adjust standard scale for screen display to match physical millimeters (1mm = 3.65px on average device densities)
+  const MM_TO_PX = 3.65; 
 
   useEffect(() => {
     if (isOpen) {
@@ -56,173 +58,218 @@ const KadaMeasurementTool = ({ isOpen, onClose, onConfirm, selectedSize, availab
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
 
   const handleSliderChange = (e) => {
     setDiameter(Number(e.target.value));
   };
 
-  const handleIncrement = () => setDiameter((prev) => Math.min(prev + 1, 110));
-  const handleDecrement = () => setDiameter((prev) => Math.max(prev - 1, 40));
+  const handleIncrement = () => setDiameter((prev) => Math.min(prev + 1, 100));
+  const handleDecrement = () => setDiameter((prev) => Math.max(prev - 1, 50));
 
   const getDynamicRecommendedSize = (mm) => {
+    // If availableSizes are provided, check if we have an exact match first
     if (availableSizes && availableSizes.length > 0) {
-      let closestSize = availableSizes[0];
-      let minDiff = Infinity;
-      
-      availableSizes.forEach(size => {
-        const sizeMm = getMmForSize(size) || 62;
-        const diff = Math.abs(sizeMm - mm);
-        if (diff < minDiff) {
-          minDiff = diff;
-          closestSize = size;
-        }
+      const exactMatch = availableSizes.find(size => {
+        const sizeMm = getMmForSize(size);
+        return sizeMm === mm;
       });
-      return { size: String(closestSize), inner: "Best Fit" };
+
+      if (exactMatch) {
+        return {
+          size: String(exactMatch).replace(" mm", ""),
+          inner: String(exactMatch),
+          note: "Perfect Fit",
+          label: String(exactMatch)
+        };
+      }
+
+      // If no exact match, return as a custom size option so it reflects correctly
+      return {
+        size: `${mm} mm`,
+        inner: `${mm} mm`,
+        note: "Custom Measured Size",
+        label: `${mm} mm (Custom)`
+      };
     }
-    
-    if (mm < 55) return { size: "XS", inner: "2.2" };
-    if (mm >= 55 && mm < 60) return { size: "Small", inner: "2.4" };
-    if (mm >= 60 && mm < 65) return { size: "Medium", inner: "2.6" };
-    if (mm >= 65 && mm < 70) return { size: "Large", inner: "2.8" };
-    return { size: "XL", inner: "2.10" };
+
+    // Fallback standard mapping
+    const mapping = [
+      { max: 59, size: "XS", inner: "58 mm", label: "Extra Small", note: "Tight Fit" },
+      { max: 62, size: "Small", inner: "60 mm", label: "Small", note: "Comfortable Fit" },
+      { max: 66, size: "Medium", inner: "64 mm", label: "Medium", note: "Perfect Fit" },
+      { max: 70, size: "Large", inner: "68 mm", label: "Large", note: "Traditional Fit" },
+      { max: 74, size: "XL", inner: "72 mm", label: "Extra Large", note: "Loose Fit" },
+      { max: 110, size: "XXL", inner: "76 mm", label: "Double Extra Large", note: "Oversized Fit" }
+    ];
+    return mapping.find(m => mm <= m.max) || mapping[mapping.length - 1];
   };
 
   const recommended = getDynamicRecommendedSize(diameter);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center font-sans p-4">
+          {/* Backdrop overlay */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/40 backdrop-blur-md"
+          />
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Measure Your Kada</h2>
+          {/* Measuring Card Container */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ type: "spring", damping: 28, stiffness: 350 }}
+            className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col justify-between z-10 max-h-[90vh]"
+          >
+            {/* Close button top right */}
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+              className="absolute top-4 right-4 z-25 p-1.5 text-gray-400 hover:text-gray-900 bg-gray-50/80 hover:bg-gray-100 rounded-full transition-all duration-300 shadow-sm border border-gray-100/50"
             >
-              <FiX className="w-5 h-5" />
+              <FiX className="w-4 h-4" />
             </button>
-          </div>
 
-          <div className="px-6 py-4 overflow-y-auto custom-scrollbar">
-            <p className="text-sm text-gray-600 text-center mb-6 leading-relaxed">
-              Place your existing Kada flat against the screen. Adjust the slider until the blue circle perfectly matches the <strong>inner edge</strong> of your Kada.
-            </p>
-
-            {/* Visualization Area */}
-            <div className="relative w-full h-[450px] bg-gray-50/50 rounded-2xl flex items-center justify-center overflow-hidden border border-gray-100 mb-6">
-              {/* Guidelines */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-                <div className="w-full h-px bg-primary-500" />
-                <div className="absolute h-full w-px bg-primary-500" />
-              </div>
-
-              {/* Dynamic Circle */}
-              <div
-                className="rounded-full border-4 border-primary-500 bg-primary-50/30 flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(var(--color-primary-500),0.2)] transition-all duration-100 ease-out"
-                style={{
-                  width: `${diameter * MM_TO_PX}px`,
-                  height: `${diameter * MM_TO_PX}px`,
-                }}
-              >
-                {/* Diameter Label */}
-                <div className="absolute -top-3 bg-white px-3 py-1 rounded-full text-xs font-bold text-primary-700 border border-primary-200 shadow-sm">
-                  {diameter} mm
-                </div>
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div className="flex items-center gap-4 mb-8">
-              <button
-                onClick={handleDecrement}
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition-colors"
-              >
-                −
-              </button>
-              
-              <div className="flex-1 relative">
-                <input
-                  type="range"
-                  min="40"
-                  max="110"
-                  value={diameter}
-                  onChange={handleSliderChange}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
-                />
-                <div className="flex justify-between text-[10px] font-medium text-gray-400 mt-2 px-1">
-                  <span>40mm</span>
-                  <span>75mm</span>
-                  <span>110mm</span>
-                </div>
-              </div>
-
-              <button
-                onClick={handleIncrement}
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition-colors"
-              >
-                +
-              </button>
-            </div>
-
-            {/* Recommendation Result */}
-            <div className="bg-primary-50/50 border border-primary-100 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-primary-600 uppercase tracking-wider mb-1">
-                  Recommended Size
+            {/* Sizing Tool Body */}
+            <div className="flex-1 w-full flex flex-col justify-start items-center text-center px-5 pt-8 pb-4 relative overflow-y-auto custom-scrollbar gap-4">
+              {/* Title & Instructions */}
+              <div className="w-full">
+                <span className="text-[9px] uppercase tracking-widest text-black font-bold bg-black/10 px-2.5 py-0.5 rounded-full">
+                  Sikh Street Jewelry Guide
+                </span>
+                <h2 className="text-lg font-black text-gray-900 mt-2 mb-1">Find Your Perfect Kadda Size</h2>
+                <p className="text-[10px] text-gray-500 max-w-xs mx-auto leading-tight">
+                  Place your existing Kadda flat on your screen. Adjust the slider until the golden circle perfectly matches the <strong>inner diameter</strong>.
                 </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-gray-900">
-                    {recommended.size}
-                  </span>
-                  <span className="text-sm font-semibold text-primary-700">
-                    ({recommended.inner})
-                  </span>
+              </div>
+
+              {/* Interactive Measuring Circle Area */}
+              <div className="relative w-full h-[380px] bg-gradient-to-b from-gray-50/50 to-white rounded-2xl border border-gray-100 flex items-center justify-center overflow-hidden shadow-inner flex-shrink-0 my-1">
+                {/* Radial guides */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-[85%] h-[85%] rounded-full border border-dashed border-gray-200/60" />
+                  <div className="w-[60%] h-[60%] rounded-full border border-dashed border-gray-200/60" />
+                  <div className="w-full h-px bg-gray-100" />
+                  <div className="absolute h-full w-px bg-gray-100" />
+                </div>
+
+                {/* Dynamic Kadda Ring (Luxury Gold Styling) */}
+                <motion.div
+                  animate={{
+                    width: diameter * MM_TO_PX,
+                    height: diameter * MM_TO_PX,
+                  }}
+                  transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                  className="relative rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{
+                    boxSizing: "content-box",
+                    boxShadow: "0 8px 20px -5px rgba(184, 134, 11, 0.25), inset 0 2px 4px rgba(255,255,255,0.6)",
+                    border: "18px solid #F5A623", // Polished bold Metallic gold Kada
+                    background: "radial-gradient(circle, rgba(253,251,247,0.3) 0%, rgba(212,175,55,0.05) 100%)",
+                  }}
+                >
+                  {/* Center Measurement Display */}
+                  <div className="text-center font-serif text-gray-800">
+                    <span className="block text-2xl font-black tracking-tighter text-gray-900">{diameter}</span>
+                    <span className="text-[9px] font-sans font-bold tracking-widest text-black uppercase">mm</span>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Sizing Slider Panel */}
+              <div className="w-full space-y-3 flex-shrink-0">
+                <div className="flex items-center justify-between text-[10px] text-gray-400 font-semibold px-1">
+                  <span>50 mm</span>
+                  <span className="text-gray-800 font-bold">Inner Diameter</span>
+                  <span>100 mm</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {/* Minus Button */}
+                  <button
+                    type="button"
+                    onClick={handleDecrement}
+                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 font-bold transition-all shadow-sm"
+                  >
+                    −
+                  </button>
+
+                  {/* Slider Input */}
+                  <div className="flex-1 relative py-1">
+                    <input
+                      type="range"
+                      min="50"
+                      max="100"
+                      value={diameter}
+                      onChange={handleSliderChange}
+                      className="w-full h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#F5A623]"
+                      style={{
+                        background: `linear-gradient(to right, #F5A623 0%, #B8860B ${((diameter - 50) / 50) * 100}%, #F3F4F6 ${((diameter - 50) / 50) * 100}%, #F3F4F6 100%)`
+                      }}
+                    />
+                  </div>
+
+                  {/* Plus Button */}
+                  <button
+                    type="button"
+                    onClick={handleIncrement}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 text-gray-700 font-bold transition-all shadow-sm"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Sizing Results Panel */}
+                <div className="bg-white border border-black/10 rounded-xl p-3 flex items-center justify-between shadow-sm">
+                  <div className="text-left">
+                    <span className="text-[9px] font-bold text-black uppercase tracking-wider block mb-0.5">
+                      Recommended Size
+                    </span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-black text-gray-900 tracking-tight">
+                        {recommended.label}
+                      </span>
+                      <span className="text-[10px] text-black font-bold">
+                        ({recommended.inner})
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-emerald-50 text-emerald-700 font-bold text-[10px] px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm border border-emerald-100/50">
+                    <FiCheck className="stroke-[3] w-3 h-3" />
+                    <span>{recommended.note || "Perfect Fit"}</span>
+                  </div>
                 </div>
               </div>
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm border border-primary-100">
-                <FiCheck className="w-6 h-6 text-primary-600" />
+            </div>
+
+            {/* CTA Footer Panel */}
+            <div className="p-4 bg-gray-50/60 border-t border-gray-100 w-full">
+              <div className="w-full flex flex-col gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onConfirm(recommended)}
+                  className="w-full py-3.5 rounded-xl font-bold text-white bg-black hover:bg-[#F5A623] hover:text-black transition-colors hover:bg-[#F5A623] transition-all duration-300 shadow-md flex items-center justify-center gap-2 hover:scale-[1.01]"
+                >
+                  <span>Continue with this Size</span>
+                  <FiChevronRight className="w-4 h-4 stroke-[3]" />
+                </button>
+                <p className="text-[8px] text-gray-400 mt-1 text-center">
+                  *Disclaimer: Set screen zoom to 100% for maximum accuracy. Device densities may cause minor variances.
+                </p>
               </div>
             </div>
-            
-            <p className="text-[10px] text-gray-400 text-center mt-4 px-4 leading-relaxed">
-              *Disclaimer: For best accuracy, set your screen zoom to default 100%. Due to varying device pixel densities, slight variations may occur.
-            </p>
-          </div>
-
-          {/* Footer Actions */}
-          <div className="flex items-center gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100">
-            <button
-              onClick={onClose}
-              className="flex-1 py-3 rounded-xl font-bold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 transition-colors shadow-sm"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => onConfirm(recommended)}
-              className="flex-1 py-3 rounded-xl font-bold text-white bg-primary-600 hover:bg-primary-700 transition-colors shadow-[0_4px_14px_0_rgba(var(--color-primary-600),0.39)]"
-            >
-              Select Size
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    </AnimatePresence>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 };
 

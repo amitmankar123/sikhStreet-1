@@ -121,6 +121,7 @@ const StoreSettings = () => {
         storePolicies: formData.storePolicies,
         refundPolicy: formData.refundPolicy,
         shippingPolicy: formData.shippingPolicy,
+        currency: formData.currency,
         phone: formData.phone,
         address: addressData,
       });
@@ -208,7 +209,7 @@ const StoreSettings = () => {
                   <div className="relative">
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*, image/avif, .avif"
                       onChange={(e) => handleImageUpload(e, "storeLogo")}
                       className="hidden"
                       id="store-logo-upload"
@@ -239,7 +240,7 @@ const StoreSettings = () => {
                   <div className="relative">
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*, image/avif, .avif"
                       onChange={(e) => handleImageUpload(e, "storeBanner")}
                       className="hidden"
                       id="store-banner-upload"
@@ -305,10 +306,14 @@ const StoreSettings = () => {
                     value={formData.currency || "INR"}
                     onChange={handleChange}
                     options={[
-                      { value: "INR", label: "INR (₹)" },
-                      { value: "USD", label: "USD ($)" },
-                      { value: "EUR", label: "EUR (€)" },
-                      { value: "GBP", label: "GBP (£)" },
+                      { value: "INR", label: "INR (₹) - Indian Rupee" },
+                      { value: "USD", label: "USD ($) - US Dollar" },
+                      { value: "EUR", label: "EUR (€) - Euro" },
+                      { value: "GBP", label: "GBP (£) - British Pound" },
+                      { value: "CAD", label: "CAD ($) - Canadian Dollar" },
+                      { value: "AUD", label: "AUD ($) - Australian Dollar" },
+                      { value: "SGD", label: "SGD ($) - Singapore Dollar" },
+                      { value: "AED", label: "AED (د.إ) - UAE Dirham" },
                     ]}
                   />
                 </div>
