@@ -216,8 +216,8 @@ const MobileHeader = () => {
               <button
                 onClick={() => setIsCategoryMenuOpen(!isCategoryMenuOpen)}
                 className={`hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full transition-all text-sm font-semibold select-none ${isCategoryMenuOpen
-                    ? "bg-[#F5A623]/10 text-[#F5A623] shadow-sm"
-                    : "text-neutral-700 hover:bg-gray-50 active:scale-95"
+                  ? "bg-[#F5A623]/10 text-[#F5A623] shadow-sm"
+                  : "text-neutral-700 hover:bg-gray-50 active:scale-95"
                   }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-4 h-4">
@@ -260,8 +260,8 @@ const MobileHeader = () => {
                                 setIsCategoryMenuOpen(false);
                               }}
                               className={`flex items-center justify-between px-4 py-2.5 cursor-pointer text-xs font-semibold tracking-wide transition-all ${isActive
-                                  ? "bg-white text-black font-bold border-l-[3px] border-[#F5A623] pl-[13px] shadow-sm"
-                                  : "text-neutral-600 hover:bg-neutral-50 hover:text-black"
+                                ? "bg-white text-black font-bold border-l-[3px] border-[#F5A623] pl-[13px] shadow-sm"
+                                : "text-neutral-600 hover:bg-neutral-50 hover:text-black"
                                 }`}
                             >
                               <span>{cat.name}</span>

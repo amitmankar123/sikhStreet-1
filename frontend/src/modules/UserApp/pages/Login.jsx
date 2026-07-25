@@ -26,6 +26,7 @@ const MobileLogin = () => {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm();
 
@@ -72,7 +73,10 @@ const MobileLogin = () => {
         });
         return;
       }
-      toast.error(error.message || 'Login failed. Please try again.');
+      
+      const errorMessage = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';
+      setError('email', { type: 'manual', message: errorMessage });
+      setError('password', { type: 'manual', message: errorMessage });
     }
   };
 

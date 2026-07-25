@@ -152,7 +152,7 @@ const VendorDashboard = () => {
 
   const SetupProgressChecklist = () => {
     const [openStep, setOpenStep] = useState(1);
-    
+
     // Bank Data State
     const [bankData, setBankData] = useState({
       accountName: vendor?.bankDetails?.accountName || '',
@@ -202,6 +202,10 @@ const VendorDashboard = () => {
         await fetchProfile();
         setOpenStep(2);
       } catch (err) {
+        if (err.response) {
+          toast.error(err.response?.data?.message || "Failed to save bank details. Please try again.");
+          return;
+        }
         console.warn("Backend updateVendorBankDetails failed, saving locally:", err);
         const currentVendor = useVendorAuthStore.getState().vendor;
         useVendorAuthStore.setState({
@@ -244,7 +248,7 @@ const VendorDashboard = () => {
         toast.success("Shop activated successfully! Selling and product listings are now unlocked.");
         localStorage.removeItem('vendor-billing-saved');
       } catch (err) {
-        toast.error("Failed to activate shop. Please try again.");
+        toast.error(err.response?.data?.message || err.message || "Failed to activate shop. Please try again.");
       } finally {
         setIsActivating(false);
       }
@@ -277,9 +281,8 @@ const VendorDashboard = () => {
               className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors focus:outline-none"
             >
               <div className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${
-                  isStep1Done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 text-gray-400 font-semibold text-sm'
-                }`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${isStep1Done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 text-gray-400 font-semibold text-sm'
+                  }`}>
                   {isStep1Done ? <FiCheck className="w-3.5 h-3.5" /> : "1"}
                 </div>
                 <div>
@@ -372,9 +375,8 @@ const VendorDashboard = () => {
               className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors focus:outline-none"
             >
               <div className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${
-                  isStep2Done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 text-gray-400 font-semibold text-sm'
-                }`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center border ${isStep2Done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 text-gray-400 font-semibold text-sm'
+                  }`}>
                   {isStep2Done ? <FiCheck className="w-3.5 h-3.5" /> : "2"}
                 </div>
                 <div>
@@ -459,9 +461,8 @@ const VendorDashboard = () => {
           </div>
 
           {/* STEP 3: ACTIVATION */}
-          <div className={`border rounded-xl overflow-hidden bg-white shadow-sm ${
-            (isStep1Done && isStep2Done) ? 'border-gray-100' : 'border-gray-100 opacity-60'
-          }`}>
+          <div className={`border rounded-xl overflow-hidden bg-white shadow-sm ${(isStep1Done && isStep2Done) ? 'border-gray-100' : 'border-gray-100 opacity-60'
+            }`}>
             <button
               type="button"
               disabled={!(isStep1Done && isStep2Done)}

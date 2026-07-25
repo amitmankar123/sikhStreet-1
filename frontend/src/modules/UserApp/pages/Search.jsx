@@ -228,6 +228,32 @@ const MobileSearch = () => {
       }
 
       try {
+        // ── Try real backend API first ─────────────────────────────────────────
+        const response = await api.get('/products', { params: query });
+        const payload = response?.data ?? response;
+        const apiProducts = Array.isArray(payload?.products)
+          ? payload.products
+          : Array.isArray(payload)
+          ? payload
+          : null;
+
+        if (apiProducts !== null) {
+          const list = apiProducts.map(normalizeProduct);
+          setProducts((prev) => (append ? [...prev, ...list] : list));
+          setPagination({
+            page: payload?.page ?? pageNumber,
+            pages: payload?.pages ?? 1,
+            total: payload?.total ?? list.length,
+          });
+          return;
+        }
+      } catch (_apiErr) {
+        // Backend unreachable — fall through to static fallback below
+        console.warn('Backend /products unreachable, using static fallback for search.');
+      }
+
+      // ── Static fallback ────────────────────────────────────────────────────
+      try {
         let fallback = catalogProducts.filter((product) => {
           let match = true;
           if (query.q) {
@@ -284,7 +310,7 @@ const MobileSearch = () => {
         }
       }
     },
-    [buildQueryParams]
+    [buildQueryParams, storeCategories]
   );
 
   useEffect(() => {

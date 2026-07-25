@@ -35,11 +35,11 @@ export const register = asyncHandler(async (req, res) => {
     const Vendor = mongoose.model('Vendor');
     const Admin = mongoose.model('Admin');
 
-    const { 
-        name, email, password, phone, storeName, storeDescription, 
-        vendorType, vendorCountry, businessName, businessType, businessCountry, businessAddress, kycDocumentType 
+    const {
+        name, email, password, phone, storeName, storeDescription,
+        vendorType, vendorCountry, businessName, businessType, businessCountry, businessAddress, kycDocumentType
     } = req.body;
-    
+
     let { address } = req.body;
     if (typeof address === 'string') {
         try {
@@ -80,7 +80,7 @@ export const register = asyncHandler(async (req, res) => {
 
     let kycDocumentUrl = '';
     let governmentIdDocumentUrl = '';
-    
+
     try {
         if (isBusiness && files.kycDocument && files.kycDocument[0]) {
             const kycFile = files.kycDocument[0];
@@ -95,6 +95,7 @@ export const register = asyncHandler(async (req, res) => {
         if (fs.existsSync(govFile.path)) fs.unlinkSync(govFile.path);
 
     } catch (error) {
+        console.error('[Vendor Register] Upload error:', error);
         if (files.kycDocument && files.kycDocument[0] && fs.existsSync(files.kycDocument[0].path)) fs.unlinkSync(files.kycDocument[0].path);
         if (files.governmentIdDocument && files.governmentIdDocument[0] && fs.existsSync(files.governmentIdDocument[0].path)) fs.unlinkSync(files.governmentIdDocument[0].path);
         throw new ApiError(500, 'Error uploading documents. Please try again.');
@@ -189,11 +190,19 @@ export const forgotPassword = asyncHandler(async (req, res) => {
         );
     }
 
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const isMock = process.env.MOCK_EMAIL_SMTP === 'true';
+    const otp = isMock ? '123456' : String(Math.floor(100000 + Math.random() * 900000));
     vendor.resetOtp = otp;
     vendor.resetOtpExpiry = new Date(Date.now() + 10 * 60 * 1000);
     vendor.resetOtpVerified = false;
     await vendor.save();
+
+    if (isMock) {
+        console.log(`[MOCK RESET OTP] Vendor password reset OTP generated for ${vendor.email}: ${otp} (SMTP bypassed)`);
+        return res.status(200).json(
+            new ApiResponse(200, null, 'If the email exists, a reset OTP has been sent.')
+        );
+    }
 
     try {
         await sendEmail({

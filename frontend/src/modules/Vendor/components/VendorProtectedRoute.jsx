@@ -78,9 +78,9 @@ const VendorProtectedRoute = ({ children }) => {
     }
   }
 
-  // Onboarding enforcement
+  // Onboarding enforcement: if vendor IS already onboarded, don't let them re-visit setup page
   const isOnboardingPath = location.pathname === '/vendor/onboarding';
-  if (isOnboardingPath) {
+  if (isOnboardingPath && vendor && vendor.isOnboarded) {
     return <Navigate to="/vendor/dashboard" replace />;
   }
 

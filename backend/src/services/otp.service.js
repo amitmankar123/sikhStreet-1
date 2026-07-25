@@ -9,7 +9,8 @@ import { sendEmail } from './email.service.js';
  * @param {string} type - Purpose label (for logging)
  */
 export const sendOTP = async (role, user, type = 'verification') => {
-    const otp = crypto.randomInt(100000, 999999).toString();
+    const isMock = process.env.MOCK_EMAIL_SMTP === 'true';
+    const otp = isMock ? '123456' : crypto.randomInt(100000, 999999).toString();
     const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     const Model = role === 'vendor' ? mongoose.model('Vendor') : mongoose.model('User');
@@ -26,6 +27,11 @@ export const sendOTP = async (role, user, type = 'verification') => {
     // Sync properties locally so downstream code has reference
     user.otp = otp;
     user.otpExpiry = otpExpiry;
+
+    if (isMock) {
+        console.log(`[MOCK OTP] ${type} OTP generated for ${user.email}: ${otp} (SMTP bypassed)`);
+        return otp;
+    }
 
     try {
         await sendEmail({

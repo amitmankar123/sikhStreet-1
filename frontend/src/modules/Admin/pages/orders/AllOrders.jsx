@@ -192,9 +192,9 @@ const OrderItemsDropdown = ({ items, orderTotal }) => {
                         <td className="px-2 sm:px-4 py-2 text-sm text-gray-800 whitespace-nowrap">
                           <p className="font-medium">{item.name || `Item ${index + 1}`}</p>
                           {formatVariantLabel(item?.variant) && (
-                              <p className="text-xs text-gray-500 mt-0.5">
-                                  {formatVariantLabel(item?.variant)}
-                              </p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {formatVariantLabel(item?.variant)}
+                            </p>
                           )}
                         </td>
                         <td className="px-2 sm:px-4 py-2 text-sm text-gray-700 text-center whitespace-nowrap">
@@ -793,11 +793,10 @@ const AllOrders = () => {
                         {summaryModal.order.paymentMethod ? formatPaymentMethod(summaryModal.order.paymentMethod) : 'N/A'}
                       </span>
                       <span className="text-gray-300">•</span>
-                      <span className={`px-2.5 py-0.5 rounded-full font-bold uppercase ${
-                        summaryModal.order.status?.toLowerCase() === 'delivered' ? 'bg-green-50 text-green-700' :
-                        summaryModal.order.status?.toLowerCase() === 'cancelled' || summaryModal.order.status?.toLowerCase() === 'canceled' ? 'bg-red-50 text-red-700' :
-                        'bg-yellow-50 text-yellow-800'
-                      }`}>
+                      <span className={`px-2.5 py-0.5 rounded-full font-bold uppercase ${summaryModal.order.status?.toLowerCase() === 'delivered' ? 'bg-green-50 text-green-700' :
+                          summaryModal.order.status?.toLowerCase() === 'cancelled' || summaryModal.order.status?.toLowerCase() === 'canceled' ? 'bg-red-50 text-red-700' :
+                            'bg-yellow-50 text-yellow-800'
+                        }`}>
                         {summaryModal.order.status}
                       </span>
                     </div>
@@ -812,7 +811,7 @@ const AllOrders = () => {
                       <FiDollarSign className="text-amber-500" />
                       Price Breakdown
                     </h4>
-                    
+
                     <div className="space-y-3 text-sm">
                       <div className="flex justify-between text-gray-600">
                         <span>Subtotal</span>
@@ -867,7 +866,7 @@ const AllOrders = () => {
                       <FiPackage className="text-blue-500" />
                       Quick Actions
                     </h4>
-                    
+
                     <div className="space-y-3">
                       {/* Action 1: View Details */}
                       <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/20 transition-all group">

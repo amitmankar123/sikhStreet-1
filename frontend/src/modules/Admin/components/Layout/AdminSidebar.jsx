@@ -28,6 +28,8 @@ import {
 } from "react-icons/fi";
 import { useAdminAuthStore } from "../../store/adminStore";
 import adminMenu from "../../config/adminMenu.json";
+import { useVendorStore } from "../../store/vendorStore";
+import { useNotificationStore } from "../../store/notificationStore";
 
 // Icon mapping for menu items
 const iconMap = {
@@ -120,26 +122,42 @@ const getChildRoute = (parentRoute, childName) => {
       "Push Config": "/admin/firebase/push-config",
       Authentication: "/admin/firebase/authentication",
     },
+    "/admin/vendors": {
+      "Manage Vendors": "/admin/vendors/manage-vendors",
+      "Pending Approvals": "/admin/vendors/pending-approvals",
+      "Commission Rates": "/admin/vendors/commission-rates",
+      "Vendor Analytics": "/admin/vendors/vendor-analytics",
+    },
   };
 
   return routeMap[parentRoute]?.[childName] || parentRoute;
 };
 
-const AdminSidebar = ({ 
-  isOpen, 
-  onClose, 
-  width, 
-  onResize, 
-  isCollapsed = false, 
+const AdminSidebar = ({
+  isOpen,
+  onClose,
+  width,
+  onResize,
+  isCollapsed = false,
   onToggleCollapse,
   isDragging,
-  setIsDragging 
+  setIsDragging
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { admin } = useAdminAuthStore();
+  const { vendors, initialize: initializeVendors } = useVendorStore();
+  const { unreadCount, fetchNotifications } = useNotificationStore();
+
+  const pendingCount = vendors.filter(v => v.status === 'pending').length;
+
   const [expandedItems, setExpandedItems] = useState({});
   const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    initializeVendors();
+    fetchNotifications();
+  }, [initializeVendors, fetchNotifications, location.pathname]);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -248,7 +266,7 @@ const AdminSidebar = ({
         {/* Main Menu Item */}
         <div
           className={`
-            flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer
+            flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer relative
             ${isCollapsed ? "justify-center px-2 py-3" : "px-4 py-3"}
             ${active
               ? "bg-primary-600 text-white shadow-sm"
@@ -269,10 +287,25 @@ const AdminSidebar = ({
           }}
           title={isCollapsed ? item.title : ""}
         >
-          <Icon
-            className={`text-xl flex-shrink-0 ${active ? "text-white" : "text-gray-400"}`}
-          />
+          <div className="relative">
+            <Icon
+              className={`text-xl flex-shrink-0 ${active ? "text-white" : "text-gray-400"}`}
+            />
+            {isCollapsed && (
+              ((item.title === "Vendors" && pendingCount > 0) || (item.title === "Notifications" && unreadCount > 0)) && (
+                <span className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-slate-850 animate-pulse" />
+              )
+            )}
+          </div>
           {!isCollapsed && <span className="font-medium flex-1 text-sm truncate">{item.title}</span>}
+          {!isCollapsed && item.title === "Vendors" && pendingCount > 0 && (
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse flex-shrink-0 mr-1" />
+          )}
+          {!isCollapsed && item.title === "Notifications" && unreadCount > 0 && (
+            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 mr-1 min-w-[16px] text-center">
+              {unreadCount}
+            </span>
+          )}
           {!isCollapsed && hasChildren && (
             <motion.div
               animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -299,6 +332,8 @@ const AdminSidebar = ({
                     (childRoute !== item.route &&
                       location.pathname.startsWith(childRoute));
 
+                  const isPendingApprovalsChild = item.title === "Vendors" && child === "Pending Approvals";
+
                   return (
                     <div
                       key={index}
@@ -306,13 +341,18 @@ const AdminSidebar = ({
                         handleMenuItemClick(childRoute, item.title)
                       }
                       className={`
-                        px-3 py-2 text-xs rounded-lg transition-colors cursor-pointer truncate
+                        px-3 py-2 text-xs rounded-lg transition-colors cursor-pointer truncate flex items-center justify-between
                         ${isChildActive
                           ? "bg-primary-500/20 text-white font-medium"
                           : "text-gray-400 hover:bg-slate-700"
                         }
                       `}>
-                      {child}
+                      <span className="truncate flex-1">{child}</span>
+                      {isPendingApprovalsChild && pendingCount > 0 && (
+                        <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse flex-shrink-0">
+                          {pendingCount}
+                        </span>
+                      )}
                     </div>
                   );
                 })}
@@ -366,9 +406,8 @@ const AdminSidebar = ({
       <div className="hidden lg:block p-3 border-t border-slate-700 bg-slate-900/50 flex-shrink-0">
         <button
           onClick={onToggleCollapse}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-400 hover:bg-slate-700 hover:text-white ${
-            isCollapsed ? 'justify-center px-2' : ''
-          }`}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-gray-400 hover:bg-slate-700 hover:text-white ${isCollapsed ? 'justify-center px-2' : ''
+            }`}
           title={isCollapsed ? "Expand Menu" : "Collapse Menu"}
         >
           {isCollapsed ? (
@@ -414,14 +453,13 @@ const AdminSidebar = ({
       </AnimatePresence>
 
       {/* Sidebar - Desktop Fixed */}
-      <div 
-        className={`hidden lg:flex fixed left-0 top-0 bottom-0 z-40 bg-slate-800 border-r border-slate-700 select-none group ${
-          isDragging ? "" : "transition-all duration-300"
-        }`}
+      <div
+        className={`hidden lg:flex fixed left-0 top-0 bottom-0 z-40 bg-slate-800 border-r border-slate-700 select-none group ${isDragging ? "" : "transition-all duration-300"
+          }`}
         style={{ width: `${width}px` }}
       >
         {sidebarContent}
-        
+
         {/* Resize Handle Overlay */}
         <div
           onMouseDown={handleMouseDown}

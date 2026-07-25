@@ -126,7 +126,10 @@ export const useVendorProductStore = create((set, get) => ({
             }));
             toast.success('Product created successfully');
             return product;
-        } catch {
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || 'Failed to create product. Please try again.';
+            console.error('❌ addProduct error:', error.response?.data || error.message);
+            toast.error(message);
             set({ isSaving: false });
             return null;
         }
@@ -154,8 +157,10 @@ export const useVendorProductStore = create((set, get) => ({
             toast.success('Product updated successfully');
             return updated;
         } catch (error) {
+            const message = error.response?.data?.message || error.message || 'Failed to update product. Please try again.';
             console.error("❌ editProduct failed. Payload:", data);
             console.error("❌ Error details:", error.response?.data || error.message);
+            toast.error(message);
             set({ isSaving: false });
             return null;
         }
@@ -179,7 +184,9 @@ export const useVendorProductStore = create((set, get) => ({
             }));
             toast.success('Product deleted successfully');
             return true;
-        } catch {
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || 'Failed to delete product.';
+            toast.error(message);
             set({ isLoading: false });
             return false;
         }
@@ -206,7 +213,9 @@ export const useVendorProductStore = create((set, get) => ({
             }));
             toast.success('Stock updated successfully');
             return true;
-        } catch {
+        } catch (error) {
+            const message = error.response?.data?.message || error.message || 'Failed to update stock.';
+            toast.error(message);
             set({ isSaving: false });
             return false;
         }

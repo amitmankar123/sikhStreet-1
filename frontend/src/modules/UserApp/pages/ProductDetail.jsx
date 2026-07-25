@@ -430,13 +430,13 @@ const SellerShopCard = ({ product }) => {
           {/* Shop Details */}
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <Link 
+              <Link
                 to={`/seller/${resolvedVendor.id}`}
                 className="text-lg font-bold text-gray-900 hover:underline transition-colors"
               >
                 {resolvedVendor.storeName}
               </Link>
-              <Link 
+              <Link
                 to={`/seller/${resolvedVendor.id}`}
                 className="text-xs text-gray-500 underline hover:text-black"
               >
@@ -462,16 +462,15 @@ const SellerShopCard = ({ product }) => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleFollowToggle}
-              className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold border transition-all active:scale-95 ${
-                isFollowing 
-                  ? "bg-gray-100 text-gray-800 border-gray-200" 
+              className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold border transition-all active:scale-95 ${isFollowing
+                  ? "bg-gray-100 text-gray-800 border-gray-200"
                   : "bg-white text-gray-900 border-gray-300 hover:bg-gray-50"
-              }`}
+                }`}
             >
               <FiHeart className={isFollowing ? "fill-red-500 text-red-500" : "text-gray-600"} />
               {isFollowing ? "Following" : "Follow shop"}
             </button>
-            
+
             <Link
               to="/chat"
               className="flex items-center justify-center px-4 py-2 rounded-full text-xs font-bold border border-black text-black hover:bg-gray-50 transition-all active:scale-95"
@@ -522,14 +521,14 @@ const SellerShopCard = ({ product }) => {
         {/* Carousel Container */}
         <div className="relative group/carousel">
           {/* Scroll Buttons */}
-          <button 
+          <button
             onClick={scrollLeft}
             className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-md hover:bg-gray-50 transition-all z-10 opacity-0 group-hover/carousel:opacity-100"
           >
             <FiChevronLeft className="text-gray-600" />
           </button>
-          
-          <button 
+
+          <button
             onClick={scrollRight}
             className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-md hover:bg-gray-50 transition-all z-10 opacity-0 group-hover/carousel:opacity-100"
           >
@@ -537,14 +536,14 @@ const SellerShopCard = ({ product }) => {
           </button>
 
           {/* Horizontally scrollable list */}
-          <div 
+          <div
             ref={carouselRef}
             className="flex gap-4 overflow-x-auto pb-4 pt-1 px-1 scroll-smooth scrollbar-none snap-x"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {resolvedReviews.map((rev) => (
-              <div 
-                key={rev.id} 
+              <div
+                key={rev.id}
                 className="flex-shrink-0 w-[290px] sm:w-[320px] bg-white border border-gray-200 hover:border-gray-300 rounded-2xl p-4 flex flex-col justify-between shadow-sm cursor-pointer transition-colors snap-start"
                 onClick={() => navigate(`/product/${rev.productId}`)}
               >
@@ -552,9 +551,9 @@ const SellerShopCard = ({ product }) => {
                   {/* Rating Stars */}
                   <div className="flex items-center gap-0.5">
                     {[...Array(5)].map((_, i) => (
-                      <FiStar 
-                        key={i} 
-                        className={`text-xs ${i < rev.rating ? "text-gray-900 fill-gray-900" : "text-gray-200"}`} 
+                      <FiStar
+                        key={i}
+                        className={`text-xs ${i < rev.rating ? "text-gray-900 fill-gray-900" : "text-gray-200"}`}
                       />
                     ))}
                   </div>
@@ -565,9 +564,9 @@ const SellerShopCard = ({ product }) => {
                     </p>
                     {rev.productImage && (
                       <div className="w-12 h-12 rounded-lg bg-gray-50 overflow-hidden flex-shrink-0 border border-gray-100">
-                        <img 
-                          src={rev.productImage} 
-                          alt={rev.productName} 
+                        <img
+                          src={rev.productImage}
+                          alt={rev.productName}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -1863,8 +1862,8 @@ const MobileProductDetail = () => {
                             const specsArray = Array.isArray(specs)
                               ? specs
                               : specs && typeof specs === 'object'
-                              ? Object.entries(specs).map(([k, v]) => ({ name: k, value: v }))
-                              : [];
+                                ? Object.entries(specs).map(([k, v]) => ({ name: k, value: v }))
+                                : [];
 
                             // Safely convert a value to a renderable string
                             const toDisplayValue = (val) => {

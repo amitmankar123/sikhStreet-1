@@ -23,7 +23,7 @@ const SwipeableCartItem = ({ item, index }) => {
     }, []);
 
     const getProductStock = () => Number(item?.stockQuantity);
-    
+
     const unitStr = String(item?.unit || '').toLowerCase();
     const isTurbanItem = item?.variant?.fabric !== undefined || (item?.name || '').toLowerCase().includes('turban');
     const isFractionalUnit = !isTurbanItem && ['meter', 'meters', 'm', 'kg', 'kilogram', 'kilograms', 'gram', 'grams', 'g', 'litre', 'litres', 'l'].includes(unitStr);
@@ -209,7 +209,7 @@ const SwipeableCartItem = ({ item, index }) => {
                                 <FiHeart className="text-[13px]" />
                                 <span className="hidden sm:inline">Wishlist</span>
                             </button>
-                            
+
                             <div className="w-[1px] h-3 bg-[#e9d7cb] hidden sm:block"></div>
 
                             <button

@@ -128,7 +128,7 @@ export const useVendorAuthStore = create(
           return { success: true, message: data?.message };
         } catch (error) {
           set({ isLoading: false });
-          return { success: true, message: "OTP verification bypassed!" };
+          throw error;
         }
       },
 
@@ -141,7 +141,7 @@ export const useVendorAuthStore = create(
           return { success: true, message: data?.message };
         } catch (error) {
           set({ isLoading: false });
-          return { success: true, message: "OTP resending bypassed!" };
+          throw error;
         }
       },
 
@@ -248,16 +248,8 @@ export const useVendorAuthStore = create(
 
           return { success: true, vendor: updatedVendor };
         } catch (error) {
-          console.warn("Backend completeOnboarding failed, applying locally:", error);
-          const updatedVendor = {
-            ...get().vendor,
-            isOnboarded: true
-          };
-          set({
-            vendor: updatedVendor,
-            isLoading: false,
-          });
-          return { success: true, vendor: updatedVendor };
+          set({ isLoading: false });
+          throw error;
         }
       },
 

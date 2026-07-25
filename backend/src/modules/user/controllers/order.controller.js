@@ -49,7 +49,7 @@ const resolveVariantSelection = (product, selectedVariant) => {
     const isArtProduct = !!product?.artConfig;
 
     const entries = toVariantPriceEntries(product?.variants?.prices);
-    
+
     let calculatedPrice = basePrice;
     let variantKey = null;
 
@@ -133,31 +133,31 @@ const resolveVariantSelection = (product, selectedVariant) => {
             }
         }
     }
-    
+
     calculatedPrice += additiveSum;
 
     // --- Apply Turban / Art logic ---
     if (hasTurbanConfig) {
-        const fabricRate = selectedVariant?.fabric 
+        const fabricRate = selectedVariant?.fabric
             ? Number(product.turbanConfig?.fabric?.find(f => f.type === selectedVariant.fabric)?.price) || 0
             : 0;
         const ratePerMeter = fabricRate > 0 ? fabricRate : calculatedPrice;
-        
-        const embroideryFee = selectedVariant?.embroidery === 'Yes' 
+
+        const embroideryFee = selectedVariant?.embroidery === 'Yes'
             ? Number(product.turbanConfig?.embroidery?.price) || 0 : 0;
-        const giftWrapFee = selectedVariant?.gift_wrap === 'Yes' 
+        const giftWrapFee = selectedVariant?.gift_wrap === 'Yes'
             ? Number(product.turbanConfig?.giftWrap?.price) || 0 : 0;
-        
+
         const turbanLength = parseFloat(selectedVariant?.size) || 1;
-        
+
         calculatedPrice = (ratePerMeter * turbanLength) + embroideryFee + giftWrapFee;
-        
+
         // Stock variant key is primarily color for Turban
         if (selectedVariant?.color) {
             variantKey = normalizeVariantPart(selectedVariant.color);
         }
     } else if (isArtProduct) {
-        const artGiftWrapFee = selectedVariant?.art_gift_wrap === 'Yes' 
+        const artGiftWrapFee = selectedVariant?.art_gift_wrap === 'Yes'
             ? Number(product.artConfig?.giftWrap?.price) || 0 : 0;
         calculatedPrice += artGiftWrapFee;
         if (selectedVariant?.color) {
@@ -170,7 +170,7 @@ const resolveVariantSelection = (product, selectedVariant) => {
                 .map((attr) => ({ axisKey: normalizeAxisName(attr?.name), values: Array.isArray(attr?.values) ? attr.values : [] }))
                 .filter((attr) => attr.axisKey && attr.values.length > 0)
             : [];
-            
+
         if (attributeAxes.length > 0) {
             const normalizedSelection = {};
             Object.entries(selectedVariant || {}).forEach(([axis, value]) => {

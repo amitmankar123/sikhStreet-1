@@ -245,12 +245,12 @@ api.interceptors.response.use(
     if (error && error.isMockResponse) {
       return Promise.resolve(error.mockData);
     }
-    // If the backend is unreachable or returns any error (405, 400, 500, 404, etc.),
+    // If the backend is unreachable (no response),
     // return simulated e-commerce data so the application functions dynamically in client-only/static mode.
-    if (error) {
+    if (error && !error.response) {
       const url = error?.config?.url || '';
       const method = String(error?.config?.method || '').toLowerCase();
-      console.warn(`Backend connection failed or returned error for ${url}. Generating static fallback...`);
+      console.warn(`Backend connection failed or was unreachable for ${url}. Generating static fallback...`);
 
       let fallbackData = {};
 
@@ -486,21 +486,6 @@ api.interceptors.response.use(
             }
           ];
         }
-      } else if (url.includes('/auth/login') || url.includes('/auth/register') || url.includes('/auth/verify-otp')) {
-        fallbackData = {
-          success: true,
-          user: {
-            id: "mock-customer-1",
-            _id: "mock-customer-1",
-            name: "Customer",
-            email: "customer@sikhstreet.com",
-            phone: "9876543210",
-            role: "customer",
-            isVerified: true
-          },
-          accessToken: "mock-access-token",
-          refreshToken: "mock-refresh-token"
-        };
       } else if (url.includes('/uploads/images')) {
         fallbackData = [
           { url: 'https://placehold.co/600x400?text=Mock+Uploaded+Image+1', publicId: 'mock-id-1' },
@@ -541,9 +526,12 @@ api.interceptors.response.use(
       error.message ||
       'Something went wrong';
 
+    const url = originalRequest.url || '';
+    const isAuthRequest = EXCLUDED_AUTH_SUFFIXES.some((suffix) => url.includes(suffix));
+
     if (message && typeof message === 'string' && message.includes('Route not found')) {
       console.error(message);
-    } else {
+    } else if (!isAuthRequest && !originalRequest.skipToast) {
       toast.error(message);
     }
 

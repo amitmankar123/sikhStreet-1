@@ -121,6 +121,10 @@ const Onboarding = () => {
         });
         setCurrentStep(2);
       } catch (err) {
+        if (err.response) {
+          toast.error(err.response?.data?.message || 'Failed to save payout details. Please try again.');
+          return;
+        }
         console.warn("Backend updateVendorBankDetails failed, saving locally:", err);
         const currentVendor = useVendorAuthStore.getState().vendor;
         useVendorAuthStore.setState({
@@ -157,8 +161,8 @@ const Onboarding = () => {
       await completeOnboarding();
       toast.success('Onboarding completed! Welcome to SikhStreet.');
       navigate('/vendor/dashboard');
-    } catch {
-      // Handled by API interceptor
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message || 'Onboarding completion failed');
     } finally {
       setIsSubmitting(false);
     }

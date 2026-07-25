@@ -196,7 +196,8 @@ export const forgotPassword = asyncHandler(async (req, res) => {
         throw new ApiError(403, 'Please verify your email first. A new verification OTP has been sent.');
     }
 
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const isMock = process.env.MOCK_EMAIL_SMTP === 'true';
+    const otp = isMock ? '123456' : String(Math.floor(100000 + Math.random() * 900000));
     await User.updateOne(
         { _id: user._id },
         {
@@ -207,6 +208,11 @@ export const forgotPassword = asyncHandler(async (req, res) => {
             }
         }
     );
+
+    if (isMock) {
+        console.log(`[MOCK RESET OTP] Password reset OTP generated for ${user.email}: ${otp} (SMTP bypassed)`);
+        return res.status(200).json(new ApiResponse(200, null, 'If the email exists, a reset OTP has been sent.'));
+    }
 
     try {
         await sendEmail({

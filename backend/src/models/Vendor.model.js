@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { wrapModel } from '../utils/prismaMongooseWrapper.js';
 
 const VendorSchema = new mongoose.Schema({
-  _id: { type: String, default: () => crypto.randomUUID() },
+  _id: { type: String, default: () => 'VDR-' + crypto.randomBytes(3).toString('hex').toUpperCase() },
   name: { type: String },
   email: { type: String, unique: true },
   password: { type: String },

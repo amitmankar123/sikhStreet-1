@@ -313,11 +313,10 @@ const DesktopHeader = () => {
                                         <div
                                             key={cat.id}
                                             onMouseEnter={() => setSelectedParentId(cat.id)}
-                                            className={`px-6 py-3 flex items-center justify-between cursor-pointer transition-all ${
-                                                isSelected
+                                            className={`px-6 py-3 flex items-center justify-between cursor-pointer transition-all ${isSelected
                                                     ? "bg-white text-[#F5A623] font-bold border-l-4 border-brand-saffron"
                                                     : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                                            }`}
+                                                }`}
                                         >
                                             <span className="text-sm tracking-wide font-sans">{cat.name}</span>
                                             <ChevronRight size={16} className={`transition-transform opacity-60 ${isSelected ? "text-[#F5A623] translate-x-1" : ""}`} />
@@ -377,7 +376,7 @@ const DesktopHeader = () => {
                                             <div className="h-[280px] flex flex-col items-center justify-center text-slate-400">
                                                 <span className="text-4xl mb-2">📦</span>
                                                 <p className="text-sm font-serif">No subcategories found</p>
-                                                <Link 
+                                                <Link
                                                     to={`/category/${selectedParentId}`}
                                                     onClick={() => setIsCategoriesOpen(false)}
                                                     className="mt-4 px-4 py-2 bg-brand-navy text-white text-xs font-bold rounded-lg hover:bg-black transition-colors"

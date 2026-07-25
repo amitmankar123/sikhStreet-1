@@ -115,7 +115,7 @@ const VendorLogin = ({ isModal = false, onClose }) => {
   const handleResendOTP = async () => {
     try {
       await resendOtp(formData.email);
-      // toast.success('A new OTP has been sent to your email.');
+      toast.success('A new OTP has been sent to your email.');
     } catch (error) {
       toast.error(error?.response?.data?.message || error?.message || 'Failed to resend OTP');
     }

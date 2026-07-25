@@ -100,7 +100,7 @@ export const useCartStore = create(
             return {
               items: state.items.map((i) =>
                 String(i.id) === String(item.id)
-                && String(i.cartLineKey || getCartLineKey(i.id, i.variant)) === lineKey
+                  && String(i.cartLineKey || getCartLineKey(i.id, i.variant)) === lineKey
                   ? {
                     ...i,
                     ...itemWithVendor,

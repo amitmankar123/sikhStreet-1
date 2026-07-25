@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { FiHeart, FiStar } from "react-icons/fi";
 import { products as allProducts } from "../../../data/products";
 import { categories as initialCategories } from "../../../data/categories";
+import api from "../../../shared/utils/api";
 
 const MobileHome = () => {
   const navigate = useNavigate();
@@ -36,6 +37,26 @@ const MobileHome = () => {
     }
   };
 
+  const [liveProducts, setLiveProducts] = useState([]);
+
+  // Fetch real vendor products from backend
+  useEffect(() => {
+    api.get('/products', { params: { limit: 40, sort: 'newest' } })
+      .then(res => {
+        const data = res?.data ?? res;
+        const prods = Array.isArray(data?.products) ? data.products
+          : Array.isArray(data) ? data : [];
+        const normalized = prods.map(p => ({
+          ...p,
+          id: p._id || p.id,
+          image: p.images?.[0] || p.image || '/images/placeholder.png',
+          vendorName: p.vendorId?.storeName || p.vendorName || 'Vendor',
+        }));
+        if (normalized.length > 0) setLiveProducts(normalized);
+      })
+      .catch(() => {}); // silently fall back to static data
+  }, []);
+
   const trendingCarouselRef = useRef(null);
   const scrollTrendingRight = () => {
     if (trendingCarouselRef.current) {
@@ -60,7 +81,23 @@ const MobileHome = () => {
     }
   };
 
+  // Merge live products first, then fill with static ones
   const trendingProductsList = useMemo(() => {
+    if (liveProducts.length > 0) {
+      // Show newest live products first, then top static ones for padding
+      const staticFallbacks = [306, 307, 302, 460, 1, 2, 4, 5, 6, 7]
+        .map(id => allProducts.find(p => Number(p.id) === Number(id)))
+        .filter(Boolean);
+      const combined = [...liveProducts, ...staticFallbacks];
+      // Deduplicate by id
+      const seen = new Set();
+      return combined.filter(p => {
+        const key = String(p.id || p._id);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).slice(0, 12);
+    }
     const ids = [306, 307, 302, 460, 1, 2, 4, 5, 6, 7];
     return ids.map(id => {
       const found = allProducts.find(p => Number(p.id) === Number(id));
@@ -74,7 +111,7 @@ const MobileHome = () => {
         reviewCount: 42,
       };
     });
-  }, [allProducts]);
+  }, [liveProducts]);
 
 
 
@@ -139,11 +176,20 @@ const MobileHome = () => {
   };
 
   const smallShopProducts = useMemo(() => {
+    if (liveProducts.length > 0) {
+      // Newest 4 live products shown first
+      const liveSlice = liveProducts.slice(0, 4);
+      if (liveSlice.length === 4) return liveSlice;
+      // Pad with static if fewer than 4
+      const staticFallbacks = [303, 302, 460, 307]
+        .map(id => allProducts.find(p => Number(p.id) === Number(id)))
+        .filter(Boolean);
+      return [...liveSlice, ...staticFallbacks].slice(0, 4);
+    }
     const targetIds = [303, 302, 460, 307];
     return targetIds.map(id => {
       const found = allProducts.find(p => Number(p.id) === Number(id));
       if (found) return found;
-      // Fallback
       return {
         id,
         name: id === 303 ? "Classic Stainless Steel Kadda" : id === 302 ? "Swirling Fish Artwork" : id === 460 ? "Premium Sikh Turban" : "Introduction to Sikhism",
@@ -152,7 +198,7 @@ const MobileHome = () => {
         vendorName: id === 303 ? "Heritage Woodcarvers" : id === 302 ? "Amritsar Fine Arts" : id === 460 ? "Sikh Heritage Weaves" : "Amritsar Fine Arts"
       };
     });
-  }, []);
+  }, [liveProducts]);
 
   const handleAddToCart = (product) => {
     const success = addItem({

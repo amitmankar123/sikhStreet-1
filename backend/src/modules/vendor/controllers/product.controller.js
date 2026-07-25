@@ -252,7 +252,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     const { name, ...rest } = req.body;
     if (!name) throw new ApiError(400, 'Product name is required.');
     const slug = slugify(name) + '-' + Date.now();
-    
+
     // Generate a unique SKU: VND-1234-TIMESTAMP-RND
     const vendorPrefix = (req.user?.id || 'VND').substring(0, 4).toUpperCase();
     const timestampStr = Date.now().toString(36).toUpperCase();
@@ -262,14 +262,14 @@ export const createProduct = asyncHandler(async (req, res) => {
     const isDigital = rest.productType === 'digital';
     const stockQuantity = isDigital ? 999999 : Number(rest.stockQuantity ?? 0);
     const lowStockThreshold = isDigital ? 0 : Number(rest.lowStockThreshold ?? 10);
-    
+
     if (!isDigital && (!Number.isFinite(stockQuantity) || stockQuantity < 0)) {
         throw new ApiError(400, 'Invalid stock quantity.');
     }
     if (!isDigital && (!Number.isFinite(lowStockThreshold) || lowStockThreshold < 0)) {
         throw new ApiError(400, 'Invalid low stock threshold.');
     }
-    
+
     const price = Number(rest.price);
     if (!Number.isFinite(price) || price < 0) {
         throw new ApiError(400, 'Invalid product price.');

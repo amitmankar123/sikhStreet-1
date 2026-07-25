@@ -20,6 +20,7 @@ const MobileRegister = () => {
     register,
     handleSubmit,
     watch,
+    setError,
     formState: { errors },
   } = useForm();
 
@@ -50,8 +51,15 @@ const MobileRegister = () => {
       // Navigate to verification page
       navigate('/verification', { state: { email: data.email } });
     } catch (error) {
-      if (!error.response) {
-        toast.error(error.message || 'Registration failed. Please try again.');
+      const errorMessage = error?.response?.data?.message || error?.message || 'Registration failed. Please try again.';
+      const lowerMessage = errorMessage.toLowerCase();
+
+      if (lowerMessage.includes('email')) {
+        setError('email', { type: 'manual', message: errorMessage });
+      } else if (lowerMessage.includes('phone')) {
+        setError('phone', { type: 'manual', message: errorMessage });
+      } else {
+        toast.error(errorMessage);
       }
       console.warn("Registration error:", error);
     }
@@ -92,8 +100,8 @@ const MobileRegister = () => {
                     type="button"
                     onClick={() => handleModeChange('signup')}
                     className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all duration-200 ${formMode === 'signup'
-                        ? 'bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white shadow-sm font-bold'
-                        : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white shadow-sm font-bold'
+                      : 'text-gray-600 hover:text-gray-900'
                       }`}
                   >
                     Sign Up
@@ -102,8 +110,8 @@ const MobileRegister = () => {
                     type="button"
                     onClick={() => handleModeChange('login')}
                     className={`flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-all duration-200 ${formMode === 'login'
-                        ? 'bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white shadow-sm font-bold'
-                        : 'text-gray-600 hover:text-gray-900'
+                      ? 'bg-black hover:bg-[#F5A623] hover:text-black transition-colors text-white shadow-sm font-bold'
+                      : 'text-gray-600 hover:text-gray-900'
                       }`}
                   >
                     Log In
@@ -130,8 +138,8 @@ const MobileRegister = () => {
                         },
                       })}
                       className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 bg-white/50 backdrop-blur-sm ${errors.firstName
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200/80 focus:border-[#F5A623]'
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-gray-200/80 focus:border-[#F5A623]'
                         } focus:outline-none transition-colors text-base`}
                       placeholder="Raj"
                     />
@@ -158,8 +166,8 @@ const MobileRegister = () => {
                         },
                       })}
                       className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 bg-white/50 backdrop-blur-sm ${errors.lastName
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200/80 focus:border-[#F5A623]'
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-gray-200/80 focus:border-[#F5A623]'
                         } focus:outline-none transition-colors text-base`}
                       placeholder="Sarkar"
                     />
@@ -184,8 +192,8 @@ const MobileRegister = () => {
                           isValidEmail(value) || 'Please enter a valid email',
                       })}
                       className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 bg-white/50 backdrop-blur-sm ${errors.email
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200/80 focus:border-[#F5A623]'
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-gray-200/80 focus:border-[#F5A623]'
                         } focus:outline-none transition-colors text-base`}
                       placeholder="sarkarraj0766@gmail.com"
                     />
@@ -220,8 +228,8 @@ const MobileRegister = () => {
                             isValidPhone(value) || 'Please enter a valid phone number',
                         })}
                         className={`w-full pl-12 pr-4 py-3 rounded-xl border-2 bg-white/50 backdrop-blur-sm ${errors.phone
-                            ? 'border-red-300 focus:border-red-500'
-                            : 'border-gray-200/80 focus:border-[#F5A623]'
+                          ? 'border-red-300 focus:border-red-500'
+                          : 'border-gray-200/80 focus:border-[#F5A623]'
                           } focus:outline-none transition-colors text-base`}
                         placeholder="4547260592"
                       />
@@ -249,8 +257,8 @@ const MobileRegister = () => {
                         },
                       })}
                       className={`w-full pl-12 pr-12 py-3 rounded-xl border-2 bg-white/50 backdrop-blur-sm ${errors.password
-                          ? 'border-red-300 focus:border-red-500'
-                          : 'border-gray-200/80 focus:border-[#F5A623]'
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-gray-200/80 focus:border-[#F5A623]'
                         } focus:outline-none transition-colors text-base`}
                       placeholder="Create a password"
                     />

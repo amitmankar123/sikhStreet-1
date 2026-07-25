@@ -17,62 +17,51 @@ export const useAuthStore = create(
       login: async (email, password, rememberMe = false) => {
         set({ isLoading: true });
         const normalizedEmail = String(email || '').trim().toLowerCase();
-        
-        // UI-only mode: Bypassing backend completely and logging in instantly with any credentials!
-        const mockUser = {
-          id: "mock-customer-1",
-          _id: "mock-customer-1",
-          name: email.split('@')[0] || "Customer",
-          email: normalizedEmail,
-          phone: "9876543210",
-          role: "customer",
-          isVerified: true
-        };
+        try {
+          const response = await api.post('/user/auth/login', { email: normalizedEmail, password });
+          const { user, accessToken, refreshToken } = response.data;
 
-        set({
-          user: mockUser,
-          token: "mock-access-token",
-          refreshToken: "mock-refresh-token",
-          isAuthenticated: true,
-          pendingEmail: null,
-          isLoading: false,
-        });
+          set({
+            user,
+            token: accessToken,
+            refreshToken,
+            isAuthenticated: true,
+            pendingEmail: null,
+            isLoading: false,
+          });
 
-        localStorage.setItem('token', "mock-access-token");
-        localStorage.setItem('refresh-token', "mock-refresh-token");
+          localStorage.setItem('token', accessToken);
+          localStorage.setItem('refresh-token', refreshToken);
 
-        return { success: true, user: mockUser };
+          return { success: true, user };
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
       },
 
       // Register action
       register: async (name, email, password, phone) => {
         set({ isLoading: true });
         const normalizedEmail = String(email || '').trim().toLowerCase();
-        
-        // UI-only mode: Bypassing backend completely and registering/logging in instantly
-        const mockUser = {
-          id: "mock-customer-1",
-          _id: "mock-customer-1",
-          name: name || email.split('@')[0] || "Customer",
-          email: normalizedEmail,
-          phone: phone || "9876543210",
-          role: "customer",
-          isVerified: true
-        };
+        try {
+          const response = await api.post('/user/auth/register', {
+            name,
+            email: normalizedEmail,
+            password,
+            phone,
+          });
 
-        set({
-          user: mockUser,
-          token: "mock-access-token",
-          refreshToken: "mock-refresh-token",
-          isAuthenticated: true,
-          pendingEmail: null,
-          isLoading: false,
-        });
+          set({
+            pendingEmail: normalizedEmail,
+            isLoading: false,
+          });
 
-        localStorage.setItem('token', "mock-access-token");
-        localStorage.setItem('refresh-token', "mock-refresh-token");
-
-        return { success: true, email: normalizedEmail };
+          return { success: true, email: normalizedEmail };
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
       },
 
       // Verify OTP and complete login
@@ -96,28 +85,8 @@ export const useAuthStore = create(
           localStorage.setItem('refresh-token', refreshToken);
           return { success: true, user };
         } catch (error) {
-          const mockUser = {
-            id: "mock-customer-1",
-            _id: "mock-customer-1",
-            name: email.split('@')[0] || "Customer",
-            email: normalizedEmail,
-            phone: "9876543210",
-            role: "customer",
-            isVerified: true
-          };
-
-          set({
-            user: mockUser,
-            token: "mock-access-token",
-            refreshToken: "mock-refresh-token",
-            isAuthenticated: true,
-            pendingEmail: null,
-            isLoading: false,
-          });
-
-          localStorage.setItem('token', "mock-access-token");
-          localStorage.setItem('refresh-token', "mock-refresh-token");
-          return { success: true, user: mockUser };
+          set({ isLoading: false });
+          throw error;
         }
       },
 

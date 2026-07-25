@@ -186,8 +186,8 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
               className="w-7 h-7 bg-white/90 rounded-full shadow flex items-center justify-center hover:scale-110 active:scale-95 transition-all text-neutral-600 hover:text-red-500">
               <FiHeart
                 className={`w-3.5 h-3.5 transition-all duration-300 ${isFavorite
-                    ? "text-red-500 fill-red-500 scale-110"
-                    : "text-neutral-600 hover:text-red-500"
+                  ? "text-red-500 fill-red-500 scale-110"
+                  : "text-neutral-600 hover:text-red-500"
                   }`}
               />
             </button>

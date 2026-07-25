@@ -149,6 +149,7 @@ const VendorRegister = ({ isModal = false, onClose }) => {
       setStep(2);
     } catch (err) {
       console.warn("Validation error:", err);
+      toast.error(err.response?.data?.message || err.message || 'Validation failed. Email or phone may already be registered.');
     } finally {
       setIsValidating(false);
     }
