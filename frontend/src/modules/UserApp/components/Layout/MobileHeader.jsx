@@ -6,7 +6,129 @@ import { motion, AnimatePresence } from "framer-motion";
 import { categories } from "../../../../data/categories";
 import { useCartStore, useUIStore } from "../../../../shared/store/useStore";
 import { useWishlistStore } from "../../../../shared/store/wishlistStore";
+import { useCategoryStore } from "../../../../shared/store/categoryStore";
 import { appLogo } from "../../../../data/logos";
+
+const booksMegaMenuLayout = [
+  // Column 1
+  [
+    {
+      title: "Sikh History",
+      id: "sikh-history-books",
+      topics: ["Gurus", "Gurbani Studies", "Sikh Philosophy", "Sikh Practices", "Sikh Rehat", "Sikh Theology", "Sikh Symbols", "Sikh History", "Punjab History", "Partition", "Sikh Empire", "Freedom Movement", "Military History"]
+    }
+  ],
+  // Column 2
+  [
+    {
+      title: "Children's Books",
+      id: "childrens-books",
+      topics: ["Picture Books", "Early Readers", "Activity Books", "Educational Books", "Bedtime Stories", "Sikh Values", "Comics", "Historical Comics", "Graphic Novels"]
+    }
+  ],
+  // Column 3
+  [
+    {
+      title: "Punjabi Literature",
+      id: "punjabi-literature",
+      topics: ["Fiction", "Short Stories", "Poetry", "Classic Literature", "Contemporary Literature"]
+    },
+    {
+      title: "Biographies",
+      id: "biographies-sikh-personalities",
+      topics: ["Gurus", "Sikh Warriors", "Saints", "Scholars", "Modern Sikh Personalities"]
+    }
+  ],
+  // Column 4
+  [
+    {
+      title: "Language & Learning",
+      id: "language-learning-books",
+      topics: ["Punjabi", "Gurmukhi", "Shahmukhi", "Dictionaries", "Grammar", "Workbooks", "Persian", "Urdu", "Sanskrit"]
+    },
+    {
+      title: "Academic & Research",
+      id: "journals-notebooks",
+      topics: ["Research Papers", "Journals", "Reference Books", "Encyclopedias", "University Texts"]
+    }
+  ],
+  // Column 5
+  [
+    {
+      title: "Punjab & Politics",
+      id: "punjab",
+      topics: ["Punjab History", "Sikh Identity", "Politics", "Human Rights", "Diaspora", "Gender Studies"]
+    },
+    {
+      title: "Digital & E-books",
+      id: "e-books",
+      topics: ["Fiction", "Poetry", "Sikh History", "Punjabi", "Reference Books"]
+    }
+  ]
+];
+
+const fashionMegaMenuLayout = [
+  // Column 1
+  [
+    {
+      title: "Patkas",
+      id: "patkas",
+      topics: []
+    },
+    {
+      title: "Dastar Accessories",
+      id: "dastar-accessories",
+      topics: []
+    }
+  ],
+  // Column 2
+  [
+    {
+      title: "Sikh-inspired Clothing",
+      id: "sikh-inspired-clothing",
+      topics: []
+    },
+    {
+      title: "T-Shirts",
+      id: "t-shirts",
+      topics: []
+    }
+  ],
+  // Column 3
+  [
+    {
+      title: "Hoodies",
+      id: "hoodies",
+      topics: []
+    },
+    {
+      title: "Jackets",
+      id: "jackets",
+      topics: []
+    }
+  ],
+  // Column 4
+  [
+    {
+      title: "Scarves",
+      id: "scarves",
+      topics: []
+    }
+  ],
+  // Column 5
+  [
+    {
+      title: "Children's Clothing",
+      id: "children's-clothing",
+      topics: []
+    }
+  ]
+];
+
+const megaMenuLayouts = {
+  books: booksMegaMenuLayout,
+  fashion: fashionMegaMenuLayout
+};
 
 const MobileHeader = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -15,20 +137,31 @@ const MobileHeader = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const [activeCategoryId, setActiveCategoryId] = useState("fashion");
+  const [hoveredNavId, setHoveredNavId] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { categories: storeCategories } = useCategoryStore();
 
   useEffect(() => {
     setIsCategoryMenuOpen(false);
+    setHoveredNavId(null);
   }, [location]);
 
-  const rootCategories = categories.filter((cat) => !cat.parentId);
+  const categoriesToUse = storeCategories && storeCategories.length > 0 ? storeCategories : categories;
+  const rootCategories = categoriesToUse.filter((cat) => !cat.parentId);
   const activeCategory = rootCategories.find((c) => c.id === activeCategoryId) || rootCategories[0];
-  const subcats = categories.filter((c) => c.parentId === activeCategory?.id);
+  const subcats = categoriesToUse.filter((c) => c.parentId === activeCategory?.id);
   const displaySubcats = subcats.length > 0 ? subcats : [
     { id: activeCategory?.id, name: `Browse ${activeCategory?.name}`, image: activeCategory?.image }
   ];
-  
+
+  const navItems = [
+    { name: "Book & Literature", to: "/category/books", categoryId: "books" },
+    { name: "Home Favourites", to: "/home-favourites" },
+    { name: "Fashion Finds", to: "/category/fashion", categoryId: "fashion" },
+    { name: "Our Story", to: "/our-story" }
+  ];
+
   // Close search popover on escape key
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -61,11 +194,10 @@ const MobileHeader = () => {
 
   const headerContent = (
     <header
-      className={`w-full bg-white border-b border-[#e8e8e8] transition-all duration-300 ${
-        isScrolled ? "shadow-sm py-2" : "py-4"
-      }`}
+      className={`w-full bg-white border-b border-[#e8e8e8] transition-all duration-300 ${isScrolled ? "shadow-sm py-2" : "py-4"
+        }`}
     >
-      <div className="flex flex-col gap-3 px-6 md:px-12 w-full max-w-7xl mx-auto relative">
+      <div className="flex flex-col gap-3 w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 relative">
         {/* Row 1: Logo, Search Bar, and Action Icons */}
         <div className="flex justify-between items-center w-full gap-6">
           <div className="flex items-center gap-4 flex-shrink-0">
@@ -83,11 +215,10 @@ const MobileHeader = () => {
             <div className="relative">
               <button
                 onClick={() => setIsCategoryMenuOpen(!isCategoryMenuOpen)}
-                className={`hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full transition-all text-sm font-semibold select-none ${
-                  isCategoryMenuOpen 
-                    ? "bg-[#F5A623]/10 text-[#F5A623] shadow-sm" 
+                className={`hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full transition-all text-sm font-semibold select-none ${isCategoryMenuOpen
+                    ? "bg-[#F5A623]/10 text-[#F5A623] shadow-sm"
                     : "text-neutral-700 hover:bg-gray-50 active:scale-95"
-                }`}
+                  }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -128,11 +259,10 @@ const MobileHeader = () => {
                                 navigate(`/category/${cat.id}`);
                                 setIsCategoryMenuOpen(false);
                               }}
-                              className={`flex items-center justify-between px-4 py-2.5 cursor-pointer text-xs font-semibold tracking-wide transition-all ${
-                                isActive
+                              className={`flex items-center justify-between px-4 py-2.5 cursor-pointer text-xs font-semibold tracking-wide transition-all ${isActive
                                   ? "bg-white text-black font-bold border-l-[3px] border-[#F5A623] pl-[13px] shadow-sm"
                                   : "text-neutral-600 hover:bg-neutral-50 hover:text-black"
-                              }`}
+                                }`}
                             >
                               <span>{cat.name}</span>
                               <ChevronRight
@@ -302,19 +432,123 @@ const MobileHeader = () => {
         </div>
 
         {/* Row 2: Desktop Navigation Links (Below Search) */}
-        <nav className="hidden md:flex gap-8 items-center justify-start border-t border-gray-200/50 pt-2.5 w-full pl-12">
-          <Link className="text-[11px] uppercase tracking-wider font-semibold text-black transition-colors hover:text-[#F5A623]" to="/category/books">
-            Book & Literature
-          </Link>
-          <Link className="text-[11px] uppercase tracking-wider font-semibold text-black transition-colors hover:text-[#F5A623]" to="/home-favourites">
-            Home Favourites
-          </Link>
-          <Link className="text-[11px] uppercase tracking-wider font-semibold text-black transition-colors hover:text-[#F5A623]" to="/category/fashion">
-            Fashion Finds
-          </Link>
-          <Link className="text-[11px] uppercase tracking-wider font-semibold text-black transition-colors hover:text-[#F5A623]" to="/our-story">
-            Our Story
-          </Link>
+        <nav className="hidden md:flex gap-[3%] items-center justify-start border-t border-gray-200/50 pt-2.5 w-full pl-3.5">
+          {navItems.map((item) => {
+            const megaMenuLayout = item.categoryId ? megaMenuLayouts[item.categoryId] : null;
+            const itemSubcategories = item.categoryId
+              ? categoriesToUse.filter((cat) => {
+                const normalizedParent = typeof cat.parentId === 'object'
+                  ? (cat.parentId?._id ?? cat.parentId?.id ?? null)
+                  : cat.parentId;
+                return String(normalizedParent) === String(item.categoryId) && cat.isActive !== false;
+              })
+              : [];
+
+            const isHovered = hoveredNavId === item.name;
+
+            return (
+              <div
+                key={item.name}
+                className={`py-1 ${megaMenuLayout ? "" : "relative"}`}
+                onMouseEnter={() => setHoveredNavId(item.name)}
+                onMouseLeave={() => setHoveredNavId(null)}
+              >
+                <Link
+                  className={`text-[11px] uppercase tracking-wider font-semibold transition-colors duration-200 ${isHovered ? "text-[#F5A623]" : "text-black"
+                    }`}
+                  to={item.to}
+                >
+                  {item.name}
+                </Link>
+
+                <AnimatePresence>
+                  {isHovered && (
+                    <>
+                      {megaMenuLayout ? (
+                        /* Myntra-style full-width mega menu dropdown */
+                        <div className="absolute left-16 right-8 top-full pt-1.5 z-[1000]">
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
+                            className="w-full bg-white border border-neutral-200 shadow-xl px-8 py-6 grid grid-cols-5 gap-6 text-left rounded-none font-sans"
+                          >
+                            {megaMenuLayout.map((column, colIdx) => (
+                              <div key={colIdx} className="flex flex-col gap-6">
+                                {column.map((section) => (
+                                  <div key={section.id}>
+                                    {/* Header: Subcategory */}
+                                    <Link
+                                      to={`/category/${section.id}`}
+                                      onClick={() => setHoveredNavId(null)}
+                                      className="text-[#F5A623] hover:text-[#d48817] font-bold text-xs uppercase tracking-wider mb-2.5 block transition-colors duration-150"
+                                    >
+                                      {section.title}
+                                    </Link>
+                                    {/* List: Topics */}
+                                    <div className="flex flex-col gap-0.5">
+                                      {section.topics && section.topics.map((topic) => (
+                                        <Link
+                                          key={topic}
+                                          to={`/category/${section.id}?topic=${encodeURIComponent(topic)}`}
+                                          onClick={() => setHoveredNavId(null)}
+                                          className="text-neutral-600 hover:text-black font-medium text-[11px] py-1 block transition-colors duration-150 cursor-pointer"
+                                        >
+                                          {topic}
+                                        </Link>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </motion.div>
+                        </div>
+                      ) : (
+                        itemSubcategories.length > 0 && (
+                          /* Standard dropdown for other categories */
+                          <div className="absolute left-0 top-full pt-2 z-[1000]">
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 10 }}
+                              transition={{ duration: 0.15, ease: "easeOut" }}
+                              className="w-[440px] bg-white border border-neutral-200 shadow-xl rounded-none p-4 relative grid grid-cols-2 gap-2 text-left"
+                            >
+
+                              {itemSubcategories.map((sub) => (
+                                <Link
+                                  key={sub.id}
+                                  to={`/category/${sub.id}`}
+                                  onClick={() => setHoveredNavId(null)}
+                                  className="group/sub flex items-center gap-3 p-2 border border-transparent hover:border-neutral-100 hover:bg-neutral-50 transition-all duration-200"
+                                >
+                                  <div className="w-10 h-10 bg-neutral-100 border border-neutral-200 overflow-hidden flex-shrink-0 flex items-center justify-center rounded-none">
+                                    <img
+                                      src={sub.image}
+                                      alt={sub.name}
+                                      className="w-full h-full object-cover rounded-none"
+                                      onError={(e) => {
+                                        e.target.src = "https://placehold.co/40x40?text=" + encodeURIComponent(sub.name);
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="text-[11px] font-bold tracking-wide text-neutral-800 group-hover/sub:text-[#F5A623] transition-colors line-clamp-2">
+                                    {sub.name}
+                                  </span>
+                                </Link>
+                              ))}
+                            </motion.div>
+                          </div>
+                        )
+                      )}
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
         </nav>
 
       </div>

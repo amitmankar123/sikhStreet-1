@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { FiFilter, FiArrowLeft, FiGrid, FiList, FiX, FiSearch, FiChevronDown, FiSliders, FiInfo, FiChevronRight } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import gsap from "gsap";
@@ -411,15 +411,29 @@ const MobileCategory = () => {
     }, 200);
   };
 
+  const location = useLocation();
+
   useEffect(() => {
     setIsTransitioning(true);
-    setSelectedSubcategoryId(null);
-    setSelectedTopic(""); // Reset topic on category change
+    const params = new URLSearchParams(location.search);
+    const subParam = params.get("sub");
+    const topicParam = params.get("topic");
+
+    if (subParam) {
+      setSelectedSubcategoryId(subParam);
+    } else if (categoryId !== "books") {
+      setSelectedSubcategoryId(null);
+    } else {
+      setSelectedSubcategoryId(null);
+    }
+
+    setSelectedTopic(topicParam || "");
+
     const timer = setTimeout(() => {
       setIsTransitioning(false);
     }, 200);
     return () => clearTimeout(timer);
-  }, [categoryId]);
+  }, [categoryId, location.search]);
 
   const subcategories = useMemo(() => {
     const allCats = [...(categories || []), ...(fallbackCategories || [])].filter(Boolean);
