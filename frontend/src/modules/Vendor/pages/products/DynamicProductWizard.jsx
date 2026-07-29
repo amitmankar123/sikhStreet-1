@@ -625,6 +625,13 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
       }
     }
 
+    // Filter steps based on product type choice (Physical vs Digital)
+    if (formData.productType === "physical") {
+      resolvedSteps = resolvedSteps.filter(s => s !== "digital_upload" && s !== "upload_files" && s !== "license");
+    } else if (formData.productType === "digital") {
+      resolvedSteps = resolvedSteps.filter(s => s !== "shipping" && s !== "art_matrix");
+    }
+
     if (isTurban) {
       resolvedSteps = resolvedSteps.filter(s => s !== "shipping");
     }

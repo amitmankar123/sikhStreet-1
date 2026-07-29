@@ -70,6 +70,9 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
   const isLevel2 = parentIdToUse && parentDepth === 1;
   const isSubcategory = !!parentIdToUse;
   const canHaveSubcategories = !isSubcategory || (category && getCategoryDepth(category.id) === 2);
+  const parentCat = categories.find(c => String(c.id || c._id) === String(parentIdToUse));
+  const isArtCategory = String(formData.name || "").toLowerCase().includes("art") || 
+                        (parentCat && String(parentCat.name || "").toLowerCase().includes("art"));
 
   useEffect(() => {
     if (category) {
@@ -163,6 +166,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
     }
     const defaultSteps = subCatType === 'digital'
       ? ["basic_info", "upload_files", "license", "pricing", "seo", "preview", "publish"]
+      : subCatType === 'all'
+      ? ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
       : ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"];
 
     setSubCategories([
@@ -510,6 +515,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                         const type = e.target.value;
                         const defaultSteps = type === 'digital'
                           ? ["basic_info", "upload_files", "license", "pricing", "seo", "preview", "publish"]
+                          : type === 'all'
+                          ? ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
                           : ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"];
                         setFormData(prev => ({
                           ...prev,
@@ -521,7 +528,34 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                     >
                       <option value="physical">Physical Product</option>
                       <option value="digital">Digital Product</option>
+                      <option value="all">Both Physical & Digital</option>
                     </select>
+                    {formData.productType === 'physical' && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          productType: 'all',
+                          workflowSteps: ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
+                        }))}
+                        className="mt-1.5 text-xs text-primary-600 hover:text-primary-700 font-bold flex items-center gap-1.5 bg-primary-50 px-2 py-1 rounded border border-primary-200"
+                      >
+                        + Add Digital Type (Enable both Physical & Digital)
+                      </button>
+                    )}
+                    {formData.productType === 'digital' && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          productType: 'all',
+                          workflowSteps: ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
+                        }))}
+                        className="mt-1.5 text-xs text-primary-600 hover:text-primary-700 font-bold flex items-center gap-1.5 bg-primary-50 px-2 py-1 rounded border border-primary-200"
+                      >
+                        + Add Physical Type (Enable both Physical & Digital)
+                      </button>
+                    )}
                   </div>
 
                   <div>
@@ -551,26 +585,30 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                       })}
                     </div>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({
-                          ...prev,
-                          workflowSteps: ["basic_info_art", "art_dimensions", "art_canvas_types", "art_frame_types", "pricing_matrix", "inventory", "shipping", "seo", "preview", "publish"]
-                        }))}
-                        className="text-xs text-primary-600 hover:text-primary-700 font-bold bg-primary-50 px-2.5 py-1.5 rounded border border-primary-200"
-                      >
-                        Physical Art Preset
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({
-                          ...prev,
-                          workflowSteps: ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
-                        }))}
-                        className="text-xs text-gray-600 hover:text-gray-700 font-bold bg-gray-100 px-2.5 py-1.5 rounded border border-gray-300"
-                      >
-                        Standard Physical Preset
-                      </button>
+                      {isArtCategory && formData.productType !== 'digital' && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            workflowSteps: ["basic_info_art", "art_dimensions", "art_canvas_types", "art_frame_types", "pricing_matrix", "inventory", "shipping", "seo", "preview", "publish"]
+                          }))}
+                          className="text-xs text-primary-600 hover:text-primary-700 font-bold bg-primary-50 px-2.5 py-1.5 rounded border border-primary-200"
+                        >
+                          Physical Art Preset
+                        </button>
+                      )}
+                      {formData.productType !== 'digital' && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({
+                            ...prev,
+                            workflowSteps: ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
+                          }))}
+                          className="text-xs text-gray-600 hover:text-gray-700 font-bold bg-gray-100 px-2.5 py-1.5 rounded border border-gray-300"
+                        >
+                          Standard Physical Preset
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -630,6 +668,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                           >
                             <option value="physical">Physical Product</option>
                             <option value="digital">Digital Product</option>
+                            <option value="all">Both Physical & Digital</option>
                           </select>
                         </div>
                       )}

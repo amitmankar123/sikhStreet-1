@@ -1,3 +1,47 @@
+# Session Changes Log - July 25, 2026
+
+## Objectives Completed
+1. Integrated direct backend API connection for customer login/signup/OTP verification.
+2. Integrated direct backend API connection for vendor login/signup/OTP/onboarding validation checks.
+3. Added active notification alerts (red dots/unread counts) in the Admin sidebar layout, auto-polling in real-time.
+4. Resolved `MissingSchemaError: Schema hasn't been registered for model "DeliveryBoy"`.
+5. Created and integrated a real-time global multi-vendor multi-currency conversion system (INR, USD, CAD, GBP, EUR) for checkout, listings, and headers.
+6. Created a dedicated Admin Exchange Rates dashboard panel.
+
+---
+
+## Detailed Log of Changes
+
+### 1. Customer & Vendor Authentication Backend Integration
+- **Direct API Connections**: Replaced simulated mock fallbacks in `authStore.js` and `vendorAuthStore.js` to speak directly to active backend routing services.
+- **Selective Toast Suppression**: Configured the Axios interceptor in `api.js` to suppress generic toast pop-ups for `/auth/*` routes, enabling inline validations.
+- **Inline Validation Feedback**: Updated customer `Login.jsx` and vendor `Register.jsx` to render backend constraint conflicts (duplicate email, phone, invalid credentials) directly inline on their target input fields.
+- **Mock SMTP Verification**: Configured `otp.service.js` and controllers to generate/bypass SMTP with standard code `123456` when `MOCK_EMAIL_SMTP=true` is set.
+
+### 2. Admin Real-Time Alerts & Auto-Polling
+- **Dynamic Counters**: Hooked `useNotificationStore` and `useVendorStore` inside `AdminSidebar.jsx` to dynamically fetch active unread counts.
+- **Auto-Polling Loop**: Configured a 10-second automatic background polling loop on the Admin sidebar, Admin dashboard, Admin orders list, Vendor dashboard, and Vendor orders list, keeping dashboards updated in real-time.
+- **Pulsing Notification Indicators**: Added pulsing red dot alerts on the side navigation tabs to prompt admins for action when new applications or alerts arrive.
+
+### 3. DeliveryBoy Model Crash Safety
+- **Safe Fallback Refactoring**: Replaced all direct calls to `mongoose.model('DeliveryBoy')` with `mongoose.models.DeliveryBoy || null` inside `order.controller.js` (Admin), `authorize.js` middleware, and `refreshToken.service.js`. This prevents Mongoose from crashing with a 500 error if the delivery boy schema remains unregistered.
+
+### 4. Global Multi-Vendor Multi-Currency System
+- **Schema Field Extensions**: Added `currency` to User, Vendor, and Product models. Added order conversion fields (`customerCurrency`, `exchangeRateToCustomer`, `totalConverted`) to the Order model.
+- **Automatic Currency Seeding**: Configured the `createProduct` controller to inherit listing currencies from the vendor's profile currency.
+- **Zustand currencyStore**: Implemented `currencyStore.js` to fetch live exchange rates relative to `INR` from `https://open.er-api.com/v6/latest/INR` on mount.
+- **Dynamic Format Helper**: Updated `formatPrice(price, baseCurrency)` to convert prices to the customer's selected currency using cross-rate conversion ratios:
+  $$\text{priceInCustomerCurrency} = \text{priceInProductCurrency} \times \frac{\text{Rate}(C_{customer})}{\text{Rate}(C_{product})}$$
+  Outputs display with appropriate symbols (`₹`, `$`, `CA$`, `£`, `€`).
+- **Cart Calculations**: Updated `getTotal` and `getItemsByVendor` inside the cart store to convert item totals dynamically based on rate conversion parameters.
+- **Dropdown Controls**: Added preferred currency fields to customer signup page (`Register.jsx`) and currency switch dropdown widgets inside both `DesktopHeader.jsx` and `MobileHeader.jsx`.
+
+### 5. Admin Exchange Rates Dashboard
+- **Live Rate Screen**: Created `ExchangeRates.jsx` under `finance/` to list live exchange rates (relative to both INR and USD) and provide an interactive quick calculator widget.
+- **Menu Registration**: Added a child mapping to the sidebar and registered `/admin/finance/exchange-rates` inside `adminMenu.json` and `App.jsx`.
+
+---
+
 # Session Changes Log - July 23, 2026
 
 ## Objective

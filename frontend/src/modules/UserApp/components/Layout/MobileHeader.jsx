@@ -9,126 +9,7 @@ import { useWishlistStore } from "../../../../shared/store/wishlistStore";
 import { useCategoryStore } from "../../../../shared/store/categoryStore";
 import { appLogo } from "../../../../data/logos";
 
-const booksMegaMenuLayout = [
-  // Column 1
-  [
-    {
-      title: "Sikh History",
-      id: "sikh-history-books",
-      topics: ["Gurus", "Gurbani Studies", "Sikh Philosophy", "Sikh Practices", "Sikh Rehat", "Sikh Theology", "Sikh Symbols", "Sikh History", "Punjab History", "Partition", "Sikh Empire", "Freedom Movement", "Military History"]
-    }
-  ],
-  // Column 2
-  [
-    {
-      title: "Children's Books",
-      id: "childrens-books",
-      topics: ["Picture Books", "Early Readers", "Activity Books", "Educational Books", "Bedtime Stories", "Sikh Values", "Comics", "Historical Comics", "Graphic Novels"]
-    }
-  ],
-  // Column 3
-  [
-    {
-      title: "Punjabi Literature",
-      id: "punjabi-literature",
-      topics: ["Fiction", "Short Stories", "Poetry", "Classic Literature", "Contemporary Literature"]
-    },
-    {
-      title: "Biographies",
-      id: "biographies-sikh-personalities",
-      topics: ["Gurus", "Sikh Warriors", "Saints", "Scholars", "Modern Sikh Personalities"]
-    }
-  ],
-  // Column 4
-  [
-    {
-      title: "Language & Learning",
-      id: "language-learning-books",
-      topics: ["Punjabi", "Gurmukhi", "Shahmukhi", "Dictionaries", "Grammar", "Workbooks", "Persian", "Urdu", "Sanskrit"]
-    },
-    {
-      title: "Academic & Research",
-      id: "journals-notebooks",
-      topics: ["Research Papers", "Journals", "Reference Books", "Encyclopedias", "University Texts"]
-    }
-  ],
-  // Column 5
-  [
-    {
-      title: "Punjab & Politics",
-      id: "punjab",
-      topics: ["Punjab History", "Sikh Identity", "Politics", "Human Rights", "Diaspora", "Gender Studies"]
-    },
-    {
-      title: "Digital & E-books",
-      id: "e-books",
-      topics: ["Fiction", "Poetry", "Sikh History", "Punjabi", "Reference Books"]
-    }
-  ]
-];
-
-const fashionMegaMenuLayout = [
-  // Column 1
-  [
-    {
-      title: "Patkas",
-      id: "patkas",
-      topics: []
-    },
-    {
-      title: "Dastar Accessories",
-      id: "dastar-accessories",
-      topics: []
-    }
-  ],
-  // Column 2
-  [
-    {
-      title: "Sikh-inspired Clothing",
-      id: "sikh-inspired-clothing",
-      topics: []
-    },
-    {
-      title: "T-Shirts",
-      id: "t-shirts",
-      topics: []
-    }
-  ],
-  // Column 3
-  [
-    {
-      title: "Hoodies",
-      id: "hoodies",
-      topics: []
-    },
-    {
-      title: "Jackets",
-      id: "jackets",
-      topics: []
-    }
-  ],
-  // Column 4
-  [
-    {
-      title: "Scarves",
-      id: "scarves",
-      topics: []
-    }
-  ],
-  // Column 5
-  [
-    {
-      title: "Children's Clothing",
-      id: "children's-clothing",
-      topics: []
-    }
-  ]
-];
-
-const megaMenuLayouts = {
-  books: booksMegaMenuLayout,
-  fashion: fashionMegaMenuLayout
-};
+// Mega menu layouts are dynamically built from the database/fallback categories
 
 const MobileHeader = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -434,7 +315,6 @@ const MobileHeader = () => {
         {/* Row 2: Desktop Navigation Links (Below Search) */}
         <nav className="hidden md:flex gap-[3%] items-center justify-start border-t border-gray-200/50 pt-2.5 w-full pl-3.5">
           {navItems.map((item) => {
-            const megaMenuLayout = item.categoryId ? megaMenuLayouts[item.categoryId] : null;
             const itemSubcategories = item.categoryId
               ? categoriesToUse.filter((cat) => {
                 const normalizedParent = typeof cat.parentId === 'object'
@@ -443,6 +323,59 @@ const MobileHeader = () => {
                 return String(normalizedParent) === String(item.categoryId) && cat.isActive !== false;
               })
               : [];
+
+            // Dynamically construct megaMenuLayout if there are sub-subcategories (topics)
+            const megaMenuLayout = (() => {
+              if (!item.categoryId) return null;
+              
+              // 1. Get all subcategories of the active category
+              const subs = categoriesToUse.filter((cat) => {
+                const normalizedParent = typeof cat.parentId === 'object'
+                  ? (cat.parentId?._id ?? cat.parentId?.id ?? null)
+                  : cat.parentId;
+                return String(normalizedParent) === String(item.categoryId) && cat.isActive !== false;
+              });
+
+              // 2. Check if any subcategory has active child categories (Level 3 topics)
+              const hasLevel3 = subs.some((sub) =>
+                categoriesToUse.some((cat) => {
+                  const normalizedParent = typeof cat.parentId === 'object'
+                    ? (cat.parentId?._id ?? cat.parentId?.id ?? null)
+                    : cat.parentId;
+                  return String(normalizedParent) === String(sub.id || sub._id) && cat.isActive !== false;
+                })
+              );
+
+              // 3. If there are level 3 child categories, dynamically build a 5-column layout
+              if (hasLevel3) {
+                const sections = subs.map((sub) => {
+                  const topics = categoriesToUse
+                    .filter((cat) => {
+                      const normalizedParent = typeof cat.parentId === 'object'
+                        ? (cat.parentId?._id ?? cat.parentId?.id ?? null)
+                        : cat.parentId;
+                      return String(normalizedParent) === String(sub.id || sub._id) && cat.isActive !== false;
+                    })
+                    .sort((a, b) => (a.order || 0) - (b.order || 0))
+                    .map((cat) => cat.name);
+
+                  return {
+                    title: sub.name,
+                    id: sub.id || sub._id,
+                    topics: topics
+                  };
+                });
+
+                // Distribute sections across 5 columns
+                const numCols = 5;
+                const cols = Array.from({ length: numCols }, () => []);
+                sections.forEach((section, index) => {
+                  cols[index % numCols].push(section);
+                });
+                return cols;
+              }
+              return null;
+            })();
 
             const isHovered = hoveredNavId === item.name;
 
