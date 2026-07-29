@@ -32,6 +32,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [selectedBaseType, setSelectedBaseType] = useState("physical");
+  const [subCatBaseType, setSubCatBaseType] = useState("physical");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -76,6 +78,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
 
   useEffect(() => {
     if (category) {
+      const type = category.productType || "physical";
       setFormData({
         name: category.name || "",
         description: category.description || "",
@@ -86,9 +89,10 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
         order: category.order || 0,
         metaTitle: category.metaTitle || "",
         metaDescription: category.metaDescription || "",
-        productType: category.productType || "physical",
+        productType: type,
         workflowSteps: Array.isArray(category.workflowSteps) ? category.workflowSteps : [],
       });
+      setSelectedBaseType(type === "all" ? "physical" : type);
 
       // Load existing subcategories from the store categories
       const children = categories.filter((cat) => {
@@ -120,6 +124,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
         productType: "physical",
         workflowSteps: ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
       });
+      setSelectedBaseType("physical");
       setSubCategories([]);
     }
   }, [category, parentId, categories]);
@@ -183,6 +188,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
     setSubCatName("");
     setSubCatImage("");
     setSubCatType("physical");
+    setSubCatBaseType("physical");
     setSubCatGroup("");
   };
 
@@ -510,13 +516,12 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                     </label>
                     <select
                       name="productType"
-                      value={formData.productType || "physical"}
+                      value={selectedBaseType}
                       onChange={(e) => {
                         const type = e.target.value;
+                        setSelectedBaseType(type);
                         const defaultSteps = type === 'digital'
                           ? ["basic_info", "upload_files", "license", "pricing", "seo", "preview", "publish"]
-                          : type === 'all'
-                          ? ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
                           : ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"];
                         setFormData(prev => ({
                           ...prev,
@@ -528,33 +533,62 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                     >
                       <option value="physical">Physical Product</option>
                       <option value="digital">Digital Product</option>
-                      <option value="all">Both Physical & Digital</option>
                     </select>
-                    {formData.productType === 'physical' && (
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({
-                          ...prev,
-                          productType: 'all',
-                          workflowSteps: ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
-                        }))}
-                        className="mt-1.5 text-xs text-primary-600 hover:text-primary-700 font-bold flex items-center gap-1.5 bg-primary-50 px-2 py-1 rounded border border-primary-200"
-                      >
-                        + Add Digital Type (Enable both Physical & Digital)
-                      </button>
+
+                    {/* Digital toggle — shown after Physical is chosen */}
+                    {selectedBaseType === 'physical' && (
+                      <div className="mt-3 rounded-xl border border-dashed border-primary-200 bg-primary-50/60 p-3">
+                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                          <div
+                            onClick={() => setFormData(prev => ({
+                              ...prev,
+                              productType: prev.productType === 'all' ? 'physical' : 'all',
+                              workflowSteps: prev.productType === 'all'
+                                ? ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
+                                : ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
+                            }))}
+                            className={`relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer ${
+                              formData.productType === 'all' ? 'bg-primary-600' : 'bg-gray-300'
+                            }`}
+                          >
+                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
+                              formData.productType === 'all' ? 'translate-x-5' : 'translate-x-0'
+                            }`} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-primary-700">Also enable digital listing</p>
+                            <p className="text-[11px] text-primary-500 mt-0.5">Adds digital file upload & license steps to this category&apos;s workflow</p>
+                          </div>
+                        </label>
+                      </div>
                     )}
-                    {formData.productType === 'digital' && (
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({
-                          ...prev,
-                          productType: 'all',
-                          workflowSteps: ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
-                        }))}
-                        className="mt-1.5 text-xs text-primary-600 hover:text-primary-700 font-bold flex items-center gap-1.5 bg-primary-50 px-2 py-1 rounded border border-primary-200"
-                      >
-                        + Add Physical Type (Enable both Physical & Digital)
-                      </button>
+
+                    {/* Physical toggle — shown after Digital is chosen */}
+                    {selectedBaseType === 'digital' && (
+                      <div className="mt-3 rounded-xl border border-dashed border-purple-200 bg-purple-50/60 p-3">
+                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                          <div
+                            onClick={() => setFormData(prev => ({
+                              ...prev,
+                              productType: prev.productType === 'all' ? 'digital' : 'all',
+                              workflowSteps: prev.productType === 'all'
+                                ? ["basic_info", "upload_files", "license", "pricing", "seo", "preview", "publish"]
+                                : ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
+                            }))}
+                            className={`relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer ${
+                              formData.productType === 'all' ? 'bg-purple-600' : 'bg-gray-300'
+                            }`}
+                          >
+                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
+                              formData.productType === 'all' ? 'translate-x-5' : 'translate-x-0'
+                            }`} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-purple-900">Also enable physical listing</p>
+                            <p className="text-[11px] text-purple-500 mt-0.5">Adds physical shipping & inventory steps to this category&apos;s workflow</p>
+                          </div>
+                        </label>
+                      </div>
                     )}
                   </div>
 
@@ -662,14 +696,47 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                             Subcategory Product Type
                           </label>
                           <select
-                            value={subCatType}
-                            onChange={(e) => setSubCatType(e.target.value)}
+                            value={subCatBaseType}
+                            onChange={(e) => {
+                              const type = e.target.value;
+                              setSubCatBaseType(type);
+                              setSubCatType(type);
+                            }}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
                           >
                             <option value="physical">Physical Product</option>
                             <option value="digital">Digital Product</option>
-                            <option value="all">Both Physical & Digital</option>
                           </select>
+                          {subCatBaseType === 'physical' && (
+                            <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+                              <div
+                                onClick={() => setSubCatType(prev => prev === 'all' ? 'physical' : 'all')}
+                                className={`relative w-8 h-4 rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer ${
+                                  subCatType === 'all' ? 'bg-primary-600' : 'bg-gray-300'
+                                }`}
+                              >
+                                <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform duration-200 ${
+                                  subCatType === 'all' ? 'translate-x-4' : 'translate-x-0'
+                                }`} />
+                              </div>
+                              <span className="text-[11px] font-semibold text-primary-600">Also enable digital</span>
+                            </label>
+                          )}
+                          {subCatBaseType === 'digital' && (
+                            <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+                              <div
+                                onClick={() => setSubCatType(prev => prev === 'all' ? 'digital' : 'all')}
+                                className={`relative w-8 h-4 rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer ${
+                                  subCatType === 'all' ? 'bg-purple-600' : 'bg-gray-300'
+                                }`}
+                              >
+                                <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform duration-200 ${
+                                  subCatType === 'all' ? 'translate-x-4' : 'translate-x-0'
+                                }`} />
+                              </div>
+                              <span className="text-[11px] font-semibold text-purple-600">Also enable physical</span>
+                            </label>
+                          )}
                         </div>
                       )}
 
@@ -677,16 +744,15 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                         <label className="block text-xs font-bold text-gray-700 mb-2">
                           Subcategory Image
                         </label>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={subCatImage}
-                            onChange={(e) => setSubCatImage(e.target.value)}
-                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                            placeholder="Image URL or upload..."
-                          />
-                          <label className="flex-shrink-0 inline-flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer text-sm font-semibold border border-gray-300">
+                        <label className={`flex items-center justify-center gap-2 w-full h-10 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                            isUploadingSubImage
+                              ? 'border-primary-300 bg-primary-50 text-primary-500'
+                              : 'border-gray-300 bg-gray-50 text-gray-500 hover:border-primary-400 hover:bg-primary-50 hover:text-primary-600'
+                          }`}>
                             <FiUpload className="w-4 h-4" />
+                            <span className="text-xs font-semibold">
+                              {isUploadingSubImage ? 'Uploading...' : subCatImage ? 'Change Image' : 'Upload Image'}
+                            </span>
                             <input
                               type="file"
                               accept="image/*, image/avif, .avif"
@@ -694,28 +760,17 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                               className="hidden"
                               disabled={isUploadingSubImage}
                             />
-                          </label>
-                        </div>
+                        </label>
+                        {subCatImage && (
+                          <div className="mt-2 flex items-center justify-between gap-2 p-2 bg-white rounded-lg border border-gray-200">
+                             <img src={subCatImage} alt="Preview" className="w-8 h-8 object-cover rounded" />
+                             <button type="button" onClick={() => setSubCatImage('')} className="text-[10px] text-red-500 font-bold uppercase">Remove</button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {subCatImage && (
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={subCatImage}
-                          alt="Sub Preview"
-                          className="w-12 h-12 object-cover rounded-lg border border-gray-200 bg-white p-0.5"
-                          onError={(e) => { e.target.style.display = 'none'; }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setSubCatImage("")}
-                          className="text-xs text-red-500 font-semibold hover:underline"
-                        >
-                          Remove Image
-                        </button>
-                      </div>
-                    )}
+
 
                     <button
                       type="button"
@@ -746,8 +801,14 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                                   : (isLevel2 ? "New Topic" : "New Subcategory")}
                               </span>
                               {!isLevel2 && (
-                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${sub.productType === 'digital' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                                  {sub.productType === 'digital' ? 'Digital' : 'Physical'}
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                  sub.productType === 'digital'
+                                    ? 'bg-purple-100 text-purple-700'
+                                    : sub.productType === 'all'
+                                      ? 'bg-teal-100 text-teal-700'
+                                      : 'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {sub.productType === 'digital' ? 'Digital' : sub.productType === 'all' ? 'Physical & Digital' : 'Physical'}
                                 </span>
                               )}
                             </div>
@@ -788,34 +849,46 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                               <div />
                             )}
 
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={sub.image}
-                                onChange={(e) => handleUpdateSubCatField(index, "image", e.target.value)}
-                                className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                placeholder="Image URL or upload..."
-                              />
-                              <label className="flex-shrink-0 inline-flex items-center justify-center p-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer border border-gray-300">
-                                <FiUpload className="w-4 h-4" />
-                                <input
-                                  type="file"
-                                  accept="image/*, image/avif, .avif"
-                                  onChange={(e) => handleSubCatListItemImageUpload(index, e)}
-                                  className="hidden"
-                                />
-                              </label>
-                            </div>
+                             <div className="flex flex-col gap-1.5">
+                               {sub.image ? (
+                                 <div className="flex items-center gap-2">
+                                   <img
+                                     src={sub.image}
+                                     alt="Preview"
+                                     className="w-10 h-10 object-cover rounded-lg border border-gray-200 bg-white flex-shrink-0"
+                                     onError={(e) => { e.target.style.display = 'none'; }}
+                                   />
+                                   <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer text-xs font-semibold border border-gray-200">
+                                     <FiUpload className="w-3 h-3" /> Change
+                                     <input
+                                       type="file"
+                                       accept="image/*, image/avif, .avif"
+                                       onChange={(e) => handleSubCatListItemImageUpload(index, e)}
+                                       className="hidden"
+                                     />
+                                   </label>
+                                   <button
+                                     type="button"
+                                     onClick={() => handleUpdateSubCatField(index, 'image', '')}
+                                     className="text-xs text-red-500 font-semibold hover:underline"
+                                   >
+                                     Remove
+                                   </button>
+                                 </div>
+                               ) : (
+                                 <label className="flex items-center justify-center gap-1.5 w-full h-12 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer text-gray-500 hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
+                                   <FiUpload className="w-3.5 h-3.5" />
+                                   <span className="text-xs font-semibold">Upload Image</span>
+                                   <input
+                                     type="file"
+                                     accept="image/*, image/avif, .avif"
+                                     onChange={(e) => handleSubCatListItemImageUpload(index, e)}
+                                     className="hidden"
+                                   />
+                                 </label>
+                               )}
+                             </div>
                           </div>
-
-                          {sub.image && (
-                            <img
-                              src={sub.image}
-                              alt="Sub Preview"
-                              className="w-10 h-10 object-cover rounded-lg border border-gray-200 bg-white"
-                              onError={(e) => { e.target.style.display = 'none'; }}
-                            />
-                          )}
                         </div>
                       ))}
                     </div>

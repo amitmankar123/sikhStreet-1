@@ -1339,22 +1339,6 @@ const MobileCategory = () => {
                                 )}
                               </div>
 
-                              {/* === COLOUR === */}
-                              <div className="border-b border-gray-200">
-                                <button onClick={() => toggleSection('colour')} className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors">
-                                  <span className="font-semibold text-sm text-gray-900">Colour</span>
-                                  <FiChevronDown className={`text-gray-500 text-xs transition-transform duration-200 ${openSections.colour ? 'rotate-180' : ''}`} />
-                                </button>
-                                {openSections.colour && (
-                                  <div className="px-4 pb-3">
-                                    <div className="grid grid-cols-6 gap-1.5 mt-1">
-                                      {[{ label: 'Red', hex: '#c0392b' }, { label: 'Orange', hex: '#e67e22' }, { label: 'Yellow', hex: '#f1c40f' }, { label: 'Green', hex: '#27ae60' }, { label: 'Blue', hex: '#2980b9' }, { label: 'Purple', hex: '#8e44ad' }, { label: 'Pink', hex: '#e91e8c' }, { label: 'White', hex: '#f5f5f5' }, { label: 'Black', hex: '#1a1a1a' }, { label: 'Brown', hex: '#7B3F00' }, { label: 'Gold', hex: '#D4AF37' }, { label: 'Multi', hex: 'linear-gradient(135deg, red, blue, green)' }].map(({ label, hex }) => (
-                                        <button key={label} title={label} onClick={() => handleFilterChange('color', filters.color === label ? '' : label)} className={`w-7 h-7 rounded-full border-2 transition-all ${filters.color === label ? 'border-[#1861bf] scale-110 shadow-md' : 'border-gray-200 hover:border-gray-400'}`} style={{ background: hex }} />
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
 
                               {/* === ITEM TYPE === */}
                               <div className="border-b border-gray-200">

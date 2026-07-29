@@ -346,10 +346,10 @@ const MobileHeader = () => {
                 })
               );
 
-              // 3. If there are level 3 child categories, dynamically build a 5-column layout
-              if (hasLevel3) {
+              // 3. If there are level 3 child categories or it is the fashion category, dynamically build a 5-column layout
+              if (hasLevel3 || item.categoryId === "fashion") {
                 const sections = subs.map((sub) => {
-                  const topics = categoriesToUse
+                  let topics = categoriesToUse
                     .filter((cat) => {
                       const normalizedParent = typeof cat.parentId === 'object'
                         ? (cat.parentId?._id ?? cat.parentId?.id ?? null)
@@ -358,6 +358,22 @@ const MobileHeader = () => {
                     })
                     .sort((a, b) => (a.order || 0) - (b.order || 0))
                     .map((cat) => cat.name);
+
+                  // Fallback topics for fashion if none in DB to match books mega menu look
+                  if (topics.length === 0 && item.categoryId === "fashion") {
+                    const fallbackMap = {
+                      "patkas": ["Single Patka", "Double Patka", "Kids Patka", "Premium Voile"],
+                      "dastar-accessories": ["Turban Pins", "Fifty", "Salai / Baaj", "Baaj Needle"],
+                      "sikh-inspired-clothing": ["Graphic Tees", "Sweatshirts", "Kids Tees", "Gurmat Quotes"],
+                      "hoodies": ["Winter Hoodies", "Pullover", "Zip-up", "Oversized"],
+                      "t-shirts": ["Casual Tees", "Printed T-shirts", "Polo Shirts", "V-Neck"],
+                      "jackets": ["Windbreakers", "Winter Jackets", "Coats", "Bomber Jackets"],
+                      "scarves": ["Dupatta", "Shawls", "Chunri", "Rumal"],
+                      "children's-clothing": ["Kids Patkas", "Kids Tees", "Infant Rompers", "Frock Patkas"]
+                    };
+                    const subIdString = String(sub.id || sub._id || "");
+                    topics = fallbackMap[subIdString] || [];
+                  }
 
                   return {
                     title: sub.name,
