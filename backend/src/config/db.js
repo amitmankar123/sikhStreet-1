@@ -1,5 +1,14 @@
 import mongoose from 'mongoose';
+import dns from 'dns';
 import '../models/index.js';
+
+// Fallback DNS to resolve Atlas querySrv issues on some local networks
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+  // Ignore errors if setServers is restricted or fails
+}
+
 
 const connectDB = async () => {
   try {
