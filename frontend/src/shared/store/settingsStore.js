@@ -5,7 +5,7 @@ import logoImage from "../../../data/logos/ChatGPT Image Dec 2, 2025, 03_01_19 P
 
 const defaultSettings = {
   general: {
-    storeName: "Appzeto E-commerce",
+    storeName: "Sikh Street",
     storeLogo: logoImage,
     favicon: logoImage,
     contactEmail: "contact@example.com",
@@ -120,7 +120,7 @@ const defaultSettings = {
     smtpUser: "",
     smtpPassword: "",
     fromEmail: "noreply@example.com",
-    fromName: "Appzeto Store",
+    fromName: "Sikh Street",
   },
   notifications: {
     email: {
@@ -136,7 +136,7 @@ const defaultSettings = {
     },
   },
   seo: {
-    metaTitle: "Appzeto E-commerce - Shop Online",
+    metaTitle: "Sikh Street - Shop Online",
     metaDescription: "Shop the latest trends and products",
     metaKeywords: "ecommerce, shopping, online store",
     ogImage: logoImage,
@@ -159,7 +159,42 @@ export const useSettingsStore = create(
       initialize: () => {
         const savedSettings = localStorage.getItem("admin-settings");
         if (savedSettings) {
-          set({ settings: JSON.parse(savedSettings) });
+          const parsed = JSON.parse(savedSettings);
+          // Deep merge: apply defaults for any missing or still-Appzeto keys
+          const merged = {
+            ...defaultSettings,
+            ...parsed,
+            general: {
+              ...defaultSettings.general,
+              ...parsed.general,
+              // Override storeName if it still contains the old brand name
+              storeName:
+                parsed.general?.storeName &&
+                !parsed.general.storeName.toLowerCase().includes("appzeto")
+                  ? parsed.general.storeName
+                  : defaultSettings.general.storeName,
+            },
+            email: {
+              ...defaultSettings.email,
+              ...parsed.email,
+              fromName:
+                parsed.email?.fromName &&
+                !parsed.email.fromName.toLowerCase().includes("appzeto")
+                  ? parsed.email.fromName
+                  : defaultSettings.email.fromName,
+            },
+            seo: {
+              ...defaultSettings.seo,
+              ...parsed.seo,
+              metaTitle:
+                parsed.seo?.metaTitle &&
+                !parsed.seo.metaTitle.toLowerCase().includes("appzeto")
+                  ? parsed.seo.metaTitle
+                  : defaultSettings.seo.metaTitle,
+            },
+          };
+          set({ settings: merged });
+          localStorage.setItem("admin-settings", JSON.stringify(merged));
         } else {
           set({ settings: defaultSettings });
           localStorage.setItem(

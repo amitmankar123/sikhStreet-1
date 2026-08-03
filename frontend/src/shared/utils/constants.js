@@ -2,7 +2,7 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // App Constants
-export const APP_NAME = 'Appzeto multi vendor E-commerce';
+export const APP_NAME = 'Sikh Street';
 export const APP_DESCRIPTION = 'Multi Vendor E-commerce Platform';
 
 // Animation Durations
