@@ -1,9 +1,55 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiSave, FiTruck, FiMapPin } from 'react-icons/fi';
+import { FiSave, FiTruck, FiMapPin, FiGlobe, FiDollarSign } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useVendorAuthStore } from "../../store/vendorAuthStore";
 import toast from 'react-hot-toast';
+
+const renderLogo = (id) => {
+  switch (id) {
+    case 'fedex':
+      return (
+        <div className="bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 flex items-center justify-center h-12 w-28 shadow-sm flex-shrink-0 select-none">
+          <div className="font-sans font-black text-[22px] tracking-tight">
+            <span className="text-[#4D148C]">Fed</span>
+            <span className="text-[#FF6600]">Ex</span>
+          </div>
+        </div>
+      );
+    case 'delhivery':
+      return (
+        <div className="bg-white border border-gray-200 rounded-xl px-2 py-1 flex items-center justify-center h-12 w-28 shadow-sm flex-shrink-0 select-none">
+          <div className="flex items-center font-sans font-black tracking-widest text-[10px]">
+            <span className="text-gray-900">DELHIVERY</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E51B24] ml-0.5 mt-1.5 flex-shrink-0"></span>
+          </div>
+        </div>
+      );
+    case 'bluedart':
+      return (
+        <div className="bg-white border border-gray-200 rounded-xl px-2.5 py-1 flex items-center justify-center h-12 w-28 shadow-sm flex-shrink-0 select-none">
+          <div className="flex flex-col font-sans italic font-black text-[10px] tracking-tight text-blue-900 leading-none">
+            <span>BLUE DART</span>
+            <span className="h-0.5 bg-[#FFCC00] mt-0.5 w-full"></span>
+          </div>
+        </div>
+      );
+    case 'dhl':
+      return (
+        <div className="bg-[#FFCC00] rounded-xl px-3 py-2 flex items-center justify-center h-12 w-28 shadow-sm flex-shrink-0 select-none border border-[#E6B800]">
+          <div className="font-sans font-black italic tracking-tighter text-base text-[#D4001A] transform -skew-x-6">
+            DHL
+          </div>
+        </div>
+      );
+    default:
+      return (
+        <div className="bg-gray-100 border rounded-xl h-12 w-28 flex items-center justify-center font-bold text-gray-400">
+          LOGISTICS
+        </div>
+      );
+  }
+};
 
 const ShippingSettings = () => {
   const { vendor, updateProfile } = useVendorAuthStore();
@@ -19,6 +65,53 @@ const ShippingSettings = () => {
   });
   const [activeSection, setActiveSection] = useState('general');
 
+  const [carrierSettings, setCarrierSettings] = useState([
+    {
+      id: 'fedex',
+      name: 'FedEx Express',
+      shortName: 'FedEx',
+      bgColor: 'bg-purple-100 text-purple-700 border-purple-200',
+      domesticEnabled: true,
+      domesticRate: 12.00,
+      internationalEnabled: true,
+      internationalRate: 45.00,
+      supportedServices: ['Priority Overnight', 'Standard Overnight', 'Economy Ground']
+    },
+    {
+      id: 'delhivery',
+      name: 'Delhivery Logistics',
+      shortName: 'Delhivery',
+      bgColor: 'bg-amber-100 text-amber-805 border-amber-200',
+      domesticEnabled: true,
+      domesticRate: 5.00,
+      internationalEnabled: false,
+      internationalRate: 25.00,
+      supportedServices: ['Express Cargo', 'Same Day Delivery', 'Cash on Delivery (COD)']
+    },
+    {
+      id: 'bluedart',
+      name: 'Blue Dart Express',
+      shortName: 'BlueDart',
+      bgColor: 'bg-blue-100 text-blue-700 border-blue-200',
+      domesticEnabled: false,
+      domesticRate: 8.00,
+      internationalEnabled: false,
+      internationalRate: 35.00,
+      supportedServices: ['Domestic Priority', 'Dart Apex', 'Dart Ground']
+    },
+    {
+      id: 'dhl',
+      name: 'DHL Worldwide Express',
+      shortName: 'DHL',
+      bgColor: 'bg-red-100 text-red-650 border-red-200',
+      domesticEnabled: false,
+      domesticRate: 15.00,
+      internationalEnabled: true,
+      internationalRate: 50.00,
+      supportedServices: ['Express Worldwide', 'Express Envelope', 'DHL Import Express']
+    }
+  ]);
+
   useEffect(() => {
     if (vendor) {
       setFormData({
@@ -30,6 +123,15 @@ const ShippingSettings = () => {
         handlingTime: vendor.handlingTime || 1,
         processingTime: vendor.processingTime || 1,
       });
+
+      const saved = localStorage.getItem(`vendor_carriers_${vendor.id || 'default'}`);
+      if (saved) {
+        try {
+          setCarrierSettings(JSON.parse(saved));
+        } catch (e) {
+          console.error("Failed to load saved vendor carriers:", e);
+        }
+      }
     }
   }, [vendor]);
 
@@ -41,19 +143,28 @@ const ShippingSettings = () => {
     });
   };
 
-  const handleShippingMethodToggle = (method) => {
-    const methods = formData.shippingMethods || [];
-    if (methods.includes(method)) {
-      setFormData({
-        ...formData,
-        shippingMethods: methods.filter((m) => m !== method),
-      });
-    } else {
-      setFormData({
-        ...formData,
-        shippingMethods: [...methods, method],
-      });
-    }
+  const handleCarrierToggle = (id, field) => {
+    setCarrierSettings(prev => prev.map(c => {
+      if (c.id === id) {
+        return {
+          ...c,
+          [field]: !c[field]
+        };
+      }
+      return c;
+    }));
+  };
+
+  const handleCarrierRateChange = (id, field, value) => {
+    setCarrierSettings(prev => prev.map(c => {
+      if (c.id === id) {
+        return {
+          ...c,
+          [field]: parseFloat(value) || 0
+        };
+      }
+      return c;
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -61,18 +172,17 @@ const ShippingSettings = () => {
     if (!vendor) return;
 
     try {
-      // Note: shipping settings fields will be persisted when the backend
-      // vendor model and updateProfile allowed-list are extended to include them.
-      // For now, we save what the backend accepts; the call still succeeds.
+      localStorage.setItem(`vendor_carriers_${vendor.id}`, JSON.stringify(carrierSettings));
+
       await updateProfile({
         shippingEnabled: formData.shippingEnabled,
         freeShippingThreshold: parseFloat(formData.freeShippingThreshold) || 0,
         defaultShippingRate: parseFloat(formData.defaultShippingRate) || 0,
-        shippingMethods: formData.shippingMethods,
         handlingTime: parseInt(formData.handlingTime) || 1,
         processingTime: parseInt(formData.processingTime) || 1,
+        shippingMethods: carrierSettings.filter(c => c.domesticEnabled || c.internationalEnabled).map(c => c.id)
       });
-      toast.success('Shipping settings saved successfully');
+      toast.success('Shipping settings and carrier selections saved successfully');
     } catch {
       // api.js shows toast
     }
@@ -211,44 +321,101 @@ const ShippingSettings = () => {
                   </div>
 
                   <div className="border-t border-gray-200 pt-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">Shipping Methods</h3>
-                    <div className="space-y-3">
-                      <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                        <input
-                          type="checkbox"
-                          checked={formData.shippingMethods?.includes('standard') || false}
-                          onChange={() => handleShippingMethodToggle('standard')}
-                          className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                        />
-                        <div className="flex-1">
-                          <span className="text-sm font-semibold text-gray-700">Standard Shipping</span>
-                          <p className="text-xs text-gray-500 mt-1">5-7 business days</p>
+                    <h3 className="text-lg font-bold text-gray-800 mb-1">Active Third-Party Carriers</h3>
+                    <p className="text-xs text-gray-500 mb-6">Select the shipping services you want to offer to your customers and set their base rates.</p>
+                    
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                      {carrierSettings.map((carrier) => (
+                        <div key={carrier.id} className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-all">
+                          <div>
+                            {/* Card Header: Logo & Title */}
+                            <div className="flex items-center gap-4 mb-5 border-b border-gray-100 pb-4">
+                              {renderLogo(carrier.id)}
+                              <div>
+                                <h4 className="font-bold text-gray-800 text-sm">{carrier.name}</h4>
+                                <span className="text-[10px] bg-purple-55 bg-opacity-10 text-purple-650 border border-purple-100 px-2 py-0.5 rounded font-semibold uppercase tracking-wider">
+                                  Admin Configured
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Service Toggles and Rates */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                              {/* Domestic (Inside Country) */}
+                              <div className={`p-3 rounded-xl border transition-all ${
+                                carrier.domesticEnabled 
+                                  ? 'border-purple-200 bg-purple-50/20' 
+                                  : 'border-gray-150 bg-gray-50/50'
+                              }`}>
+                                <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={carrier.domesticEnabled}
+                                    onChange={() => handleCarrierToggle(carrier.id, 'domesticEnabled')}
+                                    className="w-3.5 h-3.5 text-purple-600 rounded focus:ring-purple-500"
+                                  />
+                                  <span className="text-xs font-bold text-gray-700 select-none">Domestic Shipping</span>
+                                </label>
+                                <p className="text-[10px] text-gray-400 mb-2.5">Inside the country</p>
+                                
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-xs font-bold text-gray-400">$</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    disabled={!carrier.domesticEnabled}
+                                    value={carrier.domesticRate}
+                                    onChange={(e) => handleCarrierRateChange(carrier.id, 'domesticRate', e.target.value)}
+                                    placeholder="0.00"
+                                    className="w-full pl-6 pr-3 py-1.5 border border-gray-250 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:bg-gray-100/50 disabled:text-gray-400"
+                                  />
+                                </div>
+                              </div>
+
+                              {/* International (Outside Country) */}
+                              <div className={`p-3 rounded-xl border transition-all ${
+                                carrier.internationalEnabled 
+                                  ? 'border-purple-200 bg-purple-50/20' 
+                                  : 'border-gray-150 bg-gray-50/50'
+                              }`}>
+                                <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={carrier.internationalEnabled}
+                                    onChange={() => handleCarrierToggle(carrier.id, 'internationalEnabled')}
+                                    className="w-3.5 h-3.5 text-purple-600 rounded focus:ring-purple-500"
+                                  />
+                                  <span className="text-xs font-bold text-gray-700 select-none">International Shipping</span>
+                                </label>
+                                <p className="text-[10px] text-gray-400 mb-2.5">Outside the country</p>
+                                
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-xs font-bold text-gray-400">$</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    disabled={!carrier.internationalEnabled}
+                                    value={carrier.internationalRate}
+                                    onChange={(e) => handleCarrierRateChange(carrier.id, 'internationalRate', e.target.value)}
+                                    placeholder="0.00"
+                                    className="w-full pl-6 pr-3 py-1.5 border border-gray-250 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:bg-gray-100/50 disabled:text-gray-400"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 flex-wrap border-t border-gray-100 pt-3.5 mt-2">
+                            {carrier.supportedServices.map((service, index) => (
+                              <span key={index} className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded text-[9px] font-semibold text-slate-500">
+                                {service}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </label>
-                      <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                        <input
-                          type="checkbox"
-                          checked={formData.shippingMethods?.includes('express') || false}
-                          onChange={() => handleShippingMethodToggle('express')}
-                          className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                        />
-                        <div className="flex-1">
-                          <span className="text-sm font-semibold text-gray-700">Express Shipping</span>
-                          <p className="text-xs text-gray-500 mt-1">2-3 business days</p>
-                        </div>
-                      </label>
-                      <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                        <input
-                          type="checkbox"
-                          checked={formData.shippingMethods?.includes('overnight') || false}
-                          onChange={() => handleShippingMethodToggle('overnight')}
-                          className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                        />
-                        <div className="flex-1">
-                          <span className="text-sm font-semibold text-gray-700">Overnight Shipping</span>
-                          <p className="text-xs text-gray-500 mt-1">Next business day</p>
-                        </div>
-                      </label>
+                      ))}
                     </div>
                   </div>
                 </>

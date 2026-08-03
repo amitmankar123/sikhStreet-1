@@ -142,10 +142,21 @@ export const getTopProducts = asyncHandler(async (req, res) => {
             const qty = Number(item.quantity || 0);
             const price = Number(item.price || 0);
             if (!productSales[pId]) {
-                productSales[pId] = { totalSold: 0, revenue: 0 };
+                productSales[pId] = {
+                    totalSold: 0,
+                    revenue: 0,
+                    name: item.name || 'Unknown Product',
+                    image: item.image || null
+                };
             }
             productSales[pId].totalSold += qty;
             productSales[pId].revenue += qty * price;
+            if (item.name && productSales[pId].name === 'Unknown Product') {
+                productSales[pId].name = item.name;
+            }
+            if (item.image && !productSales[pId].image) {
+                productSales[pId].image = item.image;
+            }
         }
     }
 
@@ -154,6 +165,8 @@ export const getTopProducts = asyncHandler(async (req, res) => {
             id,
             totalSold: productSales[id].totalSold,
             revenue: productSales[id].revenue,
+            fallbackName: productSales[id].name,
+            fallbackImage: productSales[id].image,
         }))
         .sort((a, b) => b.totalSold - a.totalSold)
         .slice(0, 5);
@@ -163,9 +176,14 @@ export const getTopProducts = asyncHandler(async (req, res) => {
     }
 
     const productIds = sortedProducts.map(p => p.id);
-    const dbProducts = await Product.find({ _id: { $in: productIds } })
-        .select('_id name image images')
-        .lean();
+    let dbProducts = [];
+    try {
+        dbProducts = await Product.find({ _id: { $in: productIds } })
+            .select('_id name image images')
+            .lean();
+    } catch (e) {
+        console.warn("Product lookup failed, relying on order item names:", e.message);
+    }
 
     const productMap = {};
     for (const p of dbProducts) {
@@ -174,17 +192,17 @@ export const getTopProducts = asyncHandler(async (req, res) => {
 
     const result = sortedProducts.map(p => {
         const dbProd = productMap[p.id];
-        let image = null;
+        let image = p.fallbackImage;
         if (dbProd) {
             if (Array.isArray(dbProd.images) && dbProd.images.length > 0) {
                 image = dbProd.images[0];
-            } else {
+            } else if (dbProd.image) {
                 image = dbProd.image;
             }
         }
         return {
             _id: p.id,
-            name: dbProd ? dbProd.name : 'Unknown Product',
+            name: dbProd ? dbProd.name : p.fallbackName,
             image: image,
             totalSold: p.totalSold,
             revenue: p.revenue,

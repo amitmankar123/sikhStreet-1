@@ -1,6 +1,7 @@
 import Joi from 'joi';
 
 const objectId = Joi.string().pattern(/^[a-fA-F0-9]{24}$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i);
+const vendorId = Joi.string().pattern(/^VDR-[a-zA-Z0-9]+$/i);
 
 export const vendorListQuerySchema = Joi.object({
     status: Joi.string().valid('all', 'pending', 'approved', 'suspended', 'rejected').optional(),
@@ -10,7 +11,7 @@ export const vendorListQuerySchema = Joi.object({
 });
 
 export const vendorIdParamSchema = Joi.object({
-    id: objectId.required(),
+    id: Joi.alternatives().try(objectId, vendorId).required(),
 });
 
 export const vendorStatusUpdateSchema = Joi.object({

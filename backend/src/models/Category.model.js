@@ -14,7 +14,9 @@ const CategorySchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   productType: { type: String, enum: ['physical', 'digital', 'all'], default: 'physical' },
   workflowSteps: { type: [String], default: [] },
-  group: { type: String, default: "" }
+  group: { type: String, default: "" },
+  assignedTemplateId: { type: String, default: null },
+  additionalFields: { type: mongoose.Schema.Types.Mixed, default: [] }
 }, {
   timestamps: true,
   collection: 'Category'

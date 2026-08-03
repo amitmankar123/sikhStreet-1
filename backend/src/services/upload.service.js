@@ -1,5 +1,6 @@
 import cloudinary from '../config/cloudinary.js';
 import fs from 'fs/promises';
+import path from 'path';
 
 /**
  * Upload a local image file to Cloudinary
@@ -41,13 +42,23 @@ export const uploadFileToCloudinary = async (
  * Local file deletion happens only after successful Cloudinary upload.
  */
 export const uploadLocalFileToCloudinaryAndCleanup = async (localFilePath, folder, publicId, resourceType = 'image') => {
-    const uploaded = await uploadToCloudinary(localFilePath, folder, publicId, resourceType);
     try {
-        await fs.unlink(localFilePath);
-    } catch {
-        // Non-fatal: do not fail the request if temp cleanup fails.
+        const uploaded = await uploadToCloudinary(localFilePath, folder, publicId, resourceType);
+        try {
+            await fs.unlink(localFilePath);
+        } catch {
+            // Non-fatal: do not fail the request if temp cleanup fails.
+        }
+        return uploaded;
+    } catch (error) {
+        console.warn("Cloudinary upload failed, falling back to local file serving:", error.message || error);
+        const fileName = path.basename(localFilePath);
+        const port = process.env.PORT || 5002;
+        return {
+            url: `http://localhost:${port}/uploads/tmp/${fileName}`,
+            publicId: `local-${fileName.replace(/\.[^/.]+$/, '')}`
+        };
     }
-    return uploaded;
 };
 
 /**
@@ -59,18 +70,28 @@ export const uploadLocalFileToCloudinaryAndCleanupWithType = async (
     resourceType = 'auto',
     publicId
 ) => {
-    const uploaded = await uploadFileToCloudinary(
-        localFilePath,
-        folder,
-        resourceType,
-        publicId
-    );
     try {
-        await fs.unlink(localFilePath);
-    } catch {
-        // Non-fatal: do not fail the request if temp cleanup fails.
+        const uploaded = await uploadFileToCloudinary(
+            localFilePath,
+            folder,
+            resourceType,
+            publicId
+        );
+        try {
+            await fs.unlink(localFilePath);
+        } catch {
+            // Non-fatal: do not fail the request if temp cleanup fails.
+        }
+        return uploaded;
+    } catch (error) {
+        console.warn("Cloudinary upload failed, falling back to local file serving:", error.message || error);
+        const fileName = path.basename(localFilePath);
+        const port = process.env.PORT || 5002;
+        return {
+            url: `http://localhost:${port}/uploads/tmp/${fileName}`,
+            publicId: `local-${fileName.replace(/\.[^/.]+$/, '')}`
+        };
     }
-    return uploaded;
 };
 
 /**

@@ -114,6 +114,8 @@ export const createCategorySchema = Joi.object({
     isActive: Joi.boolean().optional(),
     productType: Joi.string().valid('physical', 'digital', 'all').optional(),
     workflowSteps: Joi.array().items(Joi.string().trim()).optional(),
+    assignedTemplateId: objectId.allow(null, '').optional(),
+    additionalFields: Joi.array().items(Joi.object().unknown()).optional(),
 });
 
 export const updateCategorySchema = Joi.object({
@@ -127,6 +129,8 @@ export const updateCategorySchema = Joi.object({
     isActive: Joi.boolean().optional(),
     productType: Joi.string().valid('physical', 'digital', 'all').optional(),
     workflowSteps: Joi.array().items(Joi.string().trim()).optional(),
+    assignedTemplateId: objectId.allow(null, '').optional(),
+    additionalFields: Joi.array().items(Joi.object().unknown()).optional(),
 }).min(1);
 
 export const reorderCategoriesSchema = Joi.object({

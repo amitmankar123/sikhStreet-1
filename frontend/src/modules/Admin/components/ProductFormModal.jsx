@@ -10,6 +10,7 @@ import {
   updateProduct,
   getAllVendors,
   uploadAdminImage,
+  resolveCategorySchema
 } from "../services/adminService";
 import CategorySelector from "./CategorySelector";
 import AnimatedSelect from "./AnimatedSelect";
@@ -75,6 +76,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
     relatedProducts: [],
     faqs: [],
     sku: "",
+    specifications: {}
   });
 
   const extractId = (value) => {
@@ -88,6 +90,59 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
     initCategories();
     initBrands();
   }, [initCategories, initBrands]);
+
+  const [resolvedSchema, setResolvedSchema] = useState(null);
+  const [isLoadingSchema, setIsLoadingSchema] = useState(false);
+
+  const selectedLeafCategoryId = formData.topicId || formData.subcategoryId || formData.categoryId || null;
+
+  useEffect(() => {
+    if (!selectedLeafCategoryId) {
+      setResolvedSchema(null);
+      return;
+    }
+    const fetchSchema = async () => {
+      setIsLoadingSchema(true);
+      try {
+        const response = await resolveCategorySchema(selectedLeafCategoryId);
+        setResolvedSchema(response.data || null);
+      } catch (err) {
+        setResolvedSchema(null);
+      } finally {
+        setIsLoadingSchema(false);
+      }
+    };
+    fetchSchema();
+  }, [selectedLeafCategoryId]);
+
+  const getFieldValue = (fieldName) => {
+    const standardKeys = [
+      'name', 'description', 'price', 'originalPrice', 'stockQuantity', 
+      'lowStockThreshold', 'image', 'images', 'seoTitle', 'seoDescription', 'productType'
+    ];
+    if (standardKeys.includes(fieldName)) {
+      return formData[fieldName] ?? "";
+    }
+    return (formData.specifications || {})[fieldName] ?? "";
+  };
+
+  const setFieldValue = (fieldName, value) => {
+    const standardKeys = [
+      'name', 'description', 'price', 'originalPrice', 'stockQuantity', 
+      'lowStockThreshold', 'image', 'images', 'seoTitle', 'seoDescription', 'productType'
+    ];
+    if (standardKeys.includes(fieldName)) {
+      setFormData(prev => ({ ...prev, [fieldName]: value }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        specifications: {
+          ...(prev.specifications || {}),
+          [fieldName]: value
+        }
+      }));
+    }
+  };
 
   useEffect(() => {
     const fetchVendors = async () => {
@@ -172,6 +227,7 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
             relatedProducts: product.relatedProducts || [],
             faqs: Array.isArray(product.faqs) ? product.faqs : [],
             sku: product.sku || "",
+            specifications: product.specifications || {}
           });
         }
       } catch (error) {
@@ -822,45 +878,46 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                       </div>
                     </div>
                   </div>
-
                   {/* Pricing */}
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">
-                      Pricing
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Price <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          name="price"
-                          value={formData.price}
-                          onChange={handleChange}
-                          required
-                          min="0"
-                          step="0.01"
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        />
-                      </div>
+                  {(!resolvedSchema || resolvedSchema.workflowSteps?.includes("pricing")) && (
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800 mb-4">
+                        Pricing
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Price <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            name="price"
+                            value={formData.price}
+                            onChange={handleChange}
+                            required
+                            min="0"
+                            step="0.01"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          />
+                        </div>
 
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Original Price (for discount)
-                        </label>
-                        <input
-                          type="number"
-                          name="originalPrice"
-                          value={formData.originalPrice}
-                          onChange={handleChange}
-                          min="0"
-                          step="0.01"
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        />
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Original Price (for discount)
+                          </label>
+                          <input
+                            type="number"
+                            name="originalPrice"
+                            value={formData.originalPrice}
+                            onChange={handleChange}
+                            min="0"
+                            step="0.01"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Product Media */}
                   <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl p-4 sm:p-6 border-2 border-primary-200 shadow-lg">
@@ -988,43 +1045,45 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                   </div>
 
                   {/* Inventory */}
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">
-                      Inventory
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Stock Quantity <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          name="stockQuantity"
-                          value={formData.stockQuantity}
-                          onChange={handleChange}
-                          required
-                          min="0"
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        />
-                      </div>
+                  {(!resolvedSchema || resolvedSchema.workflowSteps?.includes("inventory")) && (
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800 mb-4">
+                        Inventory
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Stock Quantity <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            name="stockQuantity"
+                            value={formData.stockQuantity}
+                            onChange={handleChange}
+                            required
+                            min="0"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          />
+                        </div>
 
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          Stock Status
-                        </label>
-                        <AnimatedSelect
-                          name="stock"
-                          value={formData.stock}
-                          onChange={handleChange}
-                          options={[
-                            { value: "in_stock", label: "In Stock" },
-                            { value: "low_stock", label: "Low Stock" },
-                            { value: "out_of_stock", label: "Out of Stock" },
-                          ]}
-                        />
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Stock Status
+                          </label>
+                          <AnimatedSelect
+                            name="stock"
+                            value={formData.stock}
+                            onChange={handleChange}
+                            options={[
+                              { value: "in_stock", label: "In Stock" },
+                              { value: "low_stock", label: "Low Stock" },
+                              { value: "out_of_stock", label: "Out of Stock" },
+                            ]}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Additional Product Information */}
                   <div>
@@ -1398,40 +1457,117 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
                     </div>
                   </div>
 
-                  {/* SEO */}
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-800 mb-4">
-                      SEO Settings
-                    </h3>
-                    <div className="space-y-3">
+                  {/* Category Template Dynamic Specifications */}
+                  {resolvedSchema && (
+                    <div className="bg-slate-50 border border-indigo-150 rounded-xl p-5 space-y-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          SEO Title
-                        </label>
-                        <input
-                          type="text"
-                          name="seoTitle"
-                          value={formData.seoTitle}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                          placeholder="SEO optimized title"
-                        />
+                        <h3 className="text-lg font-bold text-gray-800 font-serif flex items-center gap-2">
+                          <FiLayers className="text-indigo-650" />
+                          Dynamic Template Specifications ({resolvedSchema.name})
+                        </h3>
+                        <p className="text-xs text-gray-500">Provide category-specific properties configured by the template manager.</p>
                       </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                          SEO Description
-                        </label>
-                        <textarea
-                          name="seoDescription"
-                          value={formData.seoDescription}
-                          onChange={handleChange}
-                          rows={2}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                          placeholder="SEO meta description"
-                        />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {resolvedSchema.steps?.flatMap(step => step.sections || [])
+                          .flatMap(sec => sec.fields || [])
+                          .filter(field => {
+                            const standardKeys = [
+                              'name', 'description', 'price', 'originalPrice', 'stockQuantity', 
+                              'lowStockThreshold', 'image', 'images', 'seoTitle', 'seoDescription', 'productType'
+                            ];
+                            return !standardKeys.includes(field.name);
+                          })
+                          .map((field, fieldIdx) => {
+                            const value = getFieldValue(field.name);
+                            return (
+                              <div key={fieldIdx} className="space-y-1">
+                                <label className="block text-xs font-bold text-gray-700">
+                                  {field.label} {field.required && <span className="text-red-500">*</span>}
+                                </label>
+
+                                {field.type === "textarea" ? (
+                                  <textarea
+                                    value={value}
+                                    onChange={(e) => setFieldValue(field.name, e.target.value)}
+                                    placeholder={field.placeholder}
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                  />
+                                ) : field.type === "dropdown" || field.type === "select" ? (
+                                  <select
+                                    value={value}
+                                    onChange={(e) => setFieldValue(field.name, e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                  >
+                                    <option value="">-- Choose Option --</option>
+                                    {field.options?.map((opt) => (
+                                      <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                  </select>
+                                ) : field.type === "toggle" || field.type === "checkbox" ? (
+                                  <label className="flex items-center gap-2 cursor-pointer pt-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={!!value}
+                                      onChange={(e) => setFieldValue(field.name, e.target.checked)}
+                                      className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                                    />
+                                    <span className="text-xs font-semibold text-gray-650">{field.placeholder || "Enable"}</span>
+                                  </label>
+                                ) : (
+                                  <input
+                                    type={field.type === "number" ? "number" : "text"}
+                                    value={value}
+                                    onChange={(e) => setFieldValue(field.name, e.target.value)}
+                                    placeholder={field.placeholder}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                  />
+                                )}
+                                {field.helpText && <p className="text-[10px] text-gray-400 mt-0.5">{field.helpText}</p>}
+                              </div>
+                            );
+                          })}
                       </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* SEO */}
+                  {(!resolvedSchema || resolvedSchema.workflowSteps?.includes("seo")) && (
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800 mb-4">
+                        SEO Settings
+                      </h3>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            SEO Title
+                          </label>
+                          <input
+                            type="text"
+                            name="seoTitle"
+                            value={formData.seoTitle}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            placeholder="SEO optimized title"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            SEO Description
+                          </label>
+                          <textarea
+                            name="seoDescription"
+                            value={formData.seoDescription}
+                            onChange={handleChange}
+                            rows={2}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            placeholder="SEO meta description"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Options */}
                   <div>

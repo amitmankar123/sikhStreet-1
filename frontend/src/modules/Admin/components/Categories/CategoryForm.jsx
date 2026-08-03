@@ -1,30 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { FiX, FiSave, FiPlus, FiTrash2, FiUpload } from "react-icons/fi";
+import { FiX, FiSave, FiUpload } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCategoryStore } from "../../../../shared/store/categoryStore";
 import toast from "react-hot-toast";
 import Button from "../Button";
-import { uploadAdminImage } from "../../services/adminService";
+import { uploadAdminImage, getProductTemplates, getAdditionalFields } from "../../services/adminService";
 
-const WORKFLOW_STEPS_OPTIONS = [
-  { value: "basic_info", label: "Basic Info (Standard)" },
-  { value: "basic_info_art", label: "Basic Info (Art Specialized)" },
-  { value: "art_dimensions", label: "Art Dimensions Selection" },
-  { value: "art_canvas_types", label: "Art Canvas Types Selection" },
-  { value: "art_frame_types", label: "Art Frame Types Selection" },
-  { value: "pricing_matrix", label: "Art Pricing Matrix" },
-  { value: "upload_files", label: "Digital File Upload" },
-  { value: "license", label: "Digital License Details" },
-  { value: "pricing", label: "Standard Pricing" },
-  { value: "inventory", label: "Inventory / Stock" },
-  { value: "shipping", label: "Shipping & Logistics" },
-  { value: "seo", label: "SEO Settings" },
-  { value: "preview", label: "Preview" },
-  { value: "publish", label: "Publish" },
-];
 
-const CategoryForm = ({ category, onClose, onSave, parentId }) => {
+
+const CategoryForm = ({ category, onClose, onSave, parentId, restrictParentLevel }) => {
   const location = useLocation();
   const isAppRoute = location.pathname.startsWith("/app");
   const { createCategory, updateCategory, deleteCategory, categories } = useCategoryStore();
@@ -34,6 +19,9 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [selectedBaseType, setSelectedBaseType] = useState("physical");
   const [subCatBaseType, setSubCatBaseType] = useState("physical");
+  const [templates, setTemplates] = useState([]);
+  const [libraryFields, setLibraryFields] = useState([]);
+  const [selectedHeaderId, setSelectedHeaderId] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -45,15 +33,28 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
     metaTitle: "",
     metaDescription: "",
     productType: "physical",
-    workflowSteps: ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
+    workflowSteps: ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"],
+    assignedTemplateId: "",
+    additionalFields: []
   });
 
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        const [resTemplates, resFields] = await Promise.all([
+          getProductTemplates(),
+          getAdditionalFields()
+        ]);
+        setTemplates(resTemplates.data || []);
+        setLibraryFields(resFields.data || []);
+      } catch (err) {
+        // Suppress or handle error
+      }
+    };
+    fetchMetadata();
+  }, []);
+
   const [subCategories, setSubCategories] = useState([]);
-  const [subCatName, setSubCatName] = useState("");
-  const [subCatImage, setSubCatImage] = useState("");
-  const [subCatType, setSubCatType] = useState("physical");
-  const [subCatGroup, setSubCatGroup] = useState("");
-  const [isUploadingSubImage, setIsUploadingSubImage] = useState(false);
 
   const getCategoryDepth = (catId) => {
     if (!catId) return 1;
@@ -68,22 +69,64 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
 
   const parentIdToUse = formData.parentId || parentId;
   const parentDepth = getCategoryDepth(parentIdToUse);
-  const isLevel3 = parentIdToUse && parentDepth === 2;
-  const isLevel2 = parentIdToUse && parentDepth === 1;
-  const isSubcategory = !!parentIdToUse;
+  const isLevel3 = restrictParentLevel === 2 || (parentIdToUse && parentDepth === 2);
+  const isLevel2 = restrictParentLevel === 1 || (parentIdToUse && parentDepth === 1);
+  const isLevel1 = !isLevel2 && !isLevel3;
+  const isSubcategory = !isLevel1;
   const canHaveSubcategories = !isSubcategory || (category && getCategoryDepth(category.id) === 2);
   const parentCat = categories.find(c => String(c.id || c._id) === String(parentIdToUse));
   const isArtCategory = String(formData.name || "").toLowerCase().includes("art") || 
                         (parentCat && String(parentCat.name || "").toLowerCase().includes("art"));
 
+  const parentOptions = useMemo(() => {
+    if (!restrictParentLevel) return [];
+    if (restrictParentLevel === 1) {
+      // Header Categories: parentId is null
+      return categories.filter(c => {
+        const pid = c.parentId && typeof c.parentId === 'object' ? (c.parentId.id || c.parentId._id) : c.parentId;
+        return !pid && String(c.id || c._id) !== String(category?.id || category?._id || '');
+      });
+    }
+    if (restrictParentLevel === 2) {
+      // Main Categories: parent is a Header category
+      return categories.filter(c => {
+        const pid = c.parentId && typeof c.parentId === 'object' ? (c.parentId.id || c.parentId._id) : c.parentId;
+        if (!pid) return false;
+        const parent = categories.find(p => String(p.id || p._id) === String(pid));
+        const gpId = parent ? (parent.parentId && typeof parent.parentId === 'object' ? (parent.parentId.id || parent.parentId._id) : parent.parentId) : null;
+        return !gpId && String(c.id || c._id) !== String(category?.id || category?._id || '');
+      });
+    }
+    return [];
+  }, [categories, restrictParentLevel, category]);
+
+  const headerOptions = useMemo(() => {
+    return categories.filter(c => {
+      const pid = c.parentId && typeof c.parentId === 'object' ? (c.parentId.id || c.parentId._id) : c.parentId;
+      return !pid;
+    });
+  }, [categories]);
+
+  const filteredMainOptions = useMemo(() => {
+    if (!selectedHeaderId) return [];
+    return categories.filter(c => {
+      const pid = c.parentId && typeof c.parentId === 'object' ? (c.parentId.id || c.parentId._id) : c.parentId;
+      return pid && String(pid) === String(selectedHeaderId) && String(c.id || c._id) !== String(category?.id || category?._id || '');
+    });
+  }, [categories, selectedHeaderId, category]);
+
   useEffect(() => {
     if (category) {
       const type = category.productType || "physical";
+      const actualParentId = category.parentId && typeof category.parentId === 'object'
+        ? (category.parentId.id || category.parentId._id)
+        : category.parentId || null;
+
       setFormData({
         name: category.name || "",
         description: category.description || "",
         image: category.image || "",
-        parentId: category.parentId || null,
+        parentId: actualParentId,
         group: category.group || "",
         isActive: category.isActive !== undefined ? category.isActive : true,
         order: category.order || 0,
@@ -91,8 +134,26 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
         metaDescription: category.metaDescription || "",
         productType: type,
         workflowSteps: Array.isArray(category.workflowSteps) ? category.workflowSteps : [],
+        assignedTemplateId: category.assignedTemplateId || "",
+        additionalFields: Array.isArray(category.additionalFields) ? category.additionalFields : []
       });
       setSelectedBaseType(type === "all" ? "physical" : type);
+
+      // Initialize selectedHeaderId for Level 3 category
+      if (actualParentId) {
+        const parent = categories.find(c => String(c.id || c._id) === String(actualParentId));
+        if (parent) {
+          const gpId = parent.parentId && typeof parent.parentId === 'object'
+            ? (parent.parentId.id || parent.parentId._id)
+            : parent.parentId || null;
+          if (gpId) {
+            setSelectedHeaderId(String(gpId));
+          } else {
+            // Parent has no parent (Level 1 Header), so this category itself is Level 2 (Main Category)
+            setSelectedHeaderId(String(actualParentId));
+          }
+        }
+      }
 
       // Load existing subcategories from the store categories
       const children = categories.filter((cat) => {
@@ -122,10 +183,27 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
         metaTitle: "",
         metaDescription: "",
         productType: "physical",
-        workflowSteps: ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
+        workflowSteps: ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"],
+        assignedTemplateId: "",
+        additionalFields: []
       });
       setSelectedBaseType("physical");
       setSubCategories([]);
+
+      // Initialize selectedHeaderId if parentId is passed (creating new Subcategory under a main parent category)
+      if (parentId) {
+        const parent = categories.find(c => String(c.id || c._id) === String(parentId));
+        if (parent) {
+          const gpId = parent.parentId && typeof parent.parentId === 'object'
+            ? (parent.parentId.id || parent.parentId._id)
+            : parent.parentId || null;
+          if (gpId) {
+            setSelectedHeaderId(String(gpId));
+          }
+        }
+      } else {
+        setSelectedHeaderId("");
+      }
     }
   }, [category, parentId, categories]);
 
@@ -137,112 +215,7 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
     });
   };
 
-  const handleSubCatImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    if (!file.type?.startsWith("image/")) {
-      toast.error("Please select a valid image file");
-      return;
-    }
-
-    setIsUploadingSubImage(true);
-    try {
-      const response = await uploadAdminImage(file, "categories");
-      const imageUrl = response?.data?.url;
-      if (!imageUrl) {
-        toast.error("Image upload failed");
-        return;
-      }
-      setSubCatImage(imageUrl);
-      toast.success("Subcategory image uploaded");
-    } catch (error) {
-      // Error handled by api interceptor
-    } finally {
-      setIsUploadingSubImage(false);
-      e.target.value = "";
-    }
-  };
-
-  const handleAddSubcategory = () => {
-    if (!subCatName.trim()) {
-      toast.error(isLevel2 ? "Topic name is required" : "Subcategory name is required");
-      return;
-    }
-    const defaultSteps = subCatType === 'digital'
-      ? ["basic_info", "upload_files", "license", "pricing", "seo", "preview", "publish"]
-      : subCatType === 'all'
-      ? ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
-      : ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"];
-
-    setSubCategories([
-      ...subCategories,
-      {
-        name: subCatName.trim(),
-        image: subCatImage,
-        productType: subCatType,
-        workflowSteps: defaultSteps,
-        group: isLevel2 ? subCatGroup.trim() : undefined
-      }
-    ]);
-    setSubCatName("");
-    setSubCatImage("");
-    setSubCatType("physical");
-    setSubCatBaseType("physical");
-    setSubCatGroup("");
-  };
-
-  const handleRemoveSubcategory = (index) => {
-    setSubCategories(subCategories.filter((_, i) => i !== index));
-  };
-
-  const handleUpdateSubCatField = (index, field, value) => {
-    const updated = [...subCategories];
-    updated[index] = { ...updated[index], [field]: value };
-    setSubCategories(updated);
-  };
-
-  const handleSubCatListItemImageUpload = async (index, e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type?.startsWith("image/")) {
-      toast.error("Please select a valid image file");
-      return;
-    }
-
-    try {
-      const response = await uploadAdminImage(file, "categories");
-      const imageUrl = response?.data?.url;
-      if (!imageUrl) {
-        toast.error("Image upload failed");
-        return;
-      }
-      handleUpdateSubCatField(index, "image", imageUrl);
-      toast.success("Subcategory image updated");
-    } catch (error) {
-      // Error handled by api interceptor
-    } finally {
-      e.target.value = "";
-    }
-  };
-
-  const handleRemoveOrDeleteSubcategory = async (sub, index) => {
-    if (sub.isExisting) {
-      if (window.confirm(`Are you sure you want to permanently delete "${sub.name}" subcategory? This cannot be undone.`)) {
-        try {
-          const success = await deleteCategory(sub.id);
-          if (success) {
-            setSubCategories(subCategories.filter((_, i) => i !== index));
-          }
-        } catch (error) {
-          // Error handled in store
-        }
-      }
-    } else {
-      setSubCategories(subCategories.filter((_, i) => i !== index));
-    }
-  };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -271,11 +244,43 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
     }
   };
 
+  const handleAttachField = (field) => {
+    if ((formData.additionalFields || []).some(f => f.name === field.name)) {
+      toast.error("This field is already attached.");
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      additionalFields: [...(prev.additionalFields || []), {
+        name: field.name,
+        label: field.label,
+        type: field.type,
+        placeholder: field.placeholder || "",
+        required: !!field.required,
+        options: field.options || []
+      }]
+    }));
+    toast.success(`Attached "${field.label}" field.`);
+  };
+
+  const handleDetachField = (idx) => {
+    setFormData(prev => ({
+      ...prev,
+      additionalFields: (prev.additionalFields || []).filter((_, i) => i !== idx)
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.name.trim()) {
       toast.error("Category name is required");
+      return;
+    }
+
+    const actualParentId = formData.parentId || parentId;
+    if (!actualParentId && !formData.assignedTemplateId) {
+      toast.error("Header category must be associated with a Product Template");
       return;
     }
 
@@ -398,8 +403,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
               <div className="flex-1">
                 <h2 className="text-2xl font-bold text-gray-800">
                   {isEdit
-                    ? (isSubcategory ? "Edit Subcategory" : "Edit Category")
-                    : (isSubcategory ? "Create Subcategory" : "Create Category")}
+                    ? (isLevel3 ? "Edit Subcategory" : isLevel2 ? "Edit Main Category" : "Edit Header Category")
+                    : (isLevel3 ? "Create Subcategory" : isLevel2 ? "Create Main Category" : "Create Header Category")}
                 </h2>
               </div>
               <Button
@@ -415,12 +420,84 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
               {/* Basic Information */}
               <div>
                 <h3 className="text-lg font-bold text-gray-800 mb-4">
-                  {isSubcategory ? "Subcategory Details" : "Master Category Details"}
+                  {isLevel3 ? "Subcategory Details" : isLevel2 ? "Main Category Details" : "Header Category Details"}
                 </h3>
                 <div className="space-y-4">
+                  {restrictParentLevel === 1 && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Select Parent Header Category <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="parentId"
+                        value={formData.parentId || ""}
+                        onChange={(e) => {
+                          const pVal = e.target.value || null;
+                          setFormData(prev => ({ ...prev, parentId: pVal }));
+                        }}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
+                      >
+                        <option value="">-- Choose Header Category --</option>
+                        {parentOptions.map(p => (
+                          <option key={p.id || p._id} value={p.id || p._id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {restrictParentLevel === 2 && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Select Parent Header Category <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={selectedHeaderId}
+                          onChange={(e) => {
+                            const hVal = e.target.value || "";
+                            setSelectedHeaderId(hVal);
+                            setFormData(prev => ({ ...prev, parentId: "" }));
+                          }}
+                          required
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
+                        >
+                          <option value="">-- Choose Header Category --</option>
+                          {headerOptions.map(h => (
+                            <option key={h.id || h._id} value={h.id || h._id}>{h.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Select Parent Main Category <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          name="parentId"
+                          value={formData.parentId || ""}
+                          onChange={(e) => {
+                            const pVal = e.target.value || null;
+                            setFormData(prev => ({ ...prev, parentId: pVal }));
+                          }}
+                          required
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
+                          disabled={!selectedHeaderId}
+                        >
+                          <option value="">
+                            {selectedHeaderId ? "-- Choose Main Category --" : "-- Choose Header Category First --"}
+                          </option>
+                          {filteredMainOptions.map(p => (
+                            <option key={p.id || p._id} value={p.id || p._id}>{p.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {isSubcategory ? (isLevel3 ? "Topic Name" : "Subcategory Name") : "Category Name"} <span className="text-red-500">*</span>
+                      {isLevel3 ? "Subcategory Name" : isLevel2 ? "Main Category Name" : "Header Category Name"} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -429,30 +506,27 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                       onChange={handleChange}
                       required
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      placeholder={isSubcategory ? "e.g., Summer Dresses, Running Shoes" : "e.g., Clothing, Electronics"}
+                      placeholder={isLevel3 ? "e.g., Summer Collection" : isLevel2 ? "e.g., Clothing, Electronics" : "e.g., Home Favourites"}
                     />
                   </div>
 
-                  {isLevel3 && (
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Topic Group Name (e.g. "Sikhism", "History", "Biographies")
-                      </label>
-                      <input
-                        type="text"
-                        name="group"
-                        value={formData.group || ""}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                        placeholder="Enter topic group name..."
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-500 mb-2">
+                      Generated Slug (Auto-created)
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name ? formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') : ""}
+                      disabled
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-450 cursor-not-allowed text-sm"
+                      placeholder="slug-will-appear-here"
+                    />
+                  </div>
 
                   {/* Category Image */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {isSubcategory ? "Subcategory Image" : "Category Image"}
+                      {isLevel3 ? "Subcategory Image" : isLevel2 ? "Main Category Image" : "Header Category Image"}
                     </label>
                     <input
                       type="text"
@@ -504,397 +578,84 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                 </div>
               </div>
 
-              {/* Product Type & Dynamic Workflow Configuration */}
-              <div className="pt-4 border-t border-gray-100 bg-gray-50/50 p-4 rounded-xl border border-gray-200/50">
-                <h3 className="text-base font-bold text-gray-800 mb-4 font-serif">
-                  Listing Workflow Settings
+              {/* Product Template & Custom Fields Assignment */}
+              <div className="pt-4 border-t border-gray-100">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 font-serif">
+                  Product Template Settings
                 </h3>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Product Type
+                      Assign Reusable Product Template {!parentIdToUse && <span className="text-red-500">*</span>}
                     </label>
                     <select
-                      name="productType"
-                      value={selectedBaseType}
-                      onChange={(e) => {
-                        const type = e.target.value;
-                        setSelectedBaseType(type);
-                        const defaultSteps = type === 'digital'
-                          ? ["basic_info", "upload_files", "license", "pricing", "seo", "preview", "publish"]
-                          : ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"];
-                        setFormData(prev => ({
-                          ...prev,
-                          productType: type,
-                          workflowSteps: defaultSteps
-                        }));
-                      }}
+                      name="assignedTemplateId"
+                      value={formData.assignedTemplateId || ""}
+                      onChange={(e) => setFormData(prev => ({ ...prev, assignedTemplateId: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
                     >
-                      <option value="physical">Physical Product</option>
-                      <option value="digital">Digital Product</option>
+                      {parentIdToUse ? (
+                        <option value="">-- No Direct Template Assigned (Inherits from Parent) --</option>
+                      ) : (
+                        <option value="">-- Choose Required Product Template --</option>
+                      )}
+                      {templates.map((tpl) => (
+                        <option key={tpl.id || tpl._id} value={tpl.id || tpl._id}>{tpl.name}</option>
+                      ))}
                     </select>
-
-                    {/* Digital toggle — shown after Physical is chosen */}
-                    {selectedBaseType === 'physical' && (
-                      <div className="mt-3 rounded-xl border border-dashed border-primary-200 bg-primary-50/60 p-3">
-                        <label className="flex items-center gap-3 cursor-pointer select-none">
-                          <div
-                            onClick={() => setFormData(prev => ({
-                              ...prev,
-                              productType: prev.productType === 'all' ? 'physical' : 'all',
-                              workflowSteps: prev.productType === 'all'
-                                ? ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
-                                : ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
-                            }))}
-                            className={`relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer ${
-                              formData.productType === 'all' ? 'bg-primary-600' : 'bg-gray-300'
-                            }`}
-                          >
-                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
-                              formData.productType === 'all' ? 'translate-x-5' : 'translate-x-0'
-                            }`} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-primary-700">Also enable digital listing</p>
-                            <p className="text-[11px] text-primary-500 mt-0.5">Adds digital file upload & license steps to this category&apos;s workflow</p>
-                          </div>
-                        </label>
-                      </div>
-                    )}
-
-                    {/* Physical toggle — shown after Digital is chosen */}
-                    {selectedBaseType === 'digital' && (
-                      <div className="mt-3 rounded-xl border border-dashed border-purple-200 bg-purple-50/60 p-3">
-                        <label className="flex items-center gap-3 cursor-pointer select-none">
-                          <div
-                            onClick={() => setFormData(prev => ({
-                              ...prev,
-                              productType: prev.productType === 'all' ? 'digital' : 'all',
-                              workflowSteps: prev.productType === 'all'
-                                ? ["basic_info", "upload_files", "license", "pricing", "seo", "preview", "publish"]
-                                : ["basic_info", "upload_files", "license", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
-                            }))}
-                            className={`relative w-10 h-5 rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer ${
-                              formData.productType === 'all' ? 'bg-purple-600' : 'bg-gray-300'
-                            }`}
-                          >
-                            <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
-                              formData.productType === 'all' ? 'translate-x-5' : 'translate-x-0'
-                            }`} />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-purple-900">Also enable physical listing</p>
-                            <p className="text-[11px] text-purple-500 mt-0.5">Adds physical shipping & inventory steps to this category&apos;s workflow</p>
-                          </div>
-                        </label>
-                      </div>
-                    )}
                   </div>
 
+                  {/* Additional Fields Override Management */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Active Steps in Listing Workflow
+                      Category Custom Specification Fields (Module 6)
                     </label>
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-2 max-h-60 overflow-y-auto">
-                      {WORKFLOW_STEPS_OPTIONS.map((step) => {
-                        const isChecked = (formData.workflowSteps || []).includes(step.value);
-                        return (
-                          <label key={step.value} className="flex items-center gap-3 cursor-pointer p-1.5 hover:bg-gray-100 rounded transition-colors text-xs font-semibold text-gray-700">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => {
-                                const current = formData.workflowSteps || [];
-                                const next = current.includes(step.value)
-                                  ? current.filter(s => s !== step.value)
-                                  : [...current, step.value];
-                                setFormData(prev => ({ ...prev, workflowSteps: next }));
-                              }}
-                              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
-                            />
-                            <span>{step.label}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {isArtCategory && formData.productType !== 'digital' && (
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({
-                            ...prev,
-                            workflowSteps: ["basic_info_art", "art_dimensions", "art_canvas_types", "art_frame_types", "pricing_matrix", "inventory", "shipping", "seo", "preview", "publish"]
-                          }))}
-                          className="text-xs text-primary-600 hover:text-primary-700 font-bold bg-primary-50 px-2.5 py-1.5 rounded border border-primary-200"
-                        >
-                          Physical Art Preset
-                        </button>
+                    <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                      {/* List Attached Fields */}
+                      {(formData.additionalFields || []).length === 0 ? (
+                        <p className="text-xs text-gray-400 italic">No custom fields attached to this category level.</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {(formData.additionalFields || []).map((f, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-2 bg-indigo-50/20 border border-indigo-150 rounded text-xs">
+                              <span><strong className="text-gray-800">{f.label}</strong> ({f.name} · {f.type})</span>
+                              <button
+                                type="button"
+                                onClick={() => handleDetachField(idx)}
+                                className="text-red-500 hover:text-red-750 font-bold"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       )}
-                      {formData.productType !== 'digital' && (
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({
-                            ...prev,
-                            workflowSteps: ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"]
-                          }))}
-                          className="text-xs text-gray-600 hover:text-gray-700 font-bold bg-gray-100 px-2.5 py-1.5 rounded border border-gray-300"
+
+                      {/* Attach Field from Library Selector */}
+                      <div className="pt-2 border-t border-gray-100 flex items-center gap-2">
+                        <select
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              const selected = libraryFields.find(f => String(f.id || f._id) === String(val));
+                              if (selected) {
+                                handleAttachField(selected);
+                              }
+                              e.target.value = "";
+                            }
+                          }}
+                          className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-xs bg-white"
                         >
-                          Standard Physical Preset
-                        </button>
-                      )}
+                          <option value="">-- Attach Field from Registry Library --</option>
+                          {libraryFields.map((f) => (
+                            <option key={f.id || f._id} value={f.id || f._id}>{f.label} ({f.name})</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Subcategories Section */}
-              {canHaveSubcategories && (
-                <div className="pt-4 border-t border-gray-100">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4 font-serif">
-                    {isLevel2 ? "Add Topics / Sub-subcategories" : "Add Subcategories"}
-                  </h3>
-
-                  {/* Add Subcategory Inputs */}
-                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-4 mb-4">
-                    <p className="text-xs font-semibold text-gray-500">
-                      {isLevel2
-                        ? "Stage topics to create along with this subcategory"
-                        : "Stage subcategories to create along with this parent category"}
-                    </p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-2">
-                          {isLevel2 ? "Topic Name" : "Subcategory Name"}
-                        </label>
-                        <input
-                          type="text"
-                          value={subCatName}
-                          onChange={(e) => setSubCatName(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                          placeholder={isLevel2 ? "e.g. Picture Books" : "e.g., Summer Collection"}
-                        />
-                      </div>
-
-                      {isLevel2 ? (
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 mb-2">
-                            Topic Group Name
-                          </label>
-                          <input
-                            type="text"
-                            value={subCatGroup}
-                            onChange={(e) => setSubCatGroup(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                            placeholder="e.g. Sikhism, History"
-                          />
-                        </div>
-                      ) : (
-                        <div>
-                          <label className="block text-xs font-bold text-gray-700 mb-2">
-                            Subcategory Product Type
-                          </label>
-                          <select
-                            value={subCatBaseType}
-                            onChange={(e) => {
-                              const type = e.target.value;
-                              setSubCatBaseType(type);
-                              setSubCatType(type);
-                            }}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                          >
-                            <option value="physical">Physical Product</option>
-                            <option value="digital">Digital Product</option>
-                          </select>
-                          {subCatBaseType === 'physical' && (
-                            <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
-                              <div
-                                onClick={() => setSubCatType(prev => prev === 'all' ? 'physical' : 'all')}
-                                className={`relative w-8 h-4 rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer ${
-                                  subCatType === 'all' ? 'bg-primary-600' : 'bg-gray-300'
-                                }`}
-                              >
-                                <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform duration-200 ${
-                                  subCatType === 'all' ? 'translate-x-4' : 'translate-x-0'
-                                }`} />
-                              </div>
-                              <span className="text-[11px] font-semibold text-primary-600">Also enable digital</span>
-                            </label>
-                          )}
-                          {subCatBaseType === 'digital' && (
-                            <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
-                              <div
-                                onClick={() => setSubCatType(prev => prev === 'all' ? 'digital' : 'all')}
-                                className={`relative w-8 h-4 rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer ${
-                                  subCatType === 'all' ? 'bg-purple-600' : 'bg-gray-300'
-                                }`}
-                              >
-                                <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform duration-200 ${
-                                  subCatType === 'all' ? 'translate-x-4' : 'translate-x-0'
-                                }`} />
-                              </div>
-                              <span className="text-[11px] font-semibold text-purple-600">Also enable physical</span>
-                            </label>
-                          )}
-                        </div>
-                      )}
-
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-2">
-                          Subcategory Image
-                        </label>
-                        <label className={`flex items-center justify-center gap-2 w-full h-10 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
-                            isUploadingSubImage
-                              ? 'border-primary-300 bg-primary-50 text-primary-500'
-                              : 'border-gray-300 bg-gray-50 text-gray-500 hover:border-primary-400 hover:bg-primary-50 hover:text-primary-600'
-                          }`}>
-                            <FiUpload className="w-4 h-4" />
-                            <span className="text-xs font-semibold">
-                              {isUploadingSubImage ? 'Uploading...' : subCatImage ? 'Change Image' : 'Upload Image'}
-                            </span>
-                            <input
-                              type="file"
-                              accept="image/*, image/avif, .avif"
-                              onChange={handleSubCatImageUpload}
-                              className="hidden"
-                              disabled={isUploadingSubImage}
-                            />
-                        </label>
-                        {subCatImage && (
-                          <div className="mt-2 flex items-center justify-between gap-2 p-2 bg-white rounded-lg border border-gray-200">
-                             <img src={subCatImage} alt="Preview" className="w-8 h-8 object-cover rounded" />
-                             <button type="button" onClick={() => setSubCatImage('')} className="text-[10px] text-red-500 font-bold uppercase">Remove</button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-
-
-                    <button
-                      type="button"
-                      onClick={handleAddSubcategory}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold text-xs"
-                    >
-                      <FiPlus className="w-3.5 h-3.5" />
-                      {isLevel2 ? "Add Topic" : "Add Subcategory"}
-                    </button>
-                  </div>
-
-                  {/* List of staged subcategories */}
-                  {subCategories.length > 0 && (
-                    <div className="space-y-3 max-h-72 overflow-y-auto scrollbar-admin pr-1 mb-4">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        {isLevel2 ? "Topics List" : "Subcategories List"}
-                      </p>
-                      {subCategories.map((sub, index) => (
-                        <div
-                          key={sub.id || index}
-                          className="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-3"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex gap-1.5 items-center">
-                              <span className="text-xs font-semibold px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full">
-                                {sub.isExisting
-                                  ? (isLevel2 ? "Existing Topic" : "Existing Subcategory")
-                                  : (isLevel2 ? "New Topic" : "New Subcategory")}
-                              </span>
-                              {!isLevel2 && (
-                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                                  sub.productType === 'digital'
-                                    ? 'bg-purple-100 text-purple-700'
-                                    : sub.productType === 'all'
-                                      ? 'bg-teal-100 text-teal-700'
-                                      : 'bg-blue-100 text-blue-700'
-                                }`}>
-                                  {sub.productType === 'digital' ? 'Digital' : sub.productType === 'all' ? 'Physical & Digital' : 'Physical'}
-                                </span>
-                              )}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveOrDeleteSubcategory(sub, index)}
-                              className="text-xs text-red-500 hover:text-red-700 font-semibold flex items-center gap-1"
-                              title="Delete Item"
-                            >
-                              <FiTrash2 className="w-3.5 h-3.5" />
-                              <span>Remove</span>
-                            </button>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div>
-                              <input
-                                type="text"
-                                value={sub.name}
-                                onChange={(e) => handleUpdateSubCatField(index, "name", e.target.value)}
-                                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                placeholder={isLevel2 ? "Topic Name" : "Subcategory Name"}
-                                required
-                              />
-                            </div>
-
-                            {isLevel2 ? (
-                              <div>
-                                <input
-                                  type="text"
-                                  value={sub.group || ""}
-                                  onChange={(e) => handleUpdateSubCatField(index, "group", e.target.value)}
-                                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                  placeholder="Topic Group"
-                                />
-                              </div>
-                            ) : (
-                              <div />
-                            )}
-
-                             <div className="flex flex-col gap-1.5">
-                               {sub.image ? (
-                                 <div className="flex items-center gap-2">
-                                   <img
-                                     src={sub.image}
-                                     alt="Preview"
-                                     className="w-10 h-10 object-cover rounded-lg border border-gray-200 bg-white flex-shrink-0"
-                                     onError={(e) => { e.target.style.display = 'none'; }}
-                                   />
-                                   <label className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer text-xs font-semibold border border-gray-200">
-                                     <FiUpload className="w-3 h-3" /> Change
-                                     <input
-                                       type="file"
-                                       accept="image/*, image/avif, .avif"
-                                       onChange={(e) => handleSubCatListItemImageUpload(index, e)}
-                                       className="hidden"
-                                     />
-                                   </label>
-                                   <button
-                                     type="button"
-                                     onClick={() => handleUpdateSubCatField(index, 'image', '')}
-                                     className="text-xs text-red-500 font-semibold hover:underline"
-                                   >
-                                     Remove
-                                   </button>
-                                 </div>
-                               ) : (
-                                 <label className="flex items-center justify-center gap-1.5 w-full h-12 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer text-gray-500 hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
-                                   <FiUpload className="w-3.5 h-3.5" />
-                                   <span className="text-xs font-semibold">Upload Image</span>
-                                   <input
-                                     type="file"
-                                     accept="image/*, image/avif, .avif"
-                                     onChange={(e) => handleSubCatListItemImageUpload(index, e)}
-                                     className="hidden"
-                                   />
-                                 </label>
-                               )}
-                             </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* SEO Settings */}
               <div className="pt-4 border-t border-gray-100">
@@ -943,8 +704,8 @@ const CategoryForm = ({ category, onClose, onSave, parentId }) => {
                   icon={FiSave}
                   disabled={isSubmitting}>
                   {isEdit
-                    ? (isSubcategory ? "Update Subcategory" : "Update Category")
-                    : (isSubcategory ? "Save Subcategory" : "Save Category")}
+                    ? (isLevel3 ? "Update Subcategory" : isLevel2 ? "Update Main Category" : "Update Header Category")
+                    : (isLevel3 ? "Save Subcategory" : isLevel2 ? "Save Main Category" : "Save Header Category")}
                 </Button>
               </div>
             </form>

@@ -37,7 +37,7 @@ const iconMap = {
   Orders: FiShoppingBag,
   "Return Requests": FiRotateCcw,
   Products: FiPackage,
-  Categories: FiGrid,
+  Categories: FiTag,
   Brands: FiTag,
   Customers: FiUsers,
   "Delivery Management": FiTruck,
@@ -51,6 +51,7 @@ const iconMap = {
   Settings: FiSettings,
   Policies: FiShield,
   Firebase: FiDatabase,
+  Vendors: FiUsers,
 };
 
 // Helper function to convert child name to route path
@@ -62,7 +63,6 @@ const getChildRoute = (parentRoute, childName) => {
     },
     "/admin/products": {
       "Manage Products": "/admin/products/manage-products",
-      "Manage Categories": "/admin/categories?tab=manage",
       "Tax & Pricing": "/admin/products/tax-pricing",
       "Product Ratings": "/admin/products/product-ratings",
     },
@@ -75,9 +75,7 @@ const getChildRoute = (parentRoute, childName) => {
       Transactions: "/admin/customers/transactions",
     },
     "/admin/delivery": {
-      "Delivery Boys": "/admin/delivery/delivery-boys",
-      "Cash Collection": "/admin/delivery/cash-collection",
-      "Assign Delivery": "/admin/delivery/assign-delivery",
+      "Delivery Partners": "/admin/delivery/delivery-boys",
     },
     "/admin/offers": {
       "Home Sliders": "/admin/offers/home-sliders",
@@ -120,7 +118,16 @@ const getChildRoute = (parentRoute, childName) => {
     },
     "/admin/firebase": {
       "Push Config": "/admin/firebase/push-config",
-      Authentication: "/admin/firebase/authentication",
+      "Authentication": "/admin/firebase/authentication",
+    },
+    "/admin/categories": {
+      "All Categories": "/admin/categories",
+      "Header Categories": "/admin/categories/headers",
+      "Main Categories": "/admin/categories/mains",
+      "Sub-Categories": "/admin/categories/subs",
+      "Product Templates": "/admin/marketplace-config/templates",
+      "Additional Fields Library": "/admin/marketplace-config/additional-fields",
+      "Product Types": "/admin/marketplace-config/product-types",
     },
     "/admin/vendors": {
       "Manage Vendors": "/admin/vendors/manage-vendors",

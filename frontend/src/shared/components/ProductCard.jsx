@@ -178,7 +178,7 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
         style={{ willChange: "transform", transform: "translateZ(0)" }}
         className="bg-transparent group cursor-pointer h-full flex flex-col justify-between"
         {...longPressHandlers}>
-        <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-gray-50">
+        <div className="relative aspect-square w-full overflow-hidden rounded-l bg-gray-50">
           {/* Favorite Icon */}
           <div className="absolute top-2 right-2 z-10">
             <button

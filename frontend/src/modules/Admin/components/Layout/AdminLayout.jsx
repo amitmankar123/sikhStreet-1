@@ -106,7 +106,7 @@ const AdminLayout = () => {
             // Mobile: Use calculated heights with safe area support
             // Desktop: use the same computed top spacing for consistency
             paddingTop: `${Math.max(topPadding, 80)}px`, // Use calculated height or 80px, whichever is larger
-            paddingBottom: `calc(${Math.max(bottomPadding, 80)}px + env(safe-area-inset-bottom, 0px))`, // Use calculated height + safe area or 80px + safe area, whichever is larger
+            paddingBottom: isDesktop ? '24px' : `calc(${Math.max(bottomPadding, 80)}px + env(safe-area-inset-bottom, 0px))`,
           }}
         >
           <div className="w-full max-w-full overflow-x-hidden min-w-0">

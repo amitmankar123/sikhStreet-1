@@ -529,9 +529,11 @@ api.interceptors.response.use(
     const url = originalRequest.url || '';
     const isAuthRequest = EXCLUDED_AUTH_SUFFIXES.some((suffix) => url.includes(suffix));
 
+    const isOrdersSection = typeof window !== 'undefined' && window.location.pathname.includes('/orders');
+
     if (message && typeof message === 'string' && message.includes('Route not found')) {
       console.error(message);
-    } else if (!isAuthRequest && !originalRequest.skipToast) {
+    } else if (!isAuthRequest && !originalRequest.skipToast && !isOrdersSection) {
       toast.error(message);
     }
 

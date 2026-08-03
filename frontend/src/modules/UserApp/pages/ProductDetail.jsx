@@ -40,7 +40,6 @@ import { formatPrice } from "../../../shared/utils/helpers";
 import toast from "react-hot-toast";
 import MobileLayout from "../components/Layout/MobileLayout";
 import ImageGallery from "../../../shared/components/Product/ImageGallery";
-import SearchBar from "../../../shared/components/SearchBar";
 import VariantSelector from "../../../shared/components/Product/VariantSelector";
 import ReviewForm from "../../../shared/components/Product/ReviewForm";
 import ProductQA from "../components/ProductQA";
@@ -1237,13 +1236,6 @@ const MobileProductDetail = () => {
     <PageTransition>
       <MobileLayout showBottomNav={false} showCartBar={true}>
         <div className="w-full pb-4 lg:pb-8 max-w-7xl mx-auto">
-          {/* Page Search Bar with bottom padding */}
-          {!isBookProduct && (
-            <div className="px-6 lg:px-8 pt-4 pb-6 w-full max-w-2xl">
-              <SearchBar size="default" />
-            </div>
-          )}
-
           {/* Breadcrumbs */}
           <div className="hidden lg:flex px-6 pt-4 lg:pt-6 lg:px-8 items-center justify-start flex-wrap gap-1.5 text-sm md:text-base text-brand-muted font-sans">
             <Link to="/home" className="hover:text-[#F5A623] hover:underline transition-colors font-medium">

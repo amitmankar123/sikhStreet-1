@@ -49,6 +49,7 @@ const AdminHeader = ({ onMenuClick, sidebarWidth, isDesktop, isDragging }) => {
       content: 'Content',
       settings: 'Settings',
       more: 'More',
+      'delivery-boys': 'Delivery Partners',
     };
     return pageNames[path] || path.charAt(0).toUpperCase() + path.slice(1);
   };

@@ -7,6 +7,7 @@ import { useBrandStore } from "../../../../shared/store/brandStore";
 import { useVendorProductStore } from "../../store/vendorProductStore";
 import { uploadVendorImage, uploadVendorImages, uploadVendorVideo } from "../../services/vendorService";
 import toast from "react-hot-toast";
+import api from "../../../../shared/utils/api";
 
 // Import step components
 import StepProductType from "./StepProductType";
@@ -424,7 +425,8 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
       fileType: "",
       downloadLimit: "",
       version: "1.0.0"
-    }
+    },
+    specifications: {}
   });
 
   // Load Categories and Brands
@@ -432,6 +434,43 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
     initCategories();
     initBrands();
   }, []);
+
+  const [resolvedSchema, setResolvedSchema] = useState(null);
+  const [isLoadingSchema, setIsLoadingSchema] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState({});
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest(".multi-select-dropdown-container")) {
+        setOpenDropdowns({});
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedLeafCategoryId = useMemo(() => {
+    return formData.topicId || formData.subcategoryId || formData.categoryId || null;
+  }, [formData.topicId, formData.subcategoryId, formData.categoryId]);
+
+  useEffect(() => {
+    if (!selectedLeafCategoryId) {
+      setResolvedSchema(null);
+      return;
+    }
+    const fetchSchema = async () => {
+      setIsLoadingSchema(true);
+      try {
+        const response = await api.get(`/admin/marketplace-config/resolve/${selectedLeafCategoryId}`);
+        setResolvedSchema(response.data || null);
+      } catch (err) {
+        setResolvedSchema(null);
+      } finally {
+        setIsLoadingSchema(false);
+      }
+    };
+    fetchSchema();
+  }, [selectedLeafCategoryId]);
 
   // If in edit mode, fetch product details
   useEffect(() => {
@@ -501,7 +540,8 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
                 fileType: "",
                 downloadLimit: "",
                 version: "1.0.0"
-              }
+              },
+              specifications: product.specifications || {}
             });
           }
         })
@@ -578,10 +618,39 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
     }
   }, [isTurban, isKada]);
 
-  // Dynamic step list assembly
+  // Dynamic step assembly
   const steps = useMemo(() => {
     const defaultSteps = ["product_type", "category_select"];
     if (!formData.categoryId || !categories) return defaultSteps;
+
+    if (resolvedSchema) {
+      const activeWorkflowSteps = resolvedSchema.workflowSteps || ["basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"];
+      const customTemplateSteps = Array.isArray(resolvedSchema.steps) ? resolvedSchema.steps.map(s => s.name) : [];
+      const standardSteps = [];
+      
+      if (activeWorkflowSteps.includes("pricing")) standardSteps.push("pricing");
+      if (activeWorkflowSteps.includes("inventory")) standardSteps.push("inventory");
+      if (activeWorkflowSteps.includes("shipping")) standardSteps.push("shipping");
+      if (activeWorkflowSteps.includes("seo")) standardSteps.push("seo");
+      
+      const hasBasicInfo = activeWorkflowSteps.includes("basic_info");
+      
+      return [
+        ...defaultSteps,
+        ...(hasBasicInfo ? ["basic_info"] : []),
+        ...customTemplateSteps,
+        ...standardSteps,
+        "preview",
+        "publish"
+      ];
+    }
+
+    const leafId = formData.topicId || formData.subcategoryId || formData.categoryId;
+    const leaf = categories.find(c => String(c.id || c._id) === String(leafId));
+
+    if (isTurban) {
+      return [...defaultSteps, "basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish"];
+    }
 
     const targetCategoryId = formData.subcategoryId || formData.categoryId;
     const targetCat = categories.find(c => String(c.id || c._id) === String(targetCategoryId));
@@ -801,6 +870,34 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
     }
   };
 
+  const getFieldValue = (fieldName) => {
+    const standardKeys = [
+      'name', 'description', 'price', 'originalPrice', 'stockQuantity', 
+      'lowStockThreshold', 'image', 'images', 'seoTitle', 'seoDescription', 'productType'
+    ];
+    if (standardKeys.includes(fieldName)) {
+      return formData[fieldName] ?? "";
+    }
+    return (formData.specifications || {})[fieldName] ?? "";
+  };
+
+  const setFieldValue = (fieldName, value) => {
+    const standardKeys = [
+      'name', 'description', 'price', 'originalPrice', 'stockQuantity', 
+      'lowStockThreshold', 'image', 'images', 'seoTitle', 'seoDescription', 'productType'
+    ];
+    if (standardKeys.includes(fieldName)) {
+      updateForm({ [fieldName]: value });
+    } else {
+      updateForm({
+        specifications: {
+          ...(formData.specifications || {}),
+          [fieldName]: value
+        }
+      });
+    }
+  };
+
   if (loadingProduct) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -868,14 +965,147 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
               />
             )}
 
-            {activeStep === "art_matrix" && (
+            {resolvedSchema && !["product_type", "category_select", "basic_info", "pricing", "inventory", "shipping", "seo", "preview", "publish", "art_matrix", "digital_upload"].includes(activeStep) && (
+              <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                {(() => {
+                  const stepData = resolvedSchema.steps?.find(s => s.name === activeStep);
+                  if (!stepData) {
+                    return <div className="text-gray-400">Step details not found in template.</div>;
+                  }
+                  return (
+                    <div className="space-y-6 font-serif">
+                      <div>
+                        <h2 className="text-xl font-bold text-gray-900 tracking-tight">{stepData.name}</h2>
+                        <p className="text-sm text-gray-500 mt-0.5 font-sans">Provide the details below for this listing section.</p>
+                      </div>
+
+                      {stepData.sections?.map((section, secIdx) => (
+                        <div key={secIdx} className="space-y-4 border-b border-dashed border-gray-150 pb-4 last:border-0 last:pb-0">
+                          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider font-sans">{section.name}</h3>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 font-sans">
+                            {section.fields?.map((field, fieldIdx) => {
+                              const value = getFieldValue(field.name);
+                              return (
+                                <div key={fieldIdx} className="space-y-1">
+                                  <label className="block text-xs font-bold text-gray-750">
+                                    {field.label} {field.required && <span className="text-red-500">*</span>}
+                                  </label>
+
+                                  {field.type === "textarea" ? (
+                                    <textarea
+                                      value={value}
+                                      onChange={(e) => setFieldValue(field.name, e.target.value)}
+                                      placeholder={field.placeholder}
+                                      rows={3}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50/20 focus:ring-2 focus:ring-primary-500 outline-none"
+                                    />
+                                  ) : field.type === "dropdown" || field.type === "select" ? (
+                                    <select
+                                      value={value}
+                                      onChange={(e) => setFieldValue(field.name, e.target.value)}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none"
+                                    >
+                                      <option value="">-- Choose Option --</option>
+                                      {field.options?.map((opt) => (
+                                        <option key={opt} value={opt}>{opt}</option>
+                                      ))}
+                                    </select>
+                                  ) : field.type === "multi_select" || field.type === "checkbox_group" ? (
+                                    <div className="relative multi-select-dropdown-container">
+                                      {/* Trigger Button */}
+                                      <button
+                                        type="button"
+                                        onClick={() => setOpenDropdowns(prev => ({ ...prev, [field.name]: !prev[field.name] }))}
+                                        className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none text-left"
+                                      >
+                                        <span className="truncate text-gray-700">
+                                          {(() => {
+                                            const currentArray = Array.isArray(value)
+                                              ? value
+                                              : (typeof value === 'string' && value.trim() !== '' ? value.split(',').map(s => s.trim()) : []);
+                                            return currentArray.length > 0
+                                              ? currentArray.join(', ')
+                                              : (field.placeholder || "-- Select Options --");
+                                          })()}
+                                        </span>
+                                        <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                      </button>
+
+                                      {/* Dropdown Menu */}
+                                      {openDropdowns[field.name] && (
+                                        <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto p-2.5 space-y-2">
+                                          {field.options?.map((opt) => {
+                                            const currentArray = Array.isArray(value)
+                                              ? value
+                                              : (typeof value === 'string' && value.trim() !== '' ? value.split(',').map(s => s.trim()) : []);
+                                            const isChecked = currentArray.includes(opt);
+                                            const handleCheckboxChange = (e) => {
+                                              let newArray;
+                                              if (e.target.checked) {
+                                                newArray = [...currentArray, opt];
+                                              } else {
+                                                newArray = currentArray.filter(v => v !== opt);
+                                              }
+                                              setFieldValue(field.name, newArray);
+                                            };
+                                            return (
+                                              <label key={opt} className="flex items-center gap-2.5 cursor-pointer text-xs text-gray-700 hover:text-black py-1 px-1.5 hover:bg-gray-50 rounded transition-colors select-none">
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isChecked}
+                                                  onChange={handleCheckboxChange}
+                                                  className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                                                />
+                                                <span>{opt}</span>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : field.type === "toggle" || field.type === "checkbox" ? (
+                                    <label className="flex items-center gap-2 cursor-pointer pt-1">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!value}
+                                        onChange={(e) => setFieldValue(field.name, e.target.checked)}
+                                        className="w-4 h-4 text-primary-600 rounded"
+                                      />
+                                      <span className="text-xs font-semibold text-gray-650">{field.placeholder || "Enable"}</span>
+                                    </label>
+                                  ) : (
+                                    <input
+                                      type={field.type === "number" ? "number" : "text"}
+                                      value={value}
+                                      onChange={(e) => setFieldValue(field.name, e.target.value)}
+                                      placeholder={field.placeholder}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-slate-50/20 focus:ring-2 focus:ring-primary-500 outline-none"
+                                    />
+                                  )}
+                                  {field.helpText && <p className="text-[10px] text-gray-400 mt-0.5">{field.helpText}</p>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {!resolvedSchema && activeStep === "art_matrix" && (
               <StepArtMatrix
                 formData={formData}
                 onChange={updateForm}
               />
             )}
 
-            {activeStep === "digital_upload" && (
+            {!resolvedSchema && activeStep === "digital_upload" && (
               <StepDigitalUpload
                 formData={formData}
                 onChange={updateForm}

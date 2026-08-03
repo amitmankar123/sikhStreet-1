@@ -320,7 +320,7 @@ export const createProduct = asyncHandler(async (req, res) => {
         seoDescription: rest.seoDescription || null,
         relatedProducts: rest.relatedProducts || null,
         tags: rest.tags || null,
-        specifications: isDigital ? null : (rest.specifications || null),
+        specifications: rest.specifications || null,
         turbanConfig: isDigital ? null : (rest.turbanConfig || null),
         productType: rest.productType || 'physical',
         digitalConfig: isDigital ? rest.digitalConfig : null,
@@ -414,7 +414,10 @@ export const updateProduct = asyncHandler(async (req, res) => {
         updates.lowStockThreshold = 0;
         updates.variants = undefined;
         updates.turbanConfig = null;
-        updates.specifications = null;
+        // Keep specifications if provided for digital
+        if (body.specifications !== undefined) {
+            updates.specifications = body.specifications;
+        }
         updates.codAllowed = false;
         updates.returnable = false;
         updates.cancelable = false;

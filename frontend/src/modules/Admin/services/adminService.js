@@ -103,6 +103,37 @@ export const deleteCategory = (id) =>
 export const reorderCategories = (categoryIds) =>
     api.patch('/admin/categories/reorder', { categoryIds });
 
+// ─── Marketplace Configuration ────────────────────────────────────────────────
+export const getProductTemplates = () =>
+    api.get('/admin/marketplace-config/templates');
+export const createProductTemplate = (data) =>
+    api.post('/admin/marketplace-config/templates', data);
+export const updateProductTemplate = (id, data) =>
+    api.put(`/admin/marketplace-config/templates/${id}`, data);
+export const deleteProductTemplate = (id) =>
+    api.delete(`/admin/marketplace-config/templates/${id}`);
+
+export const getAdditionalFields = () =>
+    api.get('/admin/marketplace-config/additional-fields');
+export const createAdditionalField = (data) =>
+    api.post('/admin/marketplace-config/additional-fields', data);
+export const updateAdditionalField = (id, data) =>
+    api.put(`/admin/marketplace-config/additional-fields/${id}`, data);
+export const deleteAdditionalField = (id) =>
+    api.delete(`/admin/marketplace-config/additional-fields/${id}`);
+
+export const getProductTypes = () =>
+    api.get('/admin/marketplace-config/product-types');
+export const createProductType = (data) =>
+    api.post('/admin/marketplace-config/product-types', data);
+export const updateProductType = (id, data) =>
+    api.put(`/admin/marketplace-config/product-types/${id}`, data);
+export const deleteProductType = (id) =>
+    api.delete(`/admin/marketplace-config/product-types/${id}`);
+
+export const resolveCategorySchema = (categoryId) =>
+    api.get(`/admin/marketplace-config/resolve/${categoryId}`);
+
 // ─── Brands ───────────────────────────────────────────────────────────────────
 export const getAllBrands = () =>
     api.get('/admin/brands');

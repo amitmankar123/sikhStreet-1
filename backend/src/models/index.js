@@ -31,3 +31,8 @@ export { VendorChatThread } from './VendorChatThread.model.js';
 export { VendorChatMessage } from './VendorChatMessage.model.js';
 export { Notification } from './Notification.model.js';
 export { ProductQuestion } from './ProductQuestion.model.js';
+export { ProductTemplate } from './ProductTemplate.model.js';
+export { AdditionalField } from './AdditionalField.model.js';
+export { ProductType } from './ProductType.model.js';
+export { DeliveryBoy } from './DeliveryBoy.model.js';
+

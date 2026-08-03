@@ -100,7 +100,7 @@ const CashCollection = () => {
   const columns = [
     {
       key: "name",
-      label: "Delivery Boy",
+      label: "Delivery Partner",
       sortable: true,
       render: (value, row) => (
         <div className="flex items-center gap-3">
@@ -195,7 +195,7 @@ const CashCollection = () => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             options={[
-              { value: "all", label: "All Delivery Boys" },
+              { value: "all", label: "All Delivery Partners" },
               { value: "pending", label: "Pending Collection" },
               { value: "settled", label: "Settled" },
             ]}

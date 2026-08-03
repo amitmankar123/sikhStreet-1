@@ -262,7 +262,7 @@ const AssignDelivery = () => {
                   value={selectedDeliveryBoyId}
                   onChange={(e) => setSelectedDeliveryBoyId(e.target.value)}
                   options={[
-                    { value: "", label: "Select Delivery Boy" },
+                    { value: "", label: "Select Delivery Partner" },
                     ...deliveryBoys.map((boy) => ({
                       value: String(boy.id || boy._id),
                       label: `${boy.name} (${boy.phone || "N/A"})`,

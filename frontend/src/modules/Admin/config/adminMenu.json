@@ -13,6 +13,19 @@
     ]
   },
   {
+    "title": "Categories",
+    "route": "/admin/categories",
+    "children": [
+      "All Categories",
+      "Header Categories",
+      "Main Categories",
+      "Sub-Categories",
+      "Product Templates",
+      "Additional Fields Library",
+      "Product Types"
+    ]
+  },
+  {
     "title": "Return Requests",
     "route": "/admin/return-requests",
     "children": []
@@ -22,7 +35,6 @@
     "route": "/admin/products",
     "children": [
       "Manage Products",
-      "Manage Categories",
       "Tax & Pricing",
       "Product Ratings"
     ]
@@ -47,9 +59,7 @@
     "title": "Delivery Management",
     "route": "/admin/delivery",
     "children": [
-      "Delivery Boys",
-      "Cash Collection",
-      "Assign Delivery"
+      "Delivery Partners"
     ]
   },
   {

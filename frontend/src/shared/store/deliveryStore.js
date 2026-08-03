@@ -30,7 +30,12 @@ export const useDeliveryStore = create(
                 }));
                 set({
                     deliveryBoys,
-                    pagination: response.data.pagination,
+                    pagination: response?.data?.pagination || {
+                        total: deliveryBoys.length,
+                        page: params.page || 1,
+                        limit: params.limit || 10,
+                        pages: Math.ceil(deliveryBoys.length / (params.limit || 10)) || 1
+                    },
                     isLoading: false
                 });
             } catch (error) {

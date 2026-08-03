@@ -45,6 +45,14 @@ import ProductRatings from "./modules/Admin/pages/products/ProductRatings";
 // Categories child pages
 import ManageCategories from "./modules/Admin/pages/categories/ManageCategories";
 import CategoryOrder from "./modules/Admin/pages/categories/CategoryOrder";
+import HeaderCategories from "./modules/Admin/pages/categories/HeaderCategories";
+import MainCategories from "./modules/Admin/pages/categories/MainCategories";
+import SubCategories from "./modules/Admin/pages/categories/SubCategories";
+import Templates from "./modules/Admin/pages/marketplace/Templates";
+import FieldsLibrary from "./modules/Admin/pages/marketplace/FieldsLibrary";
+import ProductTypes from "./modules/Admin/pages/marketplace/ProductTypes";
+import TemplateAssignment from "./modules/Admin/pages/marketplace/TemplateAssignment";
+import CategoryPreview from "./modules/Admin/pages/marketplace/CategoryPreview";
 // Brands child pages
 import ManageBrands from "./modules/Admin/pages/brands/ManageBrands";
 // Customers child pages
@@ -537,11 +545,19 @@ const AppRoutes = () => {
         <Route path="products/product-ratings" element={<ProductRatings />} />
         <Route path="more" element={<More />} />
         <Route path="categories" element={<Categories />} />
+        <Route path="categories/headers" element={<HeaderCategories />} />
+        <Route path="categories/mains" element={<MainCategories />} />
+        <Route path="categories/subs" element={<SubCategories />} />
         <Route
           path="categories/manage-categories"
           element={<ManageCategories />}
         />
         <Route path="categories/category-order" element={<CategoryOrder />} />
+        <Route path="marketplace-config/templates" element={<Templates />} />
+        <Route path="marketplace-config/additional-fields" element={<FieldsLibrary />} />
+        <Route path="marketplace-config/product-types" element={<ProductTypes />} />
+        <Route path="marketplace-config/template-assignment" element={<TemplateAssignment />} />
+        <Route path="marketplace-config/category-preview" element={<CategoryPreview />} />
         <Route path="brands" element={<Brands />} />
         <Route path="brands/manage-brands" element={<ManageBrands />} />
         <Route path="orders" element={<AdminOrders />} />
