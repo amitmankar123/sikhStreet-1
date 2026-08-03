@@ -25,6 +25,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+*.log
+build.log
+build_*.log
+
 
 # Editor directories and files
 .idea
