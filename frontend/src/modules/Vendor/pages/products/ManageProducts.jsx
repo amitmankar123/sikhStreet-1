@@ -114,6 +114,23 @@ const ManageProducts = () => {
       ),
     },
     {
+      key: "approvalStatus",
+      label: "Approval",
+      sortable: true,
+      render: (value) => (
+        <Badge
+          variant={
+            value === "active"
+              ? "success"
+              : value === "pending"
+                ? "warning"
+                : "error"
+          }>
+          {value ? value.toUpperCase() : "PENDING"}
+        </Badge>
+      ),
+    },
+    {
       key: "actions",
       label: "Actions",
       sortable: false,

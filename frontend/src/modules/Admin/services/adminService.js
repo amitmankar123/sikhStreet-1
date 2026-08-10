@@ -334,3 +334,4 @@ export const updatePolicy = (type, content) =>
 export const getAdminNotifications = (params) => api.get('/admin/notifications', { params });
 export const markNotificationAsRead = (id) => api.put(`/admin/notifications/${id}/read`);
 export const markAllNotificationsAsRead = () => api.put('/admin/notifications/read-all');
+

@@ -3,6 +3,7 @@ import { FiMessageCircle, FiSend, FiUser, FiSearch } from "react-icons/fi";
 import { motion } from "framer-motion";
 import Badge from "../../../shared/components/Badge";
 import { useVendorAuthStore } from "../store/vendorAuthStore";
+import socket from "../../../shared/utils/socket";
 import {
   getVendorChatThreads,
   getVendorChatMessages,
@@ -21,7 +22,9 @@ const Chat = () => {
   const [isLoadingChats, setIsLoadingChats] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [otherTyping, setOtherTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const typingTimerRef = useRef(null);
   const vendorId = vendor?.id || vendor?._id;
 
   const fetchThreads = useCallback(async () => {
@@ -37,6 +40,67 @@ const Chat = () => {
       setIsLoadingChats(false);
     }
   }, [vendorId]);
+
+  // Connect socket on mount, disconnect on unmount
+  useEffect(() => {
+    socket.connect();
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  // Listen for real-time new messages
+  useEffect(() => {
+    const handleNewMessage = (msg) => {
+      if (!msg || !selectedChat) return;
+      if (String(msg.threadId) !== String(selectedChat._id)) return;
+      setMessages((prev) => {
+        // Avoid duplicates (message may have been added optimistically)
+        const exists = prev.some((m) => String(m._id) === String(msg._id));
+        return exists ? prev : [...prev, msg];
+      });
+      // Update thread list preview
+      setChats((prev) =>
+        prev.map((c) =>
+          String(c._id) === String(msg.threadId)
+            ? { ...c, lastMessage: msg.message, lastActivity: msg.createdAt }
+            : c
+        )
+      );
+    };
+
+    const handleTyping = ({ role }) => {
+      if (role !== "vendor") {
+        setOtherTyping(true);
+        clearTimeout(typingTimerRef.current);
+        typingTimerRef.current = setTimeout(() => setOtherTyping(false), 2500);
+      }
+    };
+
+    const handleStopTyping = () => setOtherTyping(false);
+
+    const handleMessagesRead = () => {
+      setChats((prev) =>
+        prev.map((c) =>
+          selectedChat && String(c._id) === String(selectedChat._id)
+            ? { ...c, unreadCount: 0 }
+            : c
+        )
+      );
+    };
+
+    socket.on("new_message", handleNewMessage);
+    socket.on("user_typing", handleTyping);
+    socket.on("user_stop_typing", handleStopTyping);
+    socket.on("messages_read", handleMessagesRead);
+
+    return () => {
+      socket.off("new_message", handleNewMessage);
+      socket.off("user_typing", handleTyping);
+      socket.off("user_stop_typing", handleStopTyping);
+      socket.off("messages_read", handleMessagesRead);
+    };
+  }, [selectedChat]);
 
   useEffect(() => {
     fetchThreads();
@@ -69,7 +133,15 @@ const Chat = () => {
   }, [messages]);
 
   const handleSelectChat = async (chat) => {
+    // Leave previous room
+    if (selectedChat?._id) {
+      socket.emit("leave_thread", selectedChat._id);
+    }
     setSelectedChat(chat);
+    setOtherTyping(false);
+    // Join new room
+    socket.emit("join_thread", chat._id);
+    socket.emit("mark_read", { threadId: chat._id, readerType: "vendor" });
     setChats((prev) =>
       prev.map((c) =>
         (c.id || c._id) === (chat.id || chat._id) ? { ...c, unreadCount: 0, status: "active" } : c
@@ -87,40 +159,56 @@ const Chat = () => {
     if (!message || !selectedChat?._id || isSending) return;
 
     setIsSending(true);
+    // Optimistic UI update
+    const optimisticMsg = {
+      _id: `temp-${Date.now()}`,
+      threadId: selectedChat._id,
+      message,
+      senderType: "vendor",
+      senderId: vendorId,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+    setNewMessage("");
+
     try {
+      // Emit via socket (server saves to DB and broadcasts)
+      socket.emit("send_message", {
+        threadId: selectedChat._id,
+        message,
+        senderType: "vendor",
+        senderId: vendorId,
+      });
+      // Also save via REST as backup
       const res = await sendVendorChatMessage(selectedChat._id, message);
-      const created = (res?.data ?? res) || null;
-
-      if (created) {
-        setMessages((prev) => [...prev, created]);
+      const created = res?.data ?? res;
+      if (created?._id) {
+        // Replace optimistic message with real one from server
+        setMessages((prev) =>
+          prev.map((m) => (m._id === optimisticMsg._id ? { ...optimisticMsg, ...created } : m))
+        );
       }
-
-      setNewMessage("");
       const nowIso = new Date().toISOString();
       setChats((prev) =>
         prev.map((c) =>
           (c.id || c._id) === (selectedChat?.id || selectedChat?._id)
-            ? {
-                ...c,
-                lastMessage: message,
-                lastActivity: created?.time || nowIso,
-                unreadCount: 0,
-              }
+            ? { ...c, lastMessage: message, lastActivity: created?.createdAt || nowIso, unreadCount: 0 }
             : c
         )
       );
-      setSelectedChat((prev) =>
-        prev
-          ? {
-              ...prev,
-              lastMessage: message,
-              lastActivity: created?.time || nowIso,
-              unreadCount: 0,
-            }
-          : prev
-      );
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value);
+    if (selectedChat?._id) {
+      socket.emit("typing", { threadId: selectedChat._id, role: "vendor" });
+      clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = setTimeout(() => {
+        socket.emit("stop_typing", { threadId: selectedChat._id });
+      }, 1500);
     }
   };
 
@@ -340,11 +428,14 @@ const Chat = () => {
             </div>
 
             <div className="p-4 border-t border-gray-200">
+              {otherTyping && (
+                <p className="text-xs text-gray-400 italic mb-1 px-1">Customer is typing...</p>
+              )}
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
+                  onChange={handleInputChange}
                   onKeyDown={handleKeyPress}
                   placeholder="Type a message..."
                   className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"

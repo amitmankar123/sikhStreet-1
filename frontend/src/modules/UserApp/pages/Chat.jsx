@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import Badge from "../../../shared/components/Badge";
 import { useAuthStore } from "../../../shared/store/authStore";
 import { useChatStore } from "../../../shared/store/chatStore";
+import socket from "../../../shared/utils/socket";
 import MobileLayout from "../components/Layout/MobileLayout";
 import PageTransition from "../../../shared/components/PageTransition";
 
@@ -27,34 +28,65 @@ const Chat = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [mobileView, setMobileView] = useState("list"); // "list" or "chat"
-  
-  const messagesEndRef = useRef(null);
+  const [otherTyping, setOtherTyping] = useState(false);
 
-  // Poll for thread listing updates
+  const messagesEndRef = useRef(null);
+  const typingTimerRef = useRef(null);
+
+  // Connect socket on mount, disconnect on unmount
   useEffect(() => {
     if (!isAuthenticated) return;
+    socket.connect();
     fetchThreads();
-    const interval = setInterval(() => {
-      fetchThreads();
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [fetchThreads, isAuthenticated]);
+    return () => {
+      socket.disconnect();
+    };
+  }, [isAuthenticated, fetchThreads]);
 
-  // Poll active thread messages
+  // Join/leave thread room when active thread changes; load messages via REST
   useEffect(() => {
-    if (!activeThread?._id && !activeThread?.id) {
-      return;
-    }
+    if (!activeThread?._id && !activeThread?.id) return;
     const threadId = activeThread._id || activeThread.id;
     fetchMessages(threadId);
     markAsRead(threadId);
-
-    const interval = setInterval(() => {
-      fetchMessages(threadId);
-    }, 4000);
-
-    return () => clearInterval(interval);
+    socket.emit("join_thread", threadId);
+    socket.emit("mark_read", { threadId, readerType: "user" });
+    return () => {
+      socket.emit("leave_thread", threadId);
+    };
   }, [activeThread?._id, activeThread?.id, fetchMessages, markAsRead]);
+
+  // Real-time socket event listeners
+  useEffect(() => {
+    const handleNewMessage = (msg) => {
+      const threadId = activeThread?._id || activeThread?.id;
+      if (!msg || String(msg.threadId) !== String(threadId)) return;
+      useChatStore.setState((state) => {
+        const exists = state.messages.some((m) => String(m._id) === String(msg._id));
+        return exists ? {} : { messages: [...state.messages, msg] };
+      });
+    };
+
+    const handleTyping = ({ role }) => {
+      if (role !== "user") {
+        setOtherTyping(true);
+        clearTimeout(typingTimerRef.current);
+        typingTimerRef.current = setTimeout(() => setOtherTyping(false), 2500);
+      }
+    };
+
+    const handleStopTyping = () => setOtherTyping(false);
+
+    socket.on("new_message", handleNewMessage);
+    socket.on("user_typing", handleTyping);
+    socket.on("user_stop_typing", handleStopTyping);
+
+    return () => {
+      socket.off("new_message", handleNewMessage);
+      socket.off("user_typing", handleTyping);
+      socket.off("user_stop_typing", handleStopTyping);
+    };
+  }, [activeThread]);
 
   // Scroll to bottom when messages list changes
   useEffect(() => {
@@ -63,22 +95,41 @@ const Chat = () => {
 
   const handleSelectThread = (thread) => {
     setActiveThread(thread);
-    const threadId = thread._id || thread.id;
-    markAsRead(threadId);
+    setOtherTyping(false);
     setMobileView("chat");
   };
 
   const handleSendMessage = async () => {
     const text = newMessage.trim();
     const threadId = activeThread?._id || activeThread?.id;
+    const userId = user?.id || user?._id;
     if (!text || !threadId || isSending) return;
 
     setIsSending(true);
+    setNewMessage("");
+    // Emit via socket first (real-time delivery)
+    socket.emit("send_message", {
+      threadId,
+      message: text,
+      senderType: "user",
+      senderId: userId,
+    });
     try {
       await sendMessage(threadId, text);
-      setNewMessage("");
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value);
+    const threadId = activeThread?._id || activeThread?.id;
+    if (threadId) {
+      socket.emit("typing", { threadId, role: "user" });
+      clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = setTimeout(() => {
+        socket.emit("stop_typing", { threadId });
+      }, 1500);
     }
   };
 
@@ -305,11 +356,14 @@ const Chat = () => {
 
                   {/* Message Input Panel */}
                   <div className="p-4 border-t border-slate-200 bg-white">
+                    {otherTyping && (
+                      <p className="text-xs text-slate-400 italic mb-1 px-1">Vendor is typing...</p>
+                    )}
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={handleInputChange}
                         onKeyDown={handleKeyPress}
                         placeholder="Ask the seller a question..."
                         className="flex-1 px-4 py-2.5 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#F5A623]/20 focus:border-[#F5A623] text-sm font-medium"

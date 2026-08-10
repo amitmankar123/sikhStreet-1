@@ -226,8 +226,16 @@ const ProductFormModal = ({ isOpen, onClose, productId, onSuccess }) => {
             seoDescription: product.seoDescription || "",
             relatedProducts: product.relatedProducts || [],
             faqs: Array.isArray(product.faqs) ? product.faqs : [],
-            sku: product.sku || "",
-            specifications: product.specifications || {}
+            specifications: Array.isArray(product.specifications)
+              ? product.specifications.reduce((acc, curr) => {
+                  if (curr && curr.name) {
+                    acc[curr.name] = curr.value || "";
+                  }
+                  return acc;
+                }, {})
+              : (product.specifications && typeof product.specifications === "object"
+                  ? product.specifications
+                  : {})
           });
         }
       } catch (error) {

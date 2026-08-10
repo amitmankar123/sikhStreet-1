@@ -125,6 +125,7 @@ const enrichBrand = (rawBrand) => {
 // Etsy Style Product Card for Brand Page
 const EtsyProductCard = ({ product }) => {
     const navigate = useNavigate();
+    const [isHovered, setIsHovered] = useState(false);
     const isFreeShipping = product.price > 50;
     const isDiscount = product.originalPrice > 0;
     const discountPct = isDiscount ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0;
@@ -132,24 +133,39 @@ const EtsyProductCard = ({ product }) => {
     return (
         <div
             onClick={() => navigate(`/product/${product.id}`)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer border border-gray-150 group"
         >
             <div className="relative aspect-square w-full overflow-hidden bg-gray-50">
-                <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                        e.target.src = getPlaceholderImage(300, 300, product.name?.charAt(0) || "P");
-                    }}
-                />
+                {product.video && isHovered ? (
+                    <video
+                        src={product.video}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover absolute inset-0 z-10 transition-opacity duration-300"
+                    />
+                ) : (
+                    <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => {
+                            e.target.src = getPlaceholderImage(300, 300, product.name?.charAt(0) || "P");
+                        }}
+                    />
+                )}
 
                 {/* Media Play Button Overlay */}
-                <div className="absolute bottom-2.5 right-2.5 bg-white/90 p-2 rounded-full shadow-md flex items-center justify-center hover:scale-110 transition-transform z-10">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-gray-800">
-                        <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
-                    </svg>
-                </div>
+                {product.video && !isHovered && (
+                    <div className="absolute bottom-2.5 right-2.5 bg-white/90 p-2 rounded-full shadow-md flex items-center justify-center hover:scale-110 transition-transform z-10">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-gray-800">
+                            <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                )}
 
                 {isDiscount && (
                     <div className="absolute top-2.5 left-2.5 bg-red-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">

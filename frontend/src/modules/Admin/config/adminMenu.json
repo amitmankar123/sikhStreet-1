@@ -35,6 +35,7 @@
     "route": "/admin/products",
     "children": [
       "Manage Products",
+      "Product Verification",
       "Tax & Pricing",
       "Product Ratings"
     ]

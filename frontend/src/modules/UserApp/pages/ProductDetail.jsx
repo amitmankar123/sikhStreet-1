@@ -94,6 +94,7 @@ const normalizeProduct = (raw) => {
     vendorId,
     brandId,
     categoryId,
+    bookConfig: raw?.bookConfig || (raw?.specifications && raw.specifications.bookConfig ? raw.specifications.bookConfig : raw?.specifications) || null,
     image,
     images,
     price: Number(raw?.price) || 0,
@@ -683,9 +684,13 @@ const MobileProductDetail = () => {
 
   const isBookProduct = useMemo(() => {
     if (!product) return false;
-    const catMatch = (product.categoryName || "").toLowerCase().includes("book");
+    const catMatch = (product.categoryName || "").toLowerCase().includes("book") ||
+                     (product.categoryName || "").toLowerCase().includes("literature") ||
+                     (product.categoryName || "").toLowerCase().includes("scripture") ||
+                     (product.categoryName || "").toLowerCase().includes("nitnem");
     const idMatch = String(product.categoryId).toLowerCase().includes("book");
-    return catMatch || idMatch;
+    const hasBookConfig = !!product.bookConfig;
+    return catMatch || idMatch || hasBookConfig;
   }, [product]);
 
   const isArtProduct = useMemo(() => {
@@ -884,7 +889,9 @@ const MobileProductDetail = () => {
     }
     let baseRate = computedBaseRate;
     if (isBookProduct && selectedBookFormat) {
-      baseRate = Number(product.price || 0) + Number(selectedBookFormat.priceOffset || 0);
+      baseRate = selectedBookFormat.price !== undefined && selectedBookFormat.price !== ""
+        ? Number(selectedBookFormat.price)
+        : Number(product.price || 0) + Number(selectedBookFormat.priceOffset || 0);
     }
     const fabricRate = selectedFabric ? Number(selectedFabric.price) : 0;
     const ratePerMeter = isTurbanProduct && fabricRate > 0 ? fabricRate : baseRate;
@@ -1101,10 +1108,18 @@ const MobileProductDetail = () => {
     baseRate = selectedArtSize.basePrice * selectedArtMaterial.priceMultiplier;
   }
   if (isBookProduct && selectedBookFormat) {
-    baseRate = Number(product.price || 0) + Number(selectedBookFormat.priceOffset || 0);
+    baseRate = selectedBookFormat.price !== undefined && selectedBookFormat.price !== ""
+      ? Number(selectedBookFormat.price)
+      : Number(product.price || 0) + Number(selectedBookFormat.priceOffset || 0);
   }
   const fabricRate = selectedFabric ? Number(selectedFabric.price) : 0;
   const ratePerMeter = isTurbanProduct && fabricRate > 0 ? fabricRate : baseRate;
+
+  const displayedOriginalPrice = product && isBookProduct && selectedBookFormat && selectedBookFormat.originalPrice !== undefined && selectedBookFormat.originalPrice !== ""
+    ? Number(selectedBookFormat.originalPrice)
+    : product && isBookProduct && selectedBookFormat && product.originalPrice
+      ? Number(product.originalPrice) + Number(selectedBookFormat.priceOffset || 0)
+      : product?.originalPrice;
 
   // Turban-specific fees
   const embroideryFee = (isTurbanProduct && embroideryEnabled && product?.turbanConfig?.embroidery?.price) ? Number(product.turbanConfig.embroidery.price) : 0;
@@ -1329,15 +1344,15 @@ const MobileProductDetail = () => {
                         Now {formatPrice(ratePerMeter)}
                       </span>
                     </div>
-                    {product.originalPrice && (
+                    {displayedOriginalPrice && (
                       <div className="text-sm text-gray-500 line-through font-medium">
-                        {formatPrice(product.originalPrice)}
+                        {formatPrice(displayedOriginalPrice)}
                       </div>
                     )}
 
-                    {product.originalPrice && (
+                    {displayedOriginalPrice && displayedOriginalPrice > ratePerMeter && (
                       <div className="flex items-center gap-1 text-sm font-semibold text-green-700">
-                        <span>{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off</span>
+                        <span>{Math.round(((displayedOriginalPrice - ratePerMeter) / displayedOriginalPrice) * 100)}% off</span>
                         <span className="text-gray-400 font-light mx-0.5">•</span>
                         <span className="text-green-700">Sale ends on 05 August</span>
                       </div>
@@ -1417,7 +1432,7 @@ const MobileProductDetail = () => {
                             >
                               <span className="truncate">{opt.label}</span>
                               <span className={`text-[10px] mt-0.5 ${selectedBookFormat?.id === opt.id ? "text-stone-300" : "text-stone-500"}`}>
-                                {formatPrice(product.price + opt.priceOffset)}
+                                {formatPrice(opt.price !== undefined && opt.price !== "" ? Number(opt.price) : (Number(product.price || 0) + Number(opt.priceOffset || 0)))}
                               </span>
                             </button>
                           ))}

@@ -39,6 +39,7 @@ import OrderTracking from "./modules/Admin/pages/orders/OrderTracking";
 import Invoice from "./modules/Admin/pages/orders/Invoice";
 // Products child pages
 import ManageProducts from "./modules/Admin/pages/products/ManageProducts";
+import ProductVerification from "./modules/Admin/pages/products/ProductVerification";
 import TaxPricing from "./modules/Admin/pages/products/TaxPricing";
 import ProductRatings from "./modules/Admin/pages/products/ProductRatings";
 
@@ -541,6 +542,7 @@ const AppRoutes = () => {
         <Route path="products" element={<Products />} />
         <Route path="products/:id" element={<ProductForm />} />
         <Route path="products/manage-products" element={<ManageProducts />} />
+        <Route path="products/product-verification" element={<ProductVerification />} />
         <Route path="products/tax-pricing" element={<TaxPricing />} />
         <Route path="products/product-ratings" element={<ProductRatings />} />
         <Route path="more" element={<More />} />

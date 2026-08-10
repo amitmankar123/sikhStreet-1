@@ -723,8 +723,17 @@ const ProductForm = () => {
       cancelable: product.cancelable !== undefined ? product.cancelable : true,
       taxIncluded: product.taxIncluded || false,
       description: product.description || "",
-      tags: product.tags || [],
-      specifications: product.specifications || [],
+      specifications: Array.isArray(product.specifications)
+        ? product.specifications
+        : (product.specifications && typeof product.specifications === "object"
+            ? Object.entries(product.specifications)
+                .filter(([key]) => key !== "bookConfig" && key !== "turbanConfig")
+                .map(([key, val]) => ({
+                  name: key,
+                  value: Array.isArray(val) ? val.join(", ") : String(val),
+                  icon: "FiInfo"
+                }))
+            : []),
       variants: normalizedVariants,
       seoTitle: product.seoTitle || "",
       seoDescription: product.seoDescription || "",

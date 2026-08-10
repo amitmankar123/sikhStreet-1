@@ -43,7 +43,7 @@ const seedBookFilters = async () => {
             {
                 name: 'book_format',
                 label: 'Format',
-                type: 'dropdown',
+                type: 'multi_select',
                 options: ['Hardcover', 'Paperback', 'eBook'],
                 displayOrder: 2
             },

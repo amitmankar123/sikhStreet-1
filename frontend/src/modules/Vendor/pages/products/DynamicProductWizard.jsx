@@ -5,7 +5,7 @@ import { FiArrowLeft, FiArrowRight, FiSave, FiUpload, FiX, FiCheckCircle } from 
 import { useCategoryStore } from "../../../../shared/store/categoryStore";
 import { useBrandStore } from "../../../../shared/store/brandStore";
 import { useVendorProductStore } from "../../store/vendorProductStore";
-import { uploadVendorImage, uploadVendorImages, uploadVendorVideo } from "../../services/vendorService";
+import { uploadVendorImage, uploadVendorImages, uploadVendorVideo, uploadVendorDigitalFile } from "../../services/vendorService";
 import toast from "react-hot-toast";
 import api from "../../../../shared/utils/api";
 
@@ -353,6 +353,207 @@ const TurbanColorPanel = ({ colors = [], colorHexMap = {}, imageMap = {}, onChan
   );
 };
 
+const BookFormatMatrixSection = ({ field, specifications = {}, onChange }) => {
+  const [isUploading, setIsUploading] = useState({});
+
+  const selectedFormats = Array.isArray(specifications.book_format)
+    ? specifications.book_format
+    : (typeof specifications.book_format === "string" && specifications.book_format.trim()
+      ? specifications.book_format.split(",").map(s => s.trim())
+      : []);
+
+  const bookConfig = specifications.bookConfig || { formatOptions: [] };
+  const formatOptions = bookConfig.formatOptions || [];
+
+  const toggleFormat = (formatLabel) => {
+    const isChecked = selectedFormats.includes(formatLabel);
+    let nextFormats;
+    let nextOptions;
+
+    if (isChecked) {
+      nextFormats = selectedFormats.filter((f) => f !== formatLabel);
+      nextOptions = formatOptions.filter((opt) => opt.label !== formatLabel);
+    } else {
+      nextFormats = [...selectedFormats, formatLabel];
+      const id = formatLabel.toLowerCase().replace(/\s+/g, "_");
+      nextOptions = [
+        ...formatOptions,
+        { id, label: formatLabel, price: "", originalPrice: "", stock: "" }
+      ];
+    }
+
+    onChange({
+      ...specifications,
+      book_format: nextFormats,
+      bookConfig: {
+        ...bookConfig,
+        formatOptions: nextOptions
+      }
+    });
+  };
+
+  const updateFormatOption = (formatLabel, updates) => {
+    const nextOptions = formatOptions.map((opt) => {
+      if (opt.label === formatLabel) {
+        const updated = { ...opt, ...updates };
+        if (updates.price !== undefined) updated.price = updates.price === "" ? "" : Number(updates.price);
+        if (updates.originalPrice !== undefined) updated.originalPrice = updates.originalPrice === "" ? "" : Number(updates.originalPrice);
+        if (updates.stock !== undefined) updated.stock = updates.stock === "" ? "" : Number(updates.stock);
+        return updated;
+      }
+      return opt;
+    });
+
+    onChange({
+      ...specifications,
+      bookConfig: {
+        ...bookConfig,
+        formatOptions: nextOptions
+      }
+    });
+  };
+
+  const handleFileUpload = async (formatLabel, file) => {
+    if (!file) return;
+    setIsUploading((prev) => ({ ...prev, [formatLabel]: true }));
+    try {
+      const response = await uploadVendorDigitalFile(file);
+      const data = response.data || response;
+      if (data?.url) {
+        updateFormatOption(formatLabel, { fileUrl: data.url });
+        toast.success(`${formatLabel} file uploaded successfully`);
+      } else {
+        toast.error("Upload failed: No URL returned");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Upload failed");
+    } finally {
+      setIsUploading((prev) => ({ ...prev, [formatLabel]: false }));
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-4 bg-slate-50 p-3 rounded-lg border border-gray-200">
+        {field.options?.map((opt) => {
+          const isChecked = selectedFormats.includes(opt);
+          return (
+            <label key={opt} className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={() => toggleFormat(opt)}
+                className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+              />
+              <span className="text-sm font-semibold text-gray-700">{opt}</span>
+            </label>
+          );
+        })}
+      </div>
+
+      {selectedFormats.length > 0 && (
+        <div className="border border-gray-250 rounded-xl overflow-hidden bg-white shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50 border-b border-gray-250 text-[10px] font-bold text-gray-500 uppercase">
+                  <th className="p-3">Format</th>
+                  <th className="p-3">Selling Price (₹) *</th>
+                  <th className="p-3">Original M.R.P. (₹)</th>
+                  <th className="p-3">Stock Quantity</th>
+                  <th className="p-3">Configuration / File</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-150 text-gray-700">
+                {selectedFormats.map((fmt) => {
+                  const opt = formatOptions.find((o) => o.label === fmt) || {
+                    label: fmt,
+                    price: "",
+                    originalPrice: "",
+                    stock: ""
+                  };
+
+                  const isEbook = fmt.toLowerCase().includes("ebook") || fmt.toLowerCase().includes("e-book");
+
+                  return (
+                    <tr key={fmt} className="hover:bg-slate-50/50">
+                      <td className="p-3 font-bold text-gray-900">{fmt}</td>
+                      <td className="p-3">
+                        <input
+                          type="number"
+                          value={opt.price}
+                          onChange={(e) => updateFormatOption(fmt, { price: e.target.value })}
+                          placeholder="Price *"
+                          className="w-24 px-2 py-1.5 border border-red-200 rounded focus:ring-1 focus:ring-primary-500 outline-none text-xs bg-white"
+                          required
+                        />
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="number"
+                          value={opt.originalPrice}
+                          onChange={(e) => updateFormatOption(fmt, { originalPrice: e.target.value })}
+                          placeholder="MRP"
+                          className="w-24 px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 outline-none text-xs bg-white"
+                        />
+                      </td>
+                      <td className="p-3">
+                        {isEbook ? (
+                          <span className="text-gray-450 font-semibold italic text-[11px]">Unlimited Digital</span>
+                        ) : (
+                          <input
+                            type="number"
+                            value={opt.stock}
+                            onChange={(e) => updateFormatOption(fmt, { stock: e.target.value })}
+                            placeholder="Qty"
+                            className="w-20 px-2 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 outline-none text-xs bg-white"
+                          />
+                        )}
+                      </td>
+                      <td className="p-3">
+                        {isEbook ? (
+                          <div className="flex items-center gap-2">
+                            {opt.fileUrl ? (
+                              <div className="flex items-center gap-1.5 bg-green-50 text-green-800 border border-green-200 px-2 py-1 rounded text-[10px] font-bold">
+                                <span>File Ready</span>
+                                <button
+                                  type="button"
+                                  onClick={() => updateFormatOption(fmt, { fileUrl: "" })}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ) : (
+                              <label className="flex items-center justify-center border border-dashed border-primary-300 rounded-lg cursor-pointer hover:bg-primary-50 text-[10px] font-bold py-1.5 px-2 bg-white text-primary-750">
+                                {isUploading[fmt] ? "Uploading..." : "Upload EPUB/PDF"}
+                                <input
+                                  type="file"
+                                  onChange={(e) => handleFileUpload(fmt, e.target.files?.[0])}
+                                  className="hidden"
+                                  accept=".epub, .pdf, .mobi"
+                                  disabled={isUploading[fmt]}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-[11px]">Physical Shipping</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function DynamicProductWizard({ isEdit = false, productId = null }) {
   const navigate = useNavigate();
   const { categories, initialize: initCategories } = useCategoryStore();
@@ -395,6 +596,8 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
     taxIncluded: false,
     description: "",
     tags: [],
+    deliveryRegion: "domestic", // Default shipping region scope
+    shippingCarriers: ["fedex", "delhivery", "bluedart", "dhl"], // Enabled shipping carriers
     variants: {
       sizes: [],
       colors: [],
@@ -610,6 +813,25 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
     );
   }, [categories, formData.categoryId, formData.subcategoryId, formData.name]);
 
+  // Detect Books & Literature category (same pattern as isTurban / isKada)
+  const isBookCategory = useMemo(() => {
+    if (!categories || categories.length === 0) return false;
+    const cat = categories.find(c => String(c.id || c._id) === String(formData.categoryId));
+    const sub = categories.find(c => String(c.id || c._id) === String(formData.subcategoryId));
+    const topic = categories.find(c => String(c.id || c._id) === String(formData.topicId));
+    const names = [cat, sub, topic]
+      .filter(Boolean)
+      .map(c => (c.name || "").toLowerCase());
+    return names.some(n => n.includes("book") || n.includes("literature") || n.includes("scripture") || n.includes("nitnem"));
+  }, [categories, formData.categoryId, formData.subcategoryId, formData.topicId]);
+
+  // True when at least one book format has a valid price entered
+  const bookFormatsHavePrices = useMemo(() => {
+    if (!isBookCategory) return false;
+    const formatOptions = formData.specifications?.bookConfig?.formatOptions || [];
+    return formatOptions.length > 0 && formatOptions.every(opt => opt.price && Number(opt.price) > 0);
+  }, [isBookCategory, formData.specifications]);
+
   useEffect(() => {
     if (isTurban) {
       setFormData((prev) => ({ ...prev, unit: "Meter" }));
@@ -617,6 +839,43 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
       setFormData((prev) => ({ ...prev, unit: "Diameter" }));
     }
   }, [isTurban, isKada]);
+
+  // When book formats have prices and stocks, auto-populate formData.price, originalPrice, stock, and stockQuantity
+  // so sorting, listing, and inventory tracking still work platform-wide
+  useEffect(() => {
+    if (!isBookCategory) return;
+    const formatOptions = formData.specifications?.bookConfig?.formatOptions || [];
+    
+    // Auto-calculate prices
+    const prices = formatOptions.map(o => Number(o.price)).filter(p => p > 0);
+    const lowestPrice = prices.length > 0 ? Math.min(...prices) : "";
+    
+    const mrps = formatOptions.map(o => Number(o.originalPrice || o.price)).filter(p => p > 0);
+    const lowestMrp = mrps.length > 0 ? Math.min(...mrps) : "";
+
+    // Auto-calculate stock sums
+    const totalStock = formatOptions.reduce((sum, opt) => sum + (Number(opt.stock) || 0), 0);
+    const stockStatus = totalStock > 0 ? "in_stock" : "out_of_stock";
+
+    setFormData(prev => {
+      // Prevent redundant state updates & infinite loops
+      if (
+        prev.price === String(lowestPrice) &&
+        prev.originalPrice === String(lowestMrp) &&
+        prev.stockQuantity === String(totalStock) &&
+        prev.stock === stockStatus
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        price: String(lowestPrice),
+        originalPrice: String(lowestMrp),
+        stockQuantity: String(totalStock),
+        stock: stockStatus,
+      };
+    });
+  }, [isBookCategory, formData.specifications]);
 
   // Dynamic step assembly
   const steps = useMemo(() => {
@@ -635,7 +894,7 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
       
       const hasBasicInfo = activeWorkflowSteps.includes("basic_info");
       
-      return [
+      const resolvedSteps = [
         ...defaultSteps,
         ...(hasBasicInfo ? ["basic_info"] : []),
         ...customTemplateSteps,
@@ -643,6 +902,8 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
         "preview",
         "publish"
       ];
+      // Filter out SEO step for templates
+      return resolvedSteps.filter(s => s !== "seo");
     }
 
     const leafId = formData.topicId || formData.subcategoryId || formData.categoryId;
@@ -694,6 +955,9 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
       }
     }
 
+    // Filter out SEO step for all fallbacks
+    resolvedSteps = resolvedSteps.filter(s => s !== "seo");
+
     // Filter steps based on product type choice (Physical vs Digital)
     if (formData.productType === "physical") {
       resolvedSteps = resolvedSteps.filter(s => s !== "digital_upload" && s !== "upload_files" && s !== "license");
@@ -705,8 +969,15 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
       resolvedSteps = resolvedSteps.filter(s => s !== "shipping");
     }
 
+    // Option A: Remove the pricing and inventory steps for Books & Literature
+    // Both pricing and stock levels are already collected per-format inside BookFormatMatrixSection.
+    // The fields are auto-populated dynamically (see useEffect above).
+    if (isBookCategory) {
+      resolvedSteps = resolvedSteps.filter(s => s !== "pricing" && s !== "inventory");
+    }
+
     return resolvedSteps;
-  }, [formData.productType, formData.categoryId, formData.subcategoryId, categories, isTurban]);
+  }, [formData.productType, formData.categoryId, formData.subcategoryId, formData.topicId, categories, isTurban, isBookCategory]);
 
   const activeStep = steps[activeStepIndex] || "product_type";
 
@@ -746,8 +1017,14 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
     if (activeStep === "digital_upload") {
       if (!formData.digitalConfig.digitalFile) { toast.error("Please upload the digital file asset"); return; }
     }
-    if (activeStep === "pricing") {
+    if (activeStep === "pricing" && !isBookCategory) {
       if (!formData.price || Number(formData.price) <= 0) { toast.error("Please enter a valid price"); return; }
+    }
+    if (activeStep === "shipping") {
+      if (!formData.shippingCarriers || formData.shippingCarriers.length === 0) {
+        toast.error("Please select at least one delivery partner");
+        return;
+      }
     }
 
     if (activeStepIndex < steps.length - 1) {
@@ -839,6 +1116,7 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
         seoDescription: formData.seoDescription || undefined,
         faqs: formData.faqs || [],
         productType: formData.productType || "physical",
+        specifications: formData.specifications || {},
       };
 
       if (formData.productType === "physical") {
@@ -984,15 +1262,27 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
                           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider font-sans">{section.name}</h3>
                           
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 font-sans">
-                            {section.fields?.map((field, fieldIdx) => {
+                            {section.fields?.filter(field => {
+                              // Exclude static region specifications from Book details step
+                              if (isBookCategory && (field.name === "region" || field.name === "book_region" || field.name === "publishing_region")) {
+                                return false;
+                              }
+                              return true;
+                            }).map((field, fieldIdx) => {
                               const value = getFieldValue(field.name);
                               return (
-                                <div key={fieldIdx} className="space-y-1">
+                                <div key={fieldIdx} className={`space-y-1 ${field.name === "book_format" ? "md:col-span-2" : ""}`}>
                                   <label className="block text-xs font-bold text-gray-750">
                                     {field.label} {field.required && <span className="text-red-500">*</span>}
                                   </label>
 
-                                  {field.type === "textarea" ? (
+                                  {field.name === "book_format" ? (
+                                    <BookFormatMatrixSection
+                                      field={field}
+                                      specifications={formData.specifications || {}}
+                                      onChange={(specs) => updateForm({ specifications: specs })}
+                                    />
+                                  ) : field.type === "textarea" ? (
                                     <textarea
                                       value={value}
                                       onChange={(e) => setFieldValue(field.name, e.target.value)}
@@ -1256,89 +1546,154 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
 
             {activeStep === "pricing" && (
               <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 tracking-tight">Pricing Setup</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">Configure base pricing, taxes, and discounts.</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Option B: Books & Literature — show read-only format price summary instead of generic price inputs */}
+                {isBookCategory ? (
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                      Selling Price (₹) *
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.price}
-                      onChange={e => updateForm({ price: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                      placeholder="e.g. 1500"
-                    />
+                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">Pricing Summary</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      Format-wise pricing was collected in the previous step. Review your prices below.
+                    </p>
+                    <div className="mt-4 space-y-3">
+                      {(formData.specifications?.bookConfig?.formatOptions || []).length === 0 ? (
+                        <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                          ⚠️ No formats selected. Go back and select at least one format with a price.
+                        </div>
+                      ) : (
+                        (formData.specifications?.bookConfig?.formatOptions || []).map((opt) => (
+                          <div key={opt.id} className="flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg">
+                            <span className="text-sm font-semibold text-gray-700">{opt.label}</span>
+                            <div className="flex items-center gap-4">
+                              {opt.originalPrice && Number(opt.originalPrice) > Number(opt.price) && (
+                                <span className="text-xs text-gray-400 line-through">₹{opt.originalPrice}</span>
+                              )}
+                              <span className="text-sm font-bold text-primary-600">₹{opt.price || "—"}</span>
+                              <span className="text-xs text-gray-400">Stock: {opt.stock || "—"}</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                      {formData.price && (
+                        <p className="text-xs text-gray-400 mt-2 px-1">
+                          Platform display price auto-set to lowest format: <strong>₹{formData.price}</strong>
+                        </p>
+                      )}
+                    </div>
                   </div>
-
+                ) : (
+                  /* Standard pricing for all other categories */
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                      Original Price (M.R.P) (₹)
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.originalPrice}
-                      onChange={e => updateForm({ originalPrice: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                      placeholder="Leave empty if no discount"
-                    />
+                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">Pricing Setup</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Configure base pricing, taxes, and discounts.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                          Selling Price (₹) *
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.price}
+                          onChange={e => updateForm({ price: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                          placeholder="e.g. 1500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                          Original Price (M.R.P) (₹)
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.originalPrice}
+                          onChange={e => updateForm({ originalPrice: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                          placeholder="Leave empty if no discount"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
             {activeStep === "inventory" && (
               <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 tracking-tight">Stock & Inventory</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">Manage stock levels, purchase limits, and thresholds.</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {isBookCategory ? (
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                      Stock Status
-                    </label>
-                    <select
-                      value={formData.stock}
-                      onChange={e => updateForm({ stock: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
-                    >
-                      <option value="in_stock">In Stock</option>
-                      <option value="out_of_stock">Out of Stock</option>
-                    </select>
+                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">Stock & Inventory Summary</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      Format-wise stock levels were collected in the previous step. Review your inventory below.
+                    </p>
+                    <div className="mt-4 space-y-3">
+                      {(formData.specifications?.bookConfig?.formatOptions || []).length === 0 ? (
+                        <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                          ⚠️ No formats selected. Go back and select at least one format with stock levels.
+                        </div>
+                      ) : (
+                        (formData.specifications?.bookConfig?.formatOptions || []).map((opt) => (
+                          <div key={opt.id} className="flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg">
+                            <span className="text-sm font-semibold text-gray-700">{opt.label}</span>
+                            <span className="text-sm font-bold text-gray-900">Stock: {opt.stock || "0"}</span>
+                          </div>
+                        ))
+                      )}
+                      {formData.stockQuantity && (
+                        <p className="text-xs text-gray-400 mt-2 px-1">
+                          Total Platform Stock: <strong>{formData.stockQuantity}</strong> ({formData.stock === "in_stock" ? "In Stock" : "Out of Stock"})
+                        </p>
+                      )}
+                    </div>
                   </div>
-
+                ) : (
+                  /* Standard inventory for other categories */
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                      Stock Quantity
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.stockQuantity}
-                      onChange={e => updateForm({ stockQuantity: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                      placeholder="e.g. 50"
-                    />
-                  </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900 tracking-tight">Stock & Inventory</h2>
+                      <p className="text-sm text-gray-500 mt-0.5">Manage stock levels, purchase limits, and thresholds.</p>
+                    </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                      Minimum Order Qty
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.minimumOrderQuantity}
-                      onChange={e => updateForm({ minimumOrderQuantity: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                      placeholder="1"
-                    />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                          Stock Status
+                        </label>
+                        <select
+                          value={formData.stock}
+                          onChange={e => updateForm({ stock: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
+                        >
+                          <option value="in_stock">In Stock</option>
+                          <option value="out_of_stock">Out of Stock</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                          Stock Quantity
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.stockQuantity}
+                          onChange={e => updateForm({ stockQuantity: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                          placeholder="e.g. 50"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                          Minimum Order Qty
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.minimumOrderQuantity}
+                          onChange={e => updateForm({ minimumOrderQuantity: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                          placeholder="1"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
@@ -1350,30 +1705,93 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
+                  <div className={isBookCategory ? "md:col-span-2" : ""}>
                     <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                      Warranty Period
+                      Delivery Region Scope *
                     </label>
-                    <input
-                      type="text"
-                      value={formData.warrantyPeriod}
-                      onChange={e => updateForm({ warrantyPeriod: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                      placeholder="e.g. 6 Months"
-                    />
+                    <select
+                      value={formData.deliveryRegion || "domestic"}
+                      onChange={e => updateForm({ deliveryRegion: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white text-sm"
+                    >
+                      <option value="domestic">Domestic Shipping Only (India-wide)</option>
+                      <option value="worldwide">Worldwide Shipping (International + Domestic)</option>
+                      <option value="local">Regional/Local Shipping Only</option>
+                    </select>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                      Guarantee Period
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.guaranteePeriod}
-                      onChange={e => updateForm({ guaranteePeriod: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                      placeholder="e.g. 1 Year"
-                    />
+                  {!isBookCategory && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                          Warranty Period
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.warrantyPeriod}
+                          onChange={e => updateForm({ warrantyPeriod: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                          placeholder="e.g. 6 Months"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                          Guarantee Period
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.guaranteePeriod}
+                          onChange={e => updateForm({ guaranteePeriod: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                          placeholder="e.g. 1 Year"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="border-t border-gray-150 pt-6 mt-6">
+                  <label className="block text-xs font-bold text-gray-750 uppercase tracking-wider mb-3">
+                    Available Delivery Partners / Carriers *
+                  </label>
+                  <p className="text-xs text-gray-500 mb-4 font-sans">Select which active couriers can service this product shipment.</p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 font-sans">
+                    {[
+                      { id: "fedex", name: "FedEx Express", desc: "Express courier delivery" },
+                      { id: "delhivery", name: "Delhivery Logistics", desc: "E-commerce logistics" },
+                      { id: "bluedart", name: "Blue Dart Express", desc: "Priority cargo delivery" },
+                      { id: "dhl", name: "DHL Worldwide", desc: "International shipping" }
+                    ].map(carrier => {
+                      const isChecked = (formData.shippingCarriers || []).includes(carrier.id);
+                      return (
+                        <label
+                          key={carrier.id}
+                          className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                            isChecked
+                              ? "border-primary-600 bg-primary-50/20 ring-2 ring-primary-500/10"
+                              : "border-gray-250 hover:border-primary-250 bg-white"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              const nextCarriers = isChecked
+                                ? (formData.shippingCarriers || []).filter(id => id !== carrier.id)
+                                : [...(formData.shippingCarriers || []), carrier.id];
+                              updateForm({ shippingCarriers: nextCarriers });
+                            }}
+                            className="mt-0.5 rounded text-primary-600 focus:ring-primary-500 w-4 h-4"
+                          />
+                          <div>
+                            <p className="text-sm font-bold text-gray-805">{carrier.name}</p>
+                            <p className="text-[10px] text-gray-400">{carrier.desc}</p>
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

@@ -26,6 +26,7 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
     isInWishlist,
   } = useWishlistStore();
   const hasNoVariant = (cartItem) => !getVariantSignature(cartItem?.variant || {});
+  const [isHovered, setIsHovered] = useState(false);
   const isFavorite = isInWishlist(product.id);
   const isInCart = items.some(
     (item) => item.id === product.id && hasNoVariant(item)
@@ -175,6 +176,8 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
         transition={{ duration: 0.4, ease: "easeOut" }}
         whileTap={{ scale: 0.98 }}
         whileHover={{ y: -4 }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         style={{ willChange: "transform", transform: "translateZ(0)" }}
         className="bg-transparent group cursor-pointer h-full flex flex-col justify-between"
         {...longPressHandlers}>
@@ -207,17 +210,28 @@ const ProductCard = ({ product, hideRating = false, isFlashSale = false }) => {
             </div>
           )}
 
-          {/* Product Image */}
-          <Link to={productLink} className="block w-full h-full">
-            <LazyImage
-              src={product.image}
-              alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-              style={{ willChange: "transform", transform: "translateZ(0)" }}
-              onError={(e) => {
-                e.target.src = getPlaceholderImage(300, 300, "Product Image");
-              }}
-            />
+          {/* Product Image & Video Preview */}
+          <Link to={productLink} className="block w-full h-full relative">
+            {product.video && isHovered ? (
+              <video
+                src={product.video}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover absolute inset-0 z-10 transition-opacity duration-300"
+              />
+            ) : (
+              <LazyImage
+                src={product.image}
+                alt={product.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+                style={{ willChange: "transform", transform: "translateZ(0)" }}
+                onError={(e) => {
+                  e.target.src = getPlaceholderImage(300, 300, "Product Image");
+                }}
+              />
+            )}
           </Link>
         </div>
 

@@ -52,7 +52,9 @@ export default function FieldsLibrary() {
     helpText: "",
     required: false,
     options: "",
-    displayOrder: 0
+    displayOrder: 0,
+    isPricingAxis: false,
+    pricingAxisLabel: ""
   });
 
   const loadFields = async () => {
@@ -81,7 +83,9 @@ export default function FieldsLibrary() {
       helpText: "",
       required: false,
       options: "",
-      displayOrder: 0
+      displayOrder: 0,
+      isPricingAxis: false,
+      pricingAxisLabel: ""
     });
     setShowModal(true);
   };
@@ -96,7 +100,9 @@ export default function FieldsLibrary() {
       helpText: field.helpText || "",
       required: !!field.required,
       options: Array.isArray(field.options) ? field.options.join(", ") : "",
-      displayOrder: field.displayOrder || 0
+      displayOrder: field.displayOrder || 0,
+      isPricingAxis: !!field.isPricingAxis,
+      pricingAxisLabel: field.pricingAxisLabel || ""
     });
     setShowModal(true);
   };
@@ -199,6 +205,7 @@ export default function FieldsLibrary() {
                   <th className="p-4">Type</th>
                   <th className="p-4">Options</th>
                   <th className="p-4 text-center">Required</th>
+                  <th className="p-4 text-center">Pricing Axis</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -217,6 +224,15 @@ export default function FieldsLibrary() {
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${field.required ? "bg-red-50 text-red-650" : "bg-gray-100 text-gray-505"}`}>
                         {field.required ? "YES" : "NO"}
                       </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      {field.isPricingAxis ? (
+                        <span className="px-2 py-0.5 rounded text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          ₹ AXIS
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">—</span>
+                      )}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
@@ -334,7 +350,7 @@ export default function FieldsLibrary() {
                 />
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 space-y-3">
                 <label className="flex items-center gap-2.5 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -344,6 +360,36 @@ export default function FieldsLibrary() {
                   />
                   <span className="text-sm font-bold text-gray-700">Make this field mandatory (Required)</span>
                 </label>
+
+                {/* Pricing Axis toggle — only shown for option-based fields */}
+                {["dropdown", "multi_select", "checkbox", "radio"].includes(formData.type) && (
+                  <div className="border border-amber-200 rounded-lg p-3 bg-amber-50/60 space-y-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={formData.isPricingAxis}
+                        onChange={(e) => setFormData({ ...formData, isPricingAxis: e.target.checked, pricingAxisLabel: e.target.checked ? formData.pricingAxisLabel : "" })}
+                        className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
+                      />
+                      <div>
+                        <span className="text-sm font-bold text-amber-800">This field drives variant pricing</span>
+                        <p className="text-xs text-amber-600 mt-0.5">Vendor will set a separate price &amp; stock for each option (e.g. Hardcover ₹499, Paperback ₹299)</p>
+                      </div>
+                    </label>
+                    {formData.isPricingAxis && (
+                      <div>
+                        <label className="block text-xs font-bold text-amber-800 uppercase mb-1">Pricing Matrix Label</label>
+                        <input
+                          type="text"
+                          value={formData.pricingAxisLabel}
+                          onChange={(e) => setFormData({ ...formData, pricingAxisLabel: e.target.value })}
+                          placeholder="e.g. Select formats and set price per format"
+                          className="w-full px-3 py-1.5 border border-amber-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">

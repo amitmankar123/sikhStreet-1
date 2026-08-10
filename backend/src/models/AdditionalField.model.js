@@ -24,7 +24,9 @@ const AdditionalFieldSchema = new mongoose.Schema({
   defaultValue: { type: mongoose.Schema.Types.Mixed, default: null },
   validationRules: { type: mongoose.Schema.Types.Mixed, default: {} },
   options: { type: [String], default: [] },
-  displayOrder: { type: Number, default: 0 }
+  displayOrder: { type: Number, default: 0 },
+  isPricingAxis: { type: Boolean, default: false },
+  pricingAxisLabel: { type: String, default: '' }
 }, {
   timestamps: true,
   collection: 'AdditionalField'

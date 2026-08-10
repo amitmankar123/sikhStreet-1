@@ -46,7 +46,8 @@ const ProductSchema = new mongoose.Schema({
   specifications: { type: mongoose.Schema.Types.Mixed },
   turbanConfig: { type: mongoose.Schema.Types.Mixed },
   productType: { type: String, enum: ['physical', 'digital'], default: 'physical' },
-  digitalConfig: { type: mongoose.Schema.Types.Mixed }
+  digitalConfig: { type: mongoose.Schema.Types.Mixed },
+  approvalStatus: { type: String, enum: ['pending', 'active', 'blocked'], default: 'active' }
 }, {
   timestamps: true,
   collection: 'Product'

@@ -306,7 +306,8 @@ export const createProduct = asyncHandler(async (req, res) => {
         flashSale: rest.flashSale !== undefined ? Boolean(rest.flashSale) : undefined,
         isNewArrival: rest.isNewArrival !== undefined ? Boolean(rest.isNewArrival) : undefined,
         isFeatured: rest.isFeatured !== undefined ? Boolean(rest.isFeatured) : undefined,
-        isActive: rest.isActive !== undefined ? Boolean(rest.isActive) : true,
+        isActive: false,
+        approvalStatus: 'pending',
         isVisible: rest.isVisible !== undefined ? Boolean(rest.isVisible) : true,
         codAllowed: isDigital ? false : (rest.codAllowed !== undefined ? Boolean(rest.codAllowed) : undefined),
         returnable: isDigital ? false : (rest.returnable !== undefined ? Boolean(rest.returnable) : undefined),
@@ -426,6 +427,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
     } else {
         updates.stock = deriveStockStatus(stockQuantity, lowStockThreshold);
     }
+
+    updates.approvalStatus = 'pending';
+    updates.isActive = false;
 
     const updated = await Product.findOneAndUpdate(
         { _id: existing._id },

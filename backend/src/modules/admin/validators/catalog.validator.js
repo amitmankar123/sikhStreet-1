@@ -48,6 +48,7 @@ const productBaseSchema = {
     isFeatured: Joi.boolean().optional(),
     isActive: Joi.boolean().optional(),
     isVisible: Joi.boolean().optional(),
+    approvalStatus: Joi.string().valid('pending', 'active', 'blocked').optional(),
     codAllowed: Joi.boolean().optional(),
     returnable: Joi.boolean().optional(),
     cancelable: Joi.boolean().optional(),
