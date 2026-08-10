@@ -113,12 +113,14 @@ const DesktopHeader = () => {
                             )}
                         </Link>
 
+                        {/* Categories button commented out for future retrieval:
                         <button
                             onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
                             className="hidden lg:flex items-center gap-2.5 text-slate-700 hover:text-[#F5A623] transition-colors font-extrabold text-[22px] tracking-wide group outline-none"
                         >
                             <Menu size={28} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" /> Categories
                         </button>
+                        */}
                     </div>
 
                     {/* Massive Search Container */}

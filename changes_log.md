@@ -1105,3 +1105,19 @@ Isse dynamic formats selector block sahi tareeqe se load aur display ho jayega p
 **File Modified:**
 - `frontend/src/modules/UserApp/pages/ProductDetail.jsx`
 
+---
+
+# Update - August 10, 2026 (Header Categories Button Commented Out)
+
+### Problem:
+User requested to hide the "Categories" dropdown button present to the left of the massive search bar in the desktop (laptop) view layout, with the capability to easily retrieve it back in the future.
+
+### Solution:
+Desktop header component (`DesktopHeader.jsx`) me search bar ke left side me place kiye hue Categories dropdown menu button code block ko JSX syntax comments (`{/* ... */}`) me wrap karke hide kar diya. Isse layout cleanly adjusts to place search input close to the logo, and the code remains intact for future reactivation/retrieval.
+
+**Files Modified:**
+- `frontend/src/modules/UserApp/components/Layout/DesktopHeader.jsx`
+- `frontend/src/modules/UserApp/components/Layout/MobileHeader.jsx`
+
+
+

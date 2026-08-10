@@ -94,6 +94,7 @@ const MobileHeader = () => {
 
             {/* Categories Menu Trigger */}
             <div className="relative">
+              {/* Commented out for future retrieval:
               <button
                 onClick={() => setIsCategoryMenuOpen(!isCategoryMenuOpen)}
                 className={`hidden md:flex items-center gap-2 px-4 py-2.5 rounded-full transition-all text-sm font-semibold select-none ${isCategoryMenuOpen
@@ -106,6 +107,7 @@ const MobileHeader = () => {
                 </svg>
                 <span>Categories</span>
               </button>
+              */}
 
               {/* Mega Dropdown Menu Overlay */}
               <AnimatePresence>
