@@ -25,6 +25,7 @@ const Chat = () => {
   } = useChatStore();
 
   const [newMessage, setNewMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("order"); // "order" or "general"
   const [searchQuery, setSearchQuery] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [mobileView, setMobileView] = useState("list"); // "list" or "chat"
@@ -47,12 +48,15 @@ const Chat = () => {
   useEffect(() => {
     if (!activeThread?._id && !activeThread?.id) return;
     const threadId = activeThread._id || activeThread.id;
+    const isMockId = String(threadId).startsWith('mock-') || String(threadId).startsWith('general-');
     fetchMessages(threadId);
     markAsRead(threadId);
-    socket.emit("join_thread", threadId);
-    socket.emit("mark_read", { threadId, readerType: "user" });
+    if (!isMockId) {
+      socket.emit("join_thread", threadId);
+      socket.emit("mark_read", { threadId, readerType: "user" });
+    }
     return () => {
-      socket.emit("leave_thread", threadId);
+      if (!isMockId) socket.emit("leave_thread", threadId);
     };
   }, [activeThread?._id, activeThread?.id, fetchMessages, markAsRead]);
 
@@ -62,7 +66,21 @@ const Chat = () => {
       const threadId = activeThread?._id || activeThread?.id;
       if (!msg || String(msg.threadId) !== String(threadId)) return;
       useChatStore.setState((state) => {
-        const exists = state.messages.some((m) => String(m._id) === String(msg._id));
+        // Check if there is an optimistic message with the same text to replace
+        let matchedOptimistic = false;
+        const updatedMessages = state.messages.map((m) => {
+          if (!matchedOptimistic && String(m.id || '').startsWith("msg-") && m.message === msg.message) {
+            matchedOptimistic = true;
+            return msg;
+          }
+          return m;
+        });
+
+        if (matchedOptimistic) {
+          return { messages: updatedMessages };
+        }
+
+        const exists = state.messages.some((m) => String(m._id || m.id) === String(msg._id || msg.id));
         return exists ? {} : { messages: [...state.messages, msg] };
       });
     };
@@ -145,12 +163,20 @@ const Chat = () => {
     setActiveThread(null);
   };
 
+  const orderThreadsCount = useMemo(() => threads.filter(t => !t.threadType || t.threadType === "order").length, [threads]);
+  const generalThreadsCount = useMemo(() => threads.filter(t => t.threadType === "general").length, [threads]);
+
   const filteredThreads = useMemo(() => {
     return threads.filter((thread) => {
+      // Filter by tab type
+      const matchesTab = activeTab === "general"
+        ? thread.threadType === "general"
+        : (!thread.threadType || thread.threadType === "order");
+
+      if (!matchesTab) return false;
+
       const displayId = String(thread.orderDisplayId || "").toLowerCase();
-      const name = String(thread.customerName || "Vendor").toLowerCase();
-      // Since it's user side, the other side is the vendor/store. We can check if we have vendorName.
-      // Wait, thread might show vendor name. Let's see: we can match searchQuery.
+      const name = String(thread.vendorStoreName || thread.customerName || "Vendor").toLowerCase();
       const query = searchQuery.toLowerCase();
       return (
         !searchQuery ||
@@ -158,7 +184,7 @@ const Chat = () => {
         name.includes(query)
       );
     });
-  }, [threads, searchQuery]);
+  }, [threads, activeTab, searchQuery]);
 
   const totalUnreadCount = useMemo(() => {
     return threads.reduce((sum, t) => sum + Number(t.customerUnreadCount || 0), 0);
@@ -233,6 +259,36 @@ const Chat = () => {
                 </div>
               </div>
 
+              {/* Tabs */}
+              <div className="flex border-b border-slate-100 px-4 py-2 gap-2 bg-slate-50/50">
+                <button
+                  onClick={() => {
+                    setActiveTab("order");
+                    setActiveThread(null);
+                  }}
+                  className={`flex-1 pb-1.5 text-xs font-bold border-b-2 text-center transition-all ${
+                    activeTab === "order"
+                      ? "border-[#F5A623] text-[#F5A623]"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  Order Support ({orderThreadsCount})
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab("general");
+                    setActiveThread(null);
+                  }}
+                  className={`flex-1 pb-1.5 text-xs font-bold border-b-2 text-center transition-all ${
+                    activeTab === "general"
+                      ? "border-[#F5A623] text-[#F5A623]"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  General Chats ({generalThreadsCount})
+                </button>
+              </div>
+
               {/* Threads Scroll List */}
               <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
                 {isLoading && threads.length === 0 ? (
@@ -242,6 +298,12 @@ const Chat = () => {
                     const threadId = thread._id || thread.id;
                     const isActive = (activeThread?._id || activeThread?.id) === threadId;
                     const hasUnread = Number(thread.customerUnreadCount || 0) > 0;
+
+                    const isGeneral = thread.threadType === "general";
+                    const titleText = isGeneral
+                      ? (thread.vendorStoreName || "Seller Chat")
+                      : `Order #${thread.orderDisplayId || 'Detail'}`;
+                    const subtitleText = isGeneral ? "Direct Message" : "Order Tying Support";
 
                     return (
                       <div
@@ -253,12 +315,12 @@ const Chat = () => {
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                            <FiShoppingBag className="text-lg" />
+                            {isGeneral ? <FiUser className="text-lg" /> : <FiShoppingBag className="text-lg" />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-center mb-1">
                               <h3 className={`text-sm truncate ${hasUnread ? "font-bold text-slate-800" : "font-semibold text-slate-700"}`}>
-                                Order #{thread.orderDisplayId || 'Detail'}
+                                {titleText}
                               </h3>
                               <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
                                 {thread.lastActivity
@@ -269,8 +331,8 @@ const Chat = () => {
                                   : ""}
                               </span>
                             </div>
-                            <p className="text-xs font-semibold text-slate-500 mb-0.5">
-                              Shop Chat Thread
+                            <p className="text-xs font-semibold text-slate-450 mb-0.5">
+                              {subtitleText}
                             </p>
                             <p className={`text-xs truncate ${hasUnread ? "font-bold text-slate-800" : "text-slate-500"}`}>
                               {thread.lastMessage || "No messages yet"}
@@ -306,14 +368,18 @@ const Chat = () => {
                   <div className="px-6 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 border border-slate-300">
-                        <FiUser />
+                        {activeThread.threadType === "general" ? <FiUser /> : <FiShoppingBag />}
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-slate-800">
-                          Order Support Chat
+                        <h4 className="text-sm font-bold text-slate-850">
+                          {activeThread.threadType === "general"
+                            ? (activeThread.vendorStoreName || "Seller Chat")
+                            : "Order Support Chat"}
                         </h4>
                         <p className="text-xs font-medium text-slate-500">
-                          Order ID: {activeThread.orderDisplayId}
+                          {activeThread.threadType === "general"
+                            ? "Direct Messages"
+                            : `Order ID: ${activeThread.orderDisplayId}`}
                         </p>
                       </div>
                     </div>
@@ -342,7 +408,7 @@ const Chat = () => {
                             <span className={`block text-[10px] text-right mt-1 font-semibold ${
                               isUser ? "text-[#fdeade]" : "text-slate-400"
                             }`}>
-                              {new Date(msg.time).toLocaleTimeString(undefined, {
+                              {new Date(msg.time || msg.createdAt).toLocaleTimeString(undefined, {
                                 hour: '2-digit',
                                 minute: '2-digit'
                               })}

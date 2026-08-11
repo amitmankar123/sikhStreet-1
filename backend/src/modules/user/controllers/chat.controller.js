@@ -50,7 +50,57 @@ export const getUserChatThreads = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, threads, 'User chat threads fetched.'));
 });
 
-// GET /api/user/chat/threads/order/:orderId/vendor/:vendorId
+// GET /api/user/chat/threads/vendor/:vendorId/general
+export const getOrCreateGeneralThread = asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const { vendorId } = req.params;
+    const VendorChatThread = mongoose.model('VendorChatThread');
+    const User = mongoose.model('User');
+    const Vendor = mongoose.model('Vendor');
+
+    if (!vendorId) throw new ApiError(400, 'Vendor ID is required.');
+
+    // Try to find an existing general thread
+    let thread = await VendorChatThread.findOne({
+        customerUserId: userId,
+        vendorId,
+        threadType: 'general',
+    }).lean();
+
+    if (!thread) {
+        // Fetch user info for seeding
+        const [userDoc, vendorDoc] = await Promise.all([
+            User.findById(userId).lean(),
+            Vendor.findById(vendorId).select('storeName name').lean(),
+        ]);
+
+        const customerName = userDoc?.name || 'Customer';
+        const customerEmail = userDoc?.email || '';
+        const customerPhone = userDoc?.phone || '';
+        const vendorStoreName = vendorDoc?.storeName || vendorDoc?.name || 'Seller';
+
+        const created = await VendorChatThread.create({
+            vendorId,
+            orderRef: null,
+            orderDisplayId: null,
+            customerUserId: userId,
+            customerName,
+            customerEmail,
+            customerPhone,
+            status: 'active',
+            threadType: 'general',
+            vendorStoreName,
+            lastMessage: '',
+            lastActivity: new Date(),
+            unreadCount: 0,
+            customerUnreadCount: 0,
+        });
+        thread = created.toObject ? created.toObject() : created;
+    }
+
+    res.status(200).json(new ApiResponse(200, thread, 'General chat thread initialized.'));
+});
+
 export const getOrCreateUserChatThread = asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { orderId, vendorId } = req.params;

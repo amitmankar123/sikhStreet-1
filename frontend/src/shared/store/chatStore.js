@@ -1,12 +1,19 @@
 import { create } from 'zustand';
 import api from '../utils/api';
+import socket from '../utils/socket';
 
 export const useChatStore = create((set, get) => ({
+  // ── Order chat state ──────────────────────────────────────────────────
   threads: [],
   messages: [],
   activeThread: null,
   isLoading: false,
   lastError: null,
+
+  // ── General (direct vendor) chat state ───────────────────────────────
+  generalActiveThread: null,
+  generalMessages: [],
+  isGeneralLoading: false,
 
   fetchThreads: async () => {
     set({ isLoading: true, lastError: null });
@@ -87,6 +94,13 @@ export const useChatStore = create((set, get) => ({
       ]
     };
 
+    // Skip API call for mock/local thread IDs — they only exist on the frontend
+    const isMockId = String(threadId || '').startsWith('mock-') || String(threadId || '').startsWith('general-');
+    if (isMockId) {
+      set({ messages: mockMessages[threadId] || [], isLoading: false });
+      return;
+    }
+
     try {
       const response = await api.get(`/user/chat/threads/${threadId}/messages`);
       const payload = response?.data ?? response;
@@ -104,15 +118,39 @@ export const useChatStore = create((set, get) => ({
   },
 
   sendMessage: async (threadId, messageText) => {
+    // Optimistic update
+    const optimisticMsg = {
+      id: `msg-${Date.now()}`,
+      sender: 'customer',
+      message: messageText,
+      time: new Date().toISOString()
+    };
+    
+    set((state) => ({
+      messages: [...state.messages, optimisticMsg]
+    }));
+
+    const isMockId = String(threadId).startsWith('mock-') || String(threadId).startsWith('general-');
+    if (isMockId) {
+      return optimisticMsg;
+    }
+
+    if (socket.connected) {
+      // If socket is connected, the socket emit is sufficient
+      return optimisticMsg;
+    }
+
     try {
       const response = await api.post(`/user/chat/threads/${threadId}/messages`, {
         message: messageText,
       });
       const createdMessage = response?.data ?? response;
 
-      // Update local messages array
+      // Replace optimistic message
       set((state) => ({
-        messages: [...state.messages, createdMessage],
+        messages: state.messages.map((m) =>
+          m.id === optimisticMsg.id ? { ...createdMessage } : m
+        ),
       }));
 
       // Update the thread in the list with the last message
@@ -132,33 +170,7 @@ export const useChatStore = create((set, get) => ({
 
       return createdMessage;
     } catch (error) {
-      // Local fallback for offline mode
-      const createdMessage = {
-        id: `msg-${Date.now()}`,
-        sender: "customer",
-        message: messageText,
-        time: new Date().toISOString(),
-      };
-
-      set((state) => ({
-        messages: [...state.messages, createdMessage],
-      }));
-
-      const nowIso = new Date().toISOString();
-      set((state) => ({
-        threads: state.threads.map((t) =>
-          String(t.id || t._id) === String(threadId)
-            ? {
-                ...t,
-                lastMessage: messageText,
-                lastActivity: nowIso,
-                customerUnreadCount: 0,
-              }
-            : t
-        ),
-      }));
-
-      return createdMessage;
+      return optimisticMsg;
     }
   },
 
@@ -196,6 +208,16 @@ export const useChatStore = create((set, get) => ({
   },
 
   markAsRead: async (threadId) => {
+    // Skip API for mock/local thread IDs
+    const isMockId = String(threadId || '').startsWith('mock-') || String(threadId || '').startsWith('general-');
+    if (isMockId) {
+      set((state) => ({
+        threads: state.threads.map((t) =>
+          String(t.id || t._id) === String(threadId) ? { ...t, customerUnreadCount: 0 } : t
+        ),
+      }));
+      return;
+    }
     try {
       await api.patch(`/user/chat/threads/${threadId}/read`);
       set((state) => ({
@@ -210,6 +232,109 @@ export const useChatStore = create((set, get) => ({
 
   setActiveThread: (thread) => {
     set({ activeThread: thread });
+  },
+
+  // ── General (direct vendor) chat actions ───────────────────────────
+
+  getOrCreateGeneralThread: async (vendorId, vendorName) => {
+    set({ isGeneralLoading: true });
+    const mockThread = {
+      id: `general-${vendorId}`,
+      _id: `general-${vendorId}`,
+      vendorId,
+      threadType: 'general',
+      customerName: 'You',
+      lastMessage: '',
+      lastActivity: new Date().toISOString(),
+      customerUnreadCount: 0,
+      status: 'active',
+      storeName: vendorName || 'Seller',
+    };
+    try {
+      const response = await api.get(`/user/chat/threads/vendor/${vendorId}/general`);
+      const thread = response?.data ?? response;
+      const normalized = { ...mockThread, ...thread };
+      set({ generalActiveThread: normalized, isGeneralLoading: false });
+      // Also load messages for this thread
+      await get().fetchGeneralMessages(normalized._id || normalized.id);
+      return normalized;
+    } catch {
+      set({ generalActiveThread: mockThread, generalMessages: [], isGeneralLoading: false });
+      return mockThread;
+    }
+  },
+
+  fetchGeneralMessages: async (threadId) => {
+    try {
+      const response = await api.get(`/user/chat/threads/${threadId}/messages`);
+      const payload = response?.data ?? response;
+      const list = Array.isArray(payload) ? payload : [];
+      set({ generalMessages: list });
+    } catch {
+      set({ generalMessages: [] });
+    }
+  },
+
+  sendGeneralMessage: async (threadId, messageText) => {
+    // Optimistic update
+    const optimistic = {
+      id: `msg-${Date.now()}`,
+      sender: 'customer',
+      message: messageText,
+      time: new Date().toISOString(),
+    };
+    set((state) => ({ generalMessages: [...state.generalMessages, optimistic] }));
+
+    const isMockId = String(threadId).startsWith('mock-') || String(threadId).startsWith('general-');
+    if (isMockId) {
+      return optimistic;
+    }
+
+    if (socket.connected) {
+      // If socket is connected, the socket emit is sufficient
+      return optimistic;
+    }
+
+    try {
+      const response = await api.post(`/user/chat/threads/${threadId}/messages`, {
+        message: messageText,
+      });
+      const created = response?.data ?? response;
+      // Replace optimistic with real message
+      set((state) => ({
+        generalMessages: state.generalMessages.map((m) =>
+          m.id === optimistic.id ? { ...created } : m
+        ),
+        generalActiveThread: state.generalActiveThread
+          ? { ...state.generalActiveThread, lastMessage: messageText }
+          : state.generalActiveThread,
+      }));
+      return created;
+    } catch {
+      return optimistic;
+    }
+  },
+
+  appendGeneralMessage: (msg) => {
+    set((state) => {
+      // Check if there is an optimistic message with the same message text from the same sender
+      const isCustomer = msg.sender === "customer" || msg.senderType === "customer";
+      let matchedOptimistic = false;
+      const updatedMessages = state.generalMessages.map((m) => {
+        if (!matchedOptimistic && String(m.id || '').startsWith("msg-") && m.message === msg.message) {
+          matchedOptimistic = true;
+          return msg; // replace with real message
+        }
+        return m;
+      });
+
+      if (matchedOptimistic) {
+        return { generalMessages: updatedMessages };
+      }
+
+      const exists = state.generalMessages.some((m) => String(m._id || m.id) === String(msg._id || msg.id));
+      return exists ? {} : { generalMessages: [...state.generalMessages, msg] };
+    });
   },
 
   resetChat: () => {

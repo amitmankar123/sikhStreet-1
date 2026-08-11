@@ -11,6 +11,7 @@ import LazyImage from "../../../shared/components/LazyImage";
 import { getPlaceholderImage, formatPrice } from "../../../shared/utils/helpers";
 import api from "../../../shared/utils/api";
 import toast from "react-hot-toast";
+import VendorChatPanel from "../../../shared/components/VendorChatPanel";
 
 const normalizeBrand = (raw) => ({
     ...raw,
@@ -215,6 +216,7 @@ const EtsyProductCard = ({ product }) => {
 const Brand = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
     const brandId = String(id ?? "").trim();
     const [catalogVersion, setCatalogVersion] = useState(0);
     const [remoteBrand, setRemoteBrand] = useState(null);
@@ -599,6 +601,12 @@ const Brand = () => {
     return (
         <PageTransition>
             <MobileLayout showBottomNav={true} showCartBar={true}>
+                {/* General Vendor Chat Panel */}
+                <VendorChatPanel
+                    isOpen={isChatPanelOpen}
+                    onClose={() => setIsChatPanelOpen(false)}
+                    vendor={brand}
+                />
                 <div className="w-full max-w-[1400px] mx-auto px-0 md:px-12 py-0 md:py-6 bg-white min-h-screen text-left">
                     {/* Shop Banner Header */}
                     <div className="relative w-full h-36 md:h-[280px] md:rounded-2xl overflow-hidden bg-gradient-to-r from-[#ece4db] to-[#dfd3c3]">
@@ -618,7 +626,7 @@ const Brand = () => {
                         {/* Floating Action Buttons on Banner (Mobile Only) */}
                         <div className="absolute bottom-3 right-3 flex items-center gap-2.5 z-10 md:hidden">
                             <button
-                                onClick={() => navigate("/chat")}
+                                onClick={() => setIsChatPanelOpen(true)}
                                 className="p-2.5 bg-white/95 text-gray-700 hover:text-[#F5A623] rounded-full shadow-md transition-all duration-300 hover:scale-105 flex items-center justify-center"
                             >
                                 <FiMessageSquare className="text-base" />
@@ -681,7 +689,7 @@ const Brand = () => {
                         {/* Desktop Action Buttons */}
                         <div className="hidden md:flex items-center gap-3">
                             <button
-                                onClick={() => navigate("/chat")}
+                                onClick={() => setIsChatPanelOpen(true)}
                                 className="px-5 py-2 border border-gray-300 hover:bg-gray-55 rounded-full font-bold text-sm text-gray-800 flex items-center gap-1.5 shadow-sm transition-all animate-none"
                             >
                                 <FiMessageSquare className="text-sm" />

@@ -15,7 +15,9 @@ const VendorChatThreadSchema = new mongoose.Schema({
   lastActivity: { type: Date, default: Date.now },
   unreadCount: { type: Number, default: 0 },
   customerUnreadCount: { type: Number, default: 0 },
-  status: { type: String, default: "active" }
+  status: { type: String, default: "active" },
+  threadType: { type: String, enum: ['order', 'general'], default: 'order' },
+  vendorStoreName: { type: String, default: '' }
 }, {
   timestamps: true,
   collection: 'VendorChatThread'

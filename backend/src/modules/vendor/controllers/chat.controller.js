@@ -38,14 +38,18 @@ const serializeMessage = (messageDoc) => ({
     time: messageDoc.createdAt,
 });
 
+// GET /api/vendor/chat/threads
+// Returns order threads (auto-created from orders) AND general threads (created by customers).
+// These are kept fully separate: only 'order' type threads are auto-created here.
 export const getVendorChatThreads = asyncHandler(async (req, res) => {
     const vendorId = req.user.id;
     const Order = mongoose.model('Order');
     const VendorChatThread = mongoose.model('VendorChatThread');
     const User = mongoose.model('User');
 
+    // ── Auto-create order threads for recent orders (only 'order' type) ──
     const recentOrders = await Order.find({
-        "vendorItems.vendorId": vendorId
+        'vendorItems.vendorId': vendorId
     })
     .sort({ createdAt: -1 })
     .limit(100)
@@ -59,14 +63,19 @@ export const getVendorChatThreads = asyncHandler(async (req, res) => {
             order.user = users.find(u => String(u._id) === String(order.userId)) || null;
         }
         const seed = buildThreadSeedFromOrder(order);
-        
-        let existingThread = await VendorChatThread.findOne({ vendorId, orderRef: order._id });
-        
+
+        let existingThread = await VendorChatThread.findOne({
+            vendorId,
+            orderRef: order._id,
+            threadType: 'order',
+        });
+
         if (!existingThread) {
             await VendorChatThread.create({
                 vendorId,
                 orderRef: order._id,
                 ...seed,
+                threadType: 'order',
                 lastMessage: 'Hello, I need help with my order',
                 lastActivity: order.createdAt || new Date(),
                 unreadCount: 0,
@@ -82,13 +91,23 @@ export const getVendorChatThreads = asyncHandler(async (req, res) => {
         }
     }
 
-    const threads = await VendorChatThread.find({ vendorId })
+    // ── Fetch ALL threads for this vendor, separated by threadType ──
+    const allThreads = await VendorChatThread.find({ vendorId })
         .sort({ lastActivity: -1 })
         .lean();
-    
-    res.status(200).json(new ApiResponse(200, threads, 'Chat threads fetched.'));
+
+    const orderThreads = allThreads.filter(t => !t.threadType || t.threadType === 'order');
+    const generalThreads = allThreads.filter(t => t.threadType === 'general');
+
+    res.status(200).json(new ApiResponse(200, {
+        orderThreads,
+        generalThreads,
+        // flat list still available for backward compat
+        threads: allThreads,
+    }, 'Chat threads fetched.'));
 });
 
+// GET /api/vendor/chat/threads/:id/messages
 export const getVendorChatMessages = asyncHandler(async (req, res) => {
     const VendorChatThread = mongoose.model('VendorChatThread');
     const VendorChatMessage = mongoose.model('VendorChatMessage');
@@ -100,7 +119,9 @@ export const getVendorChatMessages = asyncHandler(async (req, res) => {
         .sort({ createdAt: 1 })
         .lean();
 
-    if (messages.length === 0) {
+    // For ORDER threads with no messages: auto-seed a greeting exchange
+    // For GENERAL threads with no messages: return empty (customer hasn't spoken yet)
+    if (messages.length === 0 && thread.threadType !== 'general') {
         const seeded = [
             await VendorChatMessage.create({
                 threadId: thread._id,
@@ -123,6 +144,7 @@ export const getVendorChatMessages = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, messages.map(serializeMessage), 'Chat messages fetched.'));
 });
 
+// POST /api/vendor/chat/threads/:id/messages
 export const sendVendorChatMessage = asyncHandler(async (req, res) => {
     const message = String(req.body?.message || '').trim();
     if (!message) throw new ApiError(400, 'Message is required.');
@@ -148,6 +170,7 @@ export const sendVendorChatMessage = asyncHandler(async (req, res) => {
     res.status(201).json(new ApiResponse(201, serializeMessage(created), 'Message sent.'));
 });
 
+// PATCH /api/vendor/chat/threads/:id/read
 export const markVendorChatRead = asyncHandler(async (req, res) => {
     const VendorChatThread = mongoose.model('VendorChatThread');
 
@@ -163,6 +186,7 @@ export const markVendorChatRead = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, updatedThread.toObject(), 'Chat marked as read.'));
 });
 
+// PATCH /api/vendor/chat/threads/:id/status
 export const updateVendorChatStatus = asyncHandler(async (req, res) => {
     const status = String(req.body?.status || '').trim();
     if (!['active', 'resolved'].includes(status)) {

@@ -86,6 +86,7 @@ router.delete('/notifications/:id', ...customerAuth, notificationController.dele
 
 // Chat routes (protected)
 router.get('/chat/threads', ...customerAuth, chatController.getUserChatThreads);
+router.get('/chat/threads/vendor/:vendorId/general', ...customerAuth, chatController.getOrCreateGeneralThread);
 router.get('/chat/threads/order/:orderId/vendor/:vendorId', ...customerAuth, chatController.getOrCreateUserChatThread);
 router.get('/chat/threads/:id/messages', ...customerAuth, chatController.getUserChatMessages);
 router.post('/chat/threads/:id/messages', ...customerAuth, chatController.sendUserChatMessage);

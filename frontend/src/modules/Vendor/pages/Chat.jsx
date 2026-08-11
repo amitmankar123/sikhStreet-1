@@ -14,6 +14,7 @@ import {
 const Chat = () => {
   const { vendor } = useVendorAuthStore();
   const [chats, setChats] = useState([]);
+  const [activeTab, setActiveTab] = useState("direct"); // "direct" or "order"
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -32,8 +33,10 @@ const Chat = () => {
     setIsLoadingChats(true);
     try {
       const res = await getVendorChatThreads();
-      const data = res?.data ?? res;
-      setChats(Array.isArray(data) ? data : []);
+      const payload = res?.data ?? res;
+      // Handle either the new object structure { threads, orderThreads, generalThreads } or standard array payload
+      const threadsArray = payload?.threads || (Array.isArray(payload) ? payload : []);
+      setChats(threadsArray);
     } catch {
       setChats([]);
     } finally {
@@ -55,7 +58,17 @@ const Chat = () => {
       if (!msg || !selectedChat) return;
       if (String(msg.threadId) !== String(selectedChat._id)) return;
       setMessages((prev) => {
-        // Avoid duplicates (message may have been added optimistically)
+        // Replace optimistic message matching text
+        let matchedOptimistic = false;
+        const updated = prev.map((m) => {
+          if (!matchedOptimistic && String(m._id || '').startsWith("temp-") && m.message === msg.message) {
+            matchedOptimistic = true;
+            return msg;
+          }
+          return m;
+        });
+        if (matchedOptimistic) return updated;
+
         const exists = prev.some((m) => String(m._id) === String(msg._id));
         return exists ? prev : [...prev, msg];
       });
@@ -179,15 +192,20 @@ const Chat = () => {
         senderType: "vendor",
         senderId: vendorId,
       });
-      // Also save via REST as backup
-      const res = await sendVendorChatMessage(selectedChat._id, message);
-      const created = res?.data ?? res;
-      if (created?._id) {
-        // Replace optimistic message with real one from server
-        setMessages((prev) =>
-          prev.map((m) => (m._id === optimisticMsg._id ? { ...optimisticMsg, ...created } : m))
-        );
+
+      let created = null;
+      if (!socket.connected) {
+        // Only save via REST as backup if socket is down
+        const res = await sendVendorChatMessage(selectedChat._id, message);
+        created = res?.data ?? res;
+        if (created?._id) {
+          // Replace optimistic message with real one from server
+          setMessages((prev) =>
+            prev.map((m) => (m._id === optimisticMsg._id ? { ...optimisticMsg, ...created } : m))
+          );
+        }
       }
+
       const nowIso = new Date().toISOString();
       setChats((prev) =>
         prev.map((c) =>
@@ -219,9 +237,17 @@ const Chat = () => {
     }
   };
 
+  const directChatsCount = useMemo(() => chats.filter(c => c.threadType === "general").length, [chats]);
+  const orderChatsCount = useMemo(() => chats.filter(c => !c.threadType || c.threadType === "order").length, [chats]);
+
   const filteredChats = useMemo(
     () =>
       chats.filter((chat) => {
+        // Filter by tab: "direct" maps to threadType === "general", "order" maps to other threads
+        const matchesTab = activeTab === "direct"
+          ? chat.threadType === "general"
+          : (!chat.threadType || chat.threadType === "order");
+
         const orderText = String(chat.orderDisplayId || "").toLowerCase();
         const customerText = String(chat.customerName || "").toLowerCase();
         const matchesSearch =
@@ -230,12 +256,18 @@ const Chat = () => {
           orderText.includes(searchQuery.toLowerCase());
         const matchesStatus =
           filterStatus === "all" || chat.status === filterStatus;
-        return matchesSearch && matchesStatus;
+        return matchesTab && matchesSearch && matchesStatus;
       }),
-    [chats, filterStatus, searchQuery]
+    [chats, activeTab, filterStatus, searchQuery]
   );
 
-  const activeChats = chats.filter((c) => c.status === "active").length;
+  const activeChats = chats.filter((c) => {
+    const matchesTab = activeTab === "direct"
+      ? c.threadType === "general"
+      : (!c.threadType || c.threadType === "order");
+    return matchesTab && c.status === "active";
+  }).length;
+
   const unreadCount = chats.reduce((sum, c) => sum + Number(c.unreadCount || 0), 0);
 
   if (!vendorId) {
@@ -283,20 +315,50 @@ const Chat = () => {
                 className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
+            {/* Thread Type Tabs */}
+            <div className="flex border-b border-gray-100 mb-4 gap-2">
+              <button
+                onClick={() => {
+                  setActiveTab("direct");
+                  setSelectedChat(null);
+                }}
+                className={`flex-1 pb-2 text-xs font-bold border-b-2 text-center transition-all ${
+                  activeTab === "direct"
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                Direct Messages ({directChatsCount})
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("order");
+                  setSelectedChat(null);
+                }}
+                className={`flex-1 pb-2 text-xs font-bold border-b-2 text-center transition-all ${
+                  activeTab === "order"
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                Order Chats ({orderChatsCount})
+              </button>
+            </div>
+
             <div className="flex gap-2">
               <button
                 onClick={() => setFilterStatus("all")}
-                className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                   filterStatus === "all"
                     ? "bg-primary-600 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                All ({chats.length})
+                All ({activeTab === "direct" ? directChatsCount : orderChatsCount})
               </button>
               <button
                 onClick={() => setFilterStatus("active")}
-                className={`flex-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                   filterStatus === "active"
                     ? "bg-primary-600 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -418,7 +480,7 @@ const Chat = () => {
                             : "text-gray-500"
                         }`}
                       >
-                        {new Date(msg.time).toLocaleTimeString()}
+                        {new Date(msg.time || msg.createdAt).toLocaleTimeString()}
                       </p>
                     </div>
                   </div>

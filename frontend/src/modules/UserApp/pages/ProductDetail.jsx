@@ -49,6 +49,7 @@ import Badge from "../../../shared/components/Badge";
 import ProductCard from "../../../shared/components/ProductCard";
 import { getVariantSignature, resolveVariantPrice } from "../../../shared/utils/variant";
 import LazyImage from "../../../shared/components/LazyImage";
+import VendorChatPanel from "../../../shared/components/VendorChatPanel";
 
 
 
@@ -254,6 +255,7 @@ const BookProductCard = ({ product }) => {
 
 const SellerShopCard = ({ product }) => {
   const navigate = useNavigate();
+  const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
   const [isFollowing, setIsFollowing] = useState(() => {
     try {
       const saved = localStorage.getItem("favorite_shops");
@@ -411,6 +413,12 @@ const SellerShopCard = ({ product }) => {
 
   return (
     <div className="border border-gray-200 rounded-[2rem] p-6 bg-white shadow-sm space-y-6 max-w-4xl text-left font-sans">
+      {/* General Vendor Chat Panel */}
+      <VendorChatPanel
+        isOpen={isChatPanelOpen}
+        onClose={() => setIsChatPanelOpen(false)}
+        vendor={resolvedVendor}
+      />
       {/* Profile Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -471,12 +479,12 @@ const SellerShopCard = ({ product }) => {
               {isFollowing ? "Following" : "Follow shop"}
             </button>
 
-            <Link
-              to="/chat"
+            <button
+              onClick={() => setIsChatPanelOpen(true)}
               className="flex items-center justify-center px-4 py-2 rounded-full text-xs font-bold border border-black text-black hover:bg-gray-50 transition-all active:scale-95"
             >
               Message seller
-            </Link>
+            </button>
           </div>
           <span className="text-[10px] text-gray-500 self-center sm:self-auto">Typically responds within a few hours</span>
         </div>

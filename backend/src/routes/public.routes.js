@@ -409,6 +409,18 @@ const getProductDetail = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, discounted[0], 'Product detail.'));
 });
 
+// GET /api/products/:productId/questions  (public — must be before /:id)
+router.get('/products/:productId/questions', asyncHandler(async (req, res) => {
+    const ProductQuestion = mongoose.model('ProductQuestion');
+    const { productId } = req.params;
+
+    const questions = await ProductQuestion.find({ productId })
+        .sort({ createdAt: -1 })
+        .lean();
+
+    res.status(200).json(new ApiResponse(200, questions, 'Questions fetched.'));
+}));
+
 // GET /api/products/:id
 router.get('/products/:id', getProductDetail);
 
