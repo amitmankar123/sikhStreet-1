@@ -1,5 +1,8 @@
 // API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const rawApiUrl = import.meta.env.VITE_API_BASE_URL || '';
+export const API_BASE_URL = rawApiUrl && !rawApiUrl.endsWith('/api') && !rawApiUrl.endsWith('/api/')
+  ? `${rawApiUrl.replace(/\/$/, '')}/api`
+  : rawApiUrl;
 
 // App Constants
 export const APP_NAME = 'Sikh Street';
