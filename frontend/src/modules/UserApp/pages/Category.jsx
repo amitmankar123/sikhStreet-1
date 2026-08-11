@@ -333,6 +333,34 @@ const MobileCategory = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
   const [categoryProductsFeed, setCategoryProductsFeed] = useState([]);
+  const [filterSearchQueries, setFilterSearchQueries] = useState({});
+
+  const availableAuthors = useMemo(() => {
+    const authorsSet = new Set();
+    categoryProductsFeed.forEach(product => {
+      if (!product) return;
+      const productSpecs = product.specifications || product.bookConfig || {};
+      const authorVal = productSpecs.author || productSpecs.book_author || product.author || product.book_author;
+      if (authorVal && typeof authorVal === 'string' && authorVal.trim()) {
+        authorsSet.add(authorVal.trim());
+      }
+    });
+    return Array.from(authorsSet).sort();
+  }, [categoryProductsFeed]);
+
+  const availablePublishers = useMemo(() => {
+    const publishersSet = new Set();
+    categoryProductsFeed.forEach(product => {
+      if (!product) return;
+      const productSpecs = product.specifications || product.bookConfig || {};
+      const publisherVal = productSpecs.publisher || productSpecs.book_publisher || product.publisher || product.book_publisher;
+      if (publisherVal && typeof publisherVal === 'string' && publisherVal.trim()) {
+        publishersSet.add(publisherVal.trim());
+      }
+    });
+    return Array.from(publishersSet).sort();
+  }, [categoryProductsFeed]);
+
   const [filters, setFilters] = useState({
     minPrice: "",
     maxPrice: "",
@@ -902,6 +930,7 @@ const MobileCategory = () => {
     setEtsySort("most_relevant");
     setSelectedTopic("");
     setDynamicFilterValues({});
+    setFilterSearchQueries({});
   };
 
   // Check if any filter is active
@@ -1416,18 +1445,82 @@ const MobileCategory = () => {
                                     {isOpen && (
                                       <div className="px-4 pb-3 space-y-2.5 max-h-60 overflow-y-auto">
                                         {field.type === 'text' ? (
-                                          <div className="relative flex items-center bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 w-full">
-                                            <input
-                                              type="text"
-                                              placeholder={`Search ${field.label}...`}
-                                              value={dynamicFilterValues[field.name] || ""}
-                                              onChange={(e) => handleDynamicTextChange(field.name, e.target.value)}
-                                              className="w-full bg-transparent text-xs outline-none text-gray-700"
-                                            />
-                                            {dynamicFilterValues[field.name] && (
-                                              <button onClick={() => handleDynamicTextChange(field.name, "")} className="text-gray-400 hover:text-gray-600 ml-1 flex-shrink-0">
-                                                <FiX size={12} />
-                                              </button>
+                                          <div className="space-y-3 w-full">
+                                            {/* Search Input for the Checklist */}
+                                            <div className="relative flex items-center bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 w-full">
+                                              <input
+                                                type="text"
+                                                placeholder={`Search ${field.label}...`}
+                                                value={filterSearchQueries[field.name] || ""}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  setFilterSearchQueries(prev => ({
+                                                    ...prev,
+                                                    [field.name]: val
+                                                  }));
+                                                }}
+                                                className="w-full bg-transparent text-xs outline-none text-gray-700 font-sans"
+                                              />
+                                              {filterSearchQueries[field.name] && (
+                                                <button
+                                                  onClick={() => {
+                                                    setFilterSearchQueries(prev => ({
+                                                      ...prev,
+                                                      [field.name]: ""
+                                                    }));
+                                                  }}
+                                                  className="text-gray-400 hover:text-gray-600 ml-1 flex-shrink-0"
+                                                >
+                                                  <FiX size={12} />
+                                                </button>
+                                              )}
+                                            </div>
+
+                                            {/* Scrollable Checklist of Options */}
+                                            {['book_author', 'book_publisher'].includes(field.name) && (
+                                              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                                                {(() => {
+                                                  const query = (filterSearchQueries[field.name] || "").toLowerCase();
+                                                  const sourceList = field.name === 'book_author' ? availableAuthors : availablePublishers;
+                                                  const filteredList = sourceList.filter(item =>
+                                                    item.toLowerCase().includes(query)
+                                                  );
+
+                                                  if (filteredList.length === 0) {
+                                                    return (
+                                                      <p className="text-[10px] text-gray-400 italic py-1">
+                                                        No {field.label.toLowerCase()}s found
+                                                      </p>
+                                                    );
+                                                  }
+
+                                                  return filteredList.map((name) => {
+                                                    const isSelected = (dynamicFilterValues[field.name] || []).includes(name);
+                                                    return (
+                                                      <label
+                                                        key={name}
+                                                        className="flex items-center justify-between cursor-pointer group py-0.5"
+                                                      >
+                                                        <div
+                                                          className="flex items-center gap-2"
+                                                          onClick={() => handleDynamicFilterToggle(field.name, name)}
+                                                        >
+                                                          <div className={`w-4 h-4 flex items-center justify-center flex-shrink-0 transition-all cursor-pointer rounded ${
+                                                            isSelected ? 'bg-[#1861bf] border-[#1861bf]' : 'border-gray-400 bg-white group-hover:border-[#1861bf] border-2'
+                                                          }`}>
+                                                            {isSelected && (
+                                                              <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none">
+                                                                <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                              </svg>
+                                                            )}
+                                                          </div>
+                                                          <span className="text-xs text-gray-700 group-hover:text-black">{name}</span>
+                                                        </div>
+                                                      </label>
+                                                    );
+                                                  });
+                                                })()}
+                                              </div>
                                             )}
                                           </div>
                                         ) : (

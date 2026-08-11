@@ -558,7 +558,8 @@ export const products = [
     variants: {},
     bookConfig: {
       synopsis: "This book is a comprehensive introduction to the Sikh faith. Ideal for those with little knowledge of the religion, it will give you a clear understanding of what Sikh's believe, and how they practise their faith. Covering all aspects, from the history of Sikhism, to Sikh ethics, to the practicalities of living a Sikh life, learn what it means to be Sikh today.",
-      publisher: "John Murray Press",
+      publisher: "XYZ",
+      author: "Amit",
       isbn: "9781444105100",
       pages: "272",
       dimensions: "196 x 128 x 18 mm",
@@ -604,7 +605,8 @@ export const products = [
     variants: {},
     bookConfig: {
       synopsis: "This book was written for the broken hearts, the anxious souls, and the tired minds searching for comfort in a world that often feels too heavy. These pages carry thoughts born from silence, pain, reflection, and the quiet emotions many people struggle to explain. It is not a book of perfection. It is a collection of reflections, scribbles, and pieces of my heart written for the hearts of others. Every page was written with sincerity, hoping that someone somewhere feels less alone while reading it. May this book become a source of benefit for you and for the Ummah of Sayyiduna Taha.",
-      publisher: "Muhebb Publishing",
+      publisher: "XYZ",
+      author: "Amit",
       isbn: "9780368945209",
       pages: "121",
       dimensions: "196 x 128 x 10 mm",
@@ -1138,6 +1140,7 @@ export const products = [
     bookConfig: {
       synopsis: "The legendary story of the last queen of the Sikh Empire, Maharani Jindan. Her bravery, struggles, and persistent rebellion against the British East India Company are vividly captured in this classic account.",
       publisher: "Seetal Publications",
+      author: "Prof. Kartar Singh",
       isbn: "9788170701121",
       pages: "312",
       dimensions: "196 x 128 x 20 mm",
@@ -1181,6 +1184,7 @@ export const products = [
     bookConfig: {
       synopsis: "An in-depth biography of Maharaja Ranjit Singh, detailing the unification of Punjab, the consolidation of the empire, and the magnificent defense systems created in the Northwest frontier. Instant digital delivery.",
       publisher: "Khalsa digital Press",
+      author: "Dr. Harjinder Singh Dilgeer",
       isbn: "9788170701123",
       pages: "420",
       dimensions: "E-Book",
@@ -1225,6 +1229,7 @@ export const products = [
     bookConfig: {
       synopsis: "A detailed modern account documenting the socio-political movements of the late 20th century in Punjab, focused on the speeches, philosophy, and historical impact of Sant Jarnail Singh Bhindranwale.",
       publisher: "Tlysta Publications",
+      author: "Prof. Kartar Singh",
       isbn: "9788170701124",
       pages: "380",
       dimensions: "220 x 140 x 25 mm",
