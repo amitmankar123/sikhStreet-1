@@ -50,6 +50,7 @@ const AdminHeader = ({ onMenuClick, sidebarWidth, isDesktop, isDragging }) => {
       settings: 'Settings',
       more: 'More',
       'delivery-boys': 'Delivery Partners',
+      'order-tracking': 'Order Tracking',
     };
     return pageNames[path] || path.charAt(0).toUpperCase() + path.slice(1);
   };

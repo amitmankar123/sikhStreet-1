@@ -41,6 +41,7 @@ const VendorHeader = ({ onMenuClick }) => {
       earnings: "Earnings",
       settings: "Settings",
       profile: "Profile",
+      "order-tracking": "Order Tracking",
     };
     return pageNames[path] || path.charAt(0).toUpperCase() + path.slice(1);
   };

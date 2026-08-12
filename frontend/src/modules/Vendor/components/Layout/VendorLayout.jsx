@@ -24,7 +24,7 @@ const VendorLayout = () => {
       <VendorSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:ml-64 min-w-0 max-w-full overflow-x-hidden">
+      <div className="flex-1 flex flex-col lg:ml-64 lg:max-w-[calc(100%-16rem)] min-w-0 overflow-x-hidden">
         {/* Header */}
         <VendorHeader onMenuClick={() => setSidebarOpen(true)} />
 

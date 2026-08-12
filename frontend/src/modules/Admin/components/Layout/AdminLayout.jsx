@@ -88,8 +88,12 @@ const AdminLayout = () => {
 
       {/* Main Content */}
       <div 
-        className={`flex-1 flex flex-col min-w-0 max-w-full overflow-x-hidden ${isDragging ? '' : 'transition-all duration-300'}`}
-        style={{ marginLeft: isDesktop ? `${sidebarWidth}px` : '0px' }}
+        className={`flex-1 flex flex-col min-w-0 overflow-x-hidden ${isDragging ? '' : 'transition-all duration-300'}`}
+        style={{ 
+          marginLeft: isDesktop ? `${sidebarWidth}px` : '0px',
+          width: isDesktop ? `calc(100% - ${sidebarWidth}px)` : '100%',
+          maxWidth: isDesktop ? `calc(100% - ${sidebarWidth}px)` : '100%'
+        }}
       >
         {/* Header */}
         <AdminHeader 
