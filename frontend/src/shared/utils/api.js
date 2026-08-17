@@ -229,7 +229,13 @@ api.interceptors.request.use(
     }
 
     const scope = getScopeFromUrl(config.url || '');
-    const token = localStorage.getItem(AUTH_SCOPES[scope].accessKey);
+    let token = localStorage.getItem(AUTH_SCOPES[scope].accessKey);
+    
+    // Fallback: If requesting the schema resolution endpoint, a vendor token is also allowed
+    if (!token && (config.url || '').includes('/admin/marketplace-config/resolve/')) {
+      token = localStorage.getItem(AUTH_SCOPES.vendor.accessKey);
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
