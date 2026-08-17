@@ -1598,18 +1598,29 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
                         <p className="text-sm text-gray-500 mt-0.5 font-sans">Provide the details below for this listing section.</p>
                       </div>
 
-                      {stepData.sections?.map((section, secIdx) => (
+                      {stepData.sections?.map((section, secIdx) => {
+                        // Filter out fields that are managed elsewhere (e.g. pricingUnit is in the Art Matrix step)
+                        const visibleFields = (section.fields || []).filter(field => {
+                          // Exclude static region specifications from Book details step
+                          if (isBookCategory && (field.name === "region" || field.name === "book_region" || field.name === "publishing_region")) {
+                            return false;
+                          }
+                          // Exclude SI unit config — it is handled inside the dedicated Art Matrix step
+                          if (field.name === "pricingUnit" || field.type === "si_unit") {
+                            return false;
+                          }
+                          return true;
+                        });
+
+                        // Skip entire section if no fields remain (e.g. "SI Unit & Size Config")
+                        if (visibleFields.length === 0) return null;
+
+                        return (
                         <div key={secIdx} className="space-y-4 border-b border-dashed border-gray-150 pb-4 last:border-0 last:pb-0">
                           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider font-sans">{section.name}</h3>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 font-sans">
-                            {section.fields?.filter(field => {
-                              // Exclude static region specifications from Book details step
-                              if (isBookCategory && (field.name === "region" || field.name === "book_region" || field.name === "publishing_region")) {
-                                return false;
-                              }
-                              return true;
-                            }).map((field, fieldIdx) => {
+                            {visibleFields.map((field, fieldIdx) => {
                               const value = getFieldValue(field.name);
                               console.log(`[Wizard] Rendering field: ${field.name}, type: ${field.type}, allowMultiple: ${field.allowMultiple}, isVariant: ${field.isVariant}`);
                               // Auto-detect: dropdowns inside an "Attributes" section should be multi-select
@@ -1772,9 +1783,10 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
                                 </div>
                               );
                             })}
-                          </div>
+                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   );
                 })()}
