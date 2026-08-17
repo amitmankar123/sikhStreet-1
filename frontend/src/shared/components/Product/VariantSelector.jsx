@@ -45,10 +45,14 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
       : [];
 
     const fallback = [];
-    const sizes = Array.isArray(variants?.sizes) ? variants.sizes : [];
+    const sizes = Array.isArray(variants?.sizes) ? variants.sizes : Array.isArray(variants?.dimensions) ? variants.dimensions : [];
     const colors = Array.isArray(variants?.colors) ? variants.colors : [];
+    const materials = Array.isArray(variants?.materials) ? variants.materials : [];
+    const frames = Array.isArray(variants?.frames) ? variants.frames : [];
     if (sizes.length) fallback.push({ label: "Size", key: "size", values: [...sizes] });
     if (colors.length) fallback.push({ label: "Color", key: "color", values: [...colors] });
+    if (materials.length) fallback.push({ label: "Material", key: "material", values: [...materials] });
+    if (frames.length) fallback.push({ label: "Frame", key: "frame", values: [...frames] });
 
     const resolved = dynamicAxes.length ? dynamicAxes : fallback;
 
@@ -85,6 +89,8 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
   };
 
   useEffect(() => {
+    if (selectedVariant && Object.keys(selectedVariant).length > 0) return;
+
     const nextSelection = {};
     const defaultSelection = variants?.defaultSelection && typeof variants.defaultSelection === "object"
       ? variants.defaultSelection
@@ -98,7 +104,7 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
           : "";
       let selected = directDefault || legacyDefault;
 
-      // Auto-select the first option if none is selected, to improve user experience
+      // Auto-select the first option if none is selected
       if (!selected && axis.values.length > 0) {
         selected = axis.values[0];
       }
@@ -106,13 +112,10 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
       if (selected) nextSelection[axis.key] = selected;
     });
 
-    const isSelectionChanged = Object.keys(nextSelection).length !== Object.keys(selectedVariant || {}).length ||
-      Object.keys(nextSelection).some((k) => nextSelection[k] !== selectedVariant?.[k]);
-
-    if (isSelectionChanged) {
+    if (Object.keys(nextSelection).length > 0) {
       setSelectedVariant(nextSelection);
     }
-  }, [axes, variants, selectedVariant]);
+  }, [axes, variants]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     onVariantChange?.(selectedVariant || {});

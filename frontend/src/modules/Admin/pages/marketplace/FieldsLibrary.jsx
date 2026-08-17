@@ -52,6 +52,8 @@ export default function FieldsLibrary() {
     helpText: "",
     required: false,
     options: "",
+    commonOptions: "",
+    vendorCanAddOptions: false,
     displayOrder: 0,
     isPricingAxis: false,
     pricingAxisLabel: ""
@@ -83,6 +85,8 @@ export default function FieldsLibrary() {
       helpText: "",
       required: false,
       options: "",
+      commonOptions: "",
+      vendorCanAddOptions: false,
       displayOrder: 0,
       isPricingAxis: false,
       pricingAxisLabel: ""
@@ -100,6 +104,8 @@ export default function FieldsLibrary() {
       helpText: field.helpText || "",
       required: !!field.required,
       options: Array.isArray(field.options) ? field.options.join(", ") : "",
+      commonOptions: Array.isArray(field.commonOptions) ? field.commonOptions.join(", ") : "",
+      vendorCanAddOptions: !!field.vendorCanAddOptions,
       displayOrder: field.displayOrder || 0,
       isPricingAxis: !!field.isPricingAxis,
       pricingAxisLabel: field.pricingAxisLabel || ""
@@ -136,7 +142,11 @@ export default function FieldsLibrary() {
       label: formData.label.trim(),
       options: formData.options
         ? formData.options.split(",").map((opt) => opt.trim()).filter(Boolean)
-        : []
+        : [],
+      commonOptions: formData.commonOptions
+        ? formData.commonOptions.split(",").map((opt) => opt.trim()).filter(Boolean)
+        : [],
+      vendorCanAddOptions: !!formData.vendorCanAddOptions
     };
 
     try {
@@ -204,7 +214,9 @@ export default function FieldsLibrary() {
                   <th className="p-4">Field ID (Name)</th>
                   <th className="p-4">Type</th>
                   <th className="p-4">Options</th>
+                  <th className="p-4">Common</th>
                   <th className="p-4 text-center">Required</th>
+                  <th className="p-4 text-center">Vendor Adds</th>
                   <th className="p-4 text-center">Pricing Axis</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
@@ -220,10 +232,20 @@ export default function FieldsLibrary() {
                     <td className="p-4 max-w-xs truncate text-gray-500">
                       {Array.isArray(field.options) && field.options.length > 0 ? field.options.join(", ") : "-"}
                     </td>
+                    <td className="p-4 max-w-xs truncate text-gray-500">
+                      {Array.isArray(field.commonOptions) && field.commonOptions.length > 0 ? field.commonOptions.join(", ") : "-"}
+                    </td>
                     <td className="p-4 text-center">
                       <span className={`px-2 py-0.5 rounded text-xs font-bold ${field.required ? "bg-red-50 text-red-650" : "bg-gray-100 text-gray-505"}`}>
                         {field.required ? "YES" : "NO"}
                       </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      {field.vendorCanAddOptions ? (
+                        <span className="px-2 py-0.5 rounded text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200">YES</span>
+                      ) : (
+                        <span className="text-gray-400 text-xs">—</span>
+                      )}
                     </td>
                     <td className="p-4 text-center">
                       {field.isPricingAxis ? (
@@ -315,6 +337,35 @@ export default function FieldsLibrary() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 </div>
+              )}
+
+              {formData.type === "dimension" && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Common Sizes (Comma separated)</label>
+                  <input
+                    type="text"
+                    value={formData.commonOptions}
+                    onChange={(e) => setFormData({ ...formData, commonOptions: e.target.value })}
+                    placeholder="e.g. 8x10, 11x14, 18x24, 24x36"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">Predefined quick-select sizes shown to vendors</p>
+                </div>
+              )}
+
+              {["dropdown", "multi_select", "checkbox", "radio", "dimension"].includes(formData.type) && (
+                <label className="flex items-center gap-2.5 cursor-pointer select-none pt-1">
+                  <input
+                    type="checkbox"
+                    checked={formData.vendorCanAddOptions}
+                    onChange={(e) => setFormData({ ...formData, vendorCanAddOptions: e.target.checked })}
+                    className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                  />
+                  <div>
+                    <span className="text-sm font-bold text-gray-700">Vendor Can Add Own Values</span>
+                    <p className="text-xs text-gray-400 mt-0.5">Allow vendors to enter custom values beyond predefined options</p>
+                  </div>
+                </label>
               )}
 
               <div className="grid grid-cols-2 gap-4">

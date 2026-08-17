@@ -112,6 +112,10 @@ export const updateProductTemplate = (id, data) =>
     api.put(`/admin/marketplace-config/templates/${id}`, data);
 export const deleteProductTemplate = (id) =>
     api.delete(`/admin/marketplace-config/templates/${id}`);
+export const publishProductTemplate = (id) =>
+    api.patch(`/admin/marketplace-config/templates/${id}/publish`);
+export const unpublishProductTemplate = (id) =>
+    api.patch(`/admin/marketplace-config/templates/${id}/unpublish`);
 
 export const getAdditionalFields = () =>
     api.get('/admin/marketplace-config/additional-fields');

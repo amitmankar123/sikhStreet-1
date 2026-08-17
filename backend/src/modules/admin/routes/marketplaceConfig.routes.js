@@ -17,6 +17,8 @@ router.get('/templates', ...adminAuth, controller.getProductTemplates);
 router.post('/templates', ...adminAuth, controller.createProductTemplate);
 router.put('/templates/:id', ...adminAuth, controller.updateProductTemplate);
 router.delete('/templates/:id', ...adminAuth, controller.deleteProductTemplate);
+router.patch('/templates/:id/publish', ...adminAuth, controller.publishProductTemplate);
+router.patch('/templates/:id/unpublish', ...adminAuth, controller.unpublishProductTemplate);
 
 // Product Types
 router.get('/product-types', ...adminAuth, controller.getProductTypes);

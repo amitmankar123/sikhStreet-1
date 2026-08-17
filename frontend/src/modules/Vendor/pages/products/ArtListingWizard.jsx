@@ -36,7 +36,7 @@ const initialArtState = {
   // Step 4: Pricing Matrix & Global Inventory
   totalInventory: "",
   // key: "Dimension|Canvas|Frame" => { price, costPrice, sku }
-  pricingMatrix: {}, 
+  pricingMatrix: {},
 
   // Step 6: Shipping
   packageWeight: "",
@@ -48,7 +48,13 @@ const initialArtState = {
   // Step 7: SEO
   seoTitle: "",
   seoDescription: "",
-  tags: []
+  tags: [],
+
+  // Pricing Config (for computed area pricing)
+  pricingUnit: "inches",      // "inches" | "cm" | "feet" | "meter"
+  unitBasePrice: "2.50",       // base price per 1×1 unit of the chosen SI unit
+  canvasModifiers: {},        // { "Rolled Canvas": "5", "Fine Art Paper": "2" }
+  frameModifiers: {},         // { "Wooden Frame": "3", "Black Frame": "4" }
 };
 
 const DIMENSION_OPTIONS = ["8x10", "12x16", "16x20", "20x30", "24x36", "30x40"];
@@ -83,78 +89,165 @@ export default function ArtListingWizard({ vendor, categoryId, subcategoryId, ca
       const dimSet = new Set();
       const canvasSet = new Set();
       const frameSet = new Set();
-      if (productToEdit.variants?.attributes) {
+
+      if (Array.isArray(productToEdit.variants?.attributes)) {
         productToEdit.variants.attributes.forEach(attr => {
-          if (attr.name === "Dimension") attr.values.forEach(v => dimSet.add(v));
-          if (attr.name === "Canvas") attr.values.forEach(v => canvasSet.add(v));
-          if (attr.name === "Frame") attr.values.forEach(v => frameSet.add(v));
+          const lower = String(attr.name || "").toLowerCase();
+          if (["dimension", "size"].includes(lower)) attr.values?.forEach(v => dimSet.add(v));
+          if (["canvas", "material", "canvas_type"].includes(lower)) attr.values?.forEach(v => canvasSet.add(v));
+          if (["frame", "frame_type"].includes(lower)) attr.values?.forEach(v => frameSet.add(v));
         });
+      }
+
+      // Parse variant price keys (e.g. size=30x40_in|material=rolled_canvas|frame_type=wooden_frame)
+      if (productToEdit.variants?.prices) {
+        const entries = productToEdit.variants.prices instanceof Map
+          ? Array.from(productToEdit.variants.prices.keys())
+          : Object.keys(productToEdit.variants.prices || {});
+
+        entries.forEach(keyStr => {
+          const parts = String(keyStr).split("|");
+          parts.forEach(part => {
+            const [axis, val] = part.split("=");
+            if (val) {
+              const lowerAxis = String(axis || "").toLowerCase();
+              const cleanVal = String(val).trim().replace(/_/g, " ");
+              if (["size", "dimension"].includes(lowerAxis)) dimSet.add(cleanVal);
+              if (["canvas", "material", "canvas_type"].includes(lowerAxis)) canvasSet.add(cleanVal);
+              if (["frame", "frame_type"].includes(lowerAxis)) frameSet.add(cleanVal);
+            }
+          });
+        });
+      }
+
+      // Specifications fallback
+      let medium = "", style = "", orientation = "Portrait", yearCreated = "", artistName = "", isSigned = false, hasCertificate = false;
+      let pricingUnit = "inches", unitBasePrice = "2.50", canvasModifiers = {}, frameModifiers = {};
+
+      if (productToEdit.specifications) {
+        const specObj = Array.isArray(productToEdit.specifications)
+          ? productToEdit.specifications.reduce((acc, s) => ({ ...acc, [s.key || s.name]: s.value }), {})
+          : productToEdit.specifications || {};
+
+        const getVals = (val) => {
+          if (Array.isArray(val)) return val.filter(Boolean);
+          if (typeof val === "string" && val.trim()) return val.split(",").map(s => s.trim()).filter(Boolean);
+          return [];
+        };
+
+        if (dimSet.size === 0) {
+          getVals(specObj.size || specObj.dimension || specObj.Size || specObj.Dimension).forEach(v => dimSet.add(v));
+        }
+        if (canvasSet.size === 0) {
+          getVals(specObj.material || specObj.canvas || specObj.canvas_type || specObj.Material || specObj.Canvas).forEach(v => canvasSet.add(v));
+        }
+        if (frameSet.size === 0) {
+          getVals(specObj.frame || specObj.frame_type || specObj.Frame || specObj.Frame_type).forEach(v => frameSet.add(v));
+        }
+
+        medium = specObj.medium || specObj.Medium || "";
+        style = specObj.style || specObj.Style || "";
+        orientation = specObj.orientation || specObj.Orientation || "Portrait";
+        yearCreated = specObj.yearCreated || specObj.Year || "";
+        artistName = specObj.artistName || specObj.Artist || "";
+        isSigned = Boolean(specObj.isSigned || specObj["Signed by Artist"]);
+        hasCertificate = Boolean(specObj.hasCertificate || specObj["Certificate of Authenticity"]);
+
+        // Reload saved pricing config
+        if (specObj.pricingConfig) {
+          try {
+            const pc = typeof specObj.pricingConfig === "string"
+              ? JSON.parse(specObj.pricingConfig)
+              : specObj.pricingConfig;
+            pricingUnit = pc.pricingUnit || "inches";
+            if (pc.unitBasePrice !== undefined && pc.unitBasePrice !== null && pc.unitBasePrice !== "" && Number(pc.unitBasePrice) > 0) {
+              unitBasePrice = String(pc.unitBasePrice);
+            }
+            canvasModifiers = pc.canvasModifiers || {};
+            frameModifiers = pc.frameModifiers || {};
+          } catch (e) { /* use defaults */ }
+        }
+      }
+
+      if (!unitBasePrice || unitBasePrice === "0" || unitBasePrice === "") {
+        unitBasePrice = "2.50";
       }
 
       const dims = Array.from(dimSet);
       const canvases = Array.from(canvasSet);
       const frames = Array.from(frameSet);
 
+      const finalCanvasMods = { ...canvasModifiers };
+      canvases.forEach(c => {
+        if (finalCanvasMods[c] === undefined || finalCanvasMods[c] === null || finalCanvasMods[c] === "") {
+          finalCanvasMods[c] = "0.00";
+        }
+      });
+
+      const finalFrameMods = { ...frameModifiers };
+      frames.forEach(f => {
+        if (finalFrameMods[f] === undefined || finalFrameMods[f] === null || finalFrameMods[f] === "") {
+          finalFrameMods[f] = "0.00";
+        }
+      });
+
       const pricingMatrix = {};
-      
+
       const iterDims = dims.length > 0 ? dims : ["Default"];
       const iterCanvas = canvases.length > 0 ? canvases : ["Default"];
       const iterFrames = frames.length > 0 ? frames : ["Default"];
 
+      const baseVal = parseFloat(unitBasePrice) || 2.50;
+
+      const parseDim = (dimStr) => {
+        const m = String(dimStr || "").match(/(\d+(?:\.\d+)?)\s*[xX×*]\s*(\d+(?:\.\d+)?)/i);
+        return m ? { w: parseFloat(m[1]), h: parseFloat(m[2]) } : { w: 1, h: 1 };
+      };
+
       iterDims.forEach(dim => {
+        const { w, h } = parseDim(dim);
+        const area = (w * h) || 1;
         iterCanvas.forEach(canvas => {
+          const cMod = parseFloat(finalCanvasMods?.[canvas]) || 0;
           iterFrames.forEach(frame => {
+            const fMod = parseFloat(finalFrameMods?.[frame]) || 0;
             const wizardKey = `${dim}|${canvas}|${frame}`;
             const selection = {};
             if (dim !== "Default") selection.Dimension = dim;
             if (canvas !== "Default") selection.Canvas = canvas;
             if (frame !== "Default") selection.Frame = frame;
-            
+
             const backendKey = createDynamicVariantKey(selection);
-            const price = productToEdit.variants?.prices?.[backendKey];
-            if (price !== undefined) {
-              pricingMatrix[wizardKey] = { price: String(price), costPrice: "", sku: "" };
-            }
+            const savedPrice = productToEdit.variants?.prices?.[backendKey];
+            const computedPrice = Math.round(area * (baseVal + cMod + fMod));
+            const finalPrice = (savedPrice !== undefined && savedPrice !== "" && Number(savedPrice) > 0)
+              ? String(savedPrice)
+              : String(computedPrice > 0 ? computedPrice : 499);
+
+            pricingMatrix[wizardKey] = { price: finalPrice, costPrice: "", sku: "" };
           });
         });
       });
 
-      // Specifications
-      let medium = "", style = "", orientation = "Portrait", yearCreated = "", artistName = "", isSigned = false, hasCertificate = false;
-      if (productToEdit.specifications) {
-         const specObj = Array.isArray(productToEdit.specifications) 
-           ? productToEdit.specifications.reduce((acc, s) => ({ ...acc, [s.key || s.name]: s.value }), {}) 
-           : productToEdit.specifications || {};
-           
-         medium = specObj.medium || specObj.Medium || "";
-         style = specObj.style || specObj.Style || "";
-         orientation = specObj.orientation || specObj.Orientation || "Portrait";
-         yearCreated = specObj.yearCreated || specObj.Year || "";
-         artistName = specObj.artistName || specObj.Artist || "";
-         isSigned = Boolean(specObj.isSigned || specObj["Signed by Artist"]);
-         hasCertificate = Boolean(specObj.hasCertificate || specObj["Certificate of Authenticity"]);
-      }
-
       setFormData(prev => ({
         ...prev,
         name: productToEdit.name || "",
-        // strip out the 'Details' section from description to avoid duplicates on re-save
         description: (productToEdit.description || "").split("**Details:**")[0].trim(),
-        image: productToEdit.images?.[0] || null,
-        images: productToEdit.images?.slice(1) || [],
+        image: productToEdit.images?.[0] || productToEdit.image || null,
+        images: Array.isArray(productToEdit.images) ? productToEdit.images.slice(1) : [],
         video: productToEdit.video || null,
-        totalInventory: String(productToEdit.stockQuantity || ""),
+        totalInventory: String(productToEdit.stockQuantity || "50"),
         seoTitle: productToEdit.seoTitle || "",
         seoDescription: productToEdit.seoDescription || "",
         tags: productToEdit.tags || [],
         packageWeight: productToEdit.packageWeight || "",
         sku: productToEdit.sku || "",
-        
+
         selectedDimensions: dims,
         selectedCanvasTypes: canvases,
         selectedFrames: frames,
         pricingMatrix,
-        
+
         medium,
         style,
         orientation,
@@ -162,12 +255,54 @@ export default function ArtListingWizard({ vendor, categoryId, subcategoryId, ca
         artistName,
         isSigned,
         hasCertificate,
+        pricingUnit,
+        unitBasePrice,
+        canvasModifiers: finalCanvasMods,
+        frameModifiers: finalFrameMods,
       }));
     }
   }, [isEdit, productToEdit]);
 
   const updateForm = (updates) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData(prev => {
+      const next = { ...prev, ...updates };
+      if (
+        updates.unitBasePrice !== undefined ||
+        updates.canvasModifiers !== undefined ||
+        updates.frameModifiers !== undefined ||
+        updates.selectedDimensions !== undefined ||
+        updates.selectedCanvasTypes !== undefined ||
+        updates.selectedFrames !== undefined ||
+        updates.pricingUnit !== undefined
+      ) {
+        const baseVal = parseFloat(next.unitBasePrice) || 2.50;
+        const dims = next.selectedDimensions.length ? next.selectedDimensions : ["Default"];
+        const canvases = next.selectedCanvasTypes.length ? next.selectedCanvasTypes : ["Default"];
+        const frames = next.selectedFrames.length ? next.selectedFrames : ["Default"];
+        const newMatrix = { ...next.pricingMatrix };
+
+        const parseDim = (dimStr) => {
+          const m = String(dimStr || "").match(/(\d+(?:\.\d+)?)\s*[xX×*]\s*(\d+(?:\.\d+)?)/i);
+          return m ? { w: parseFloat(m[1]), h: parseFloat(m[2]) } : { w: 1, h: 1 };
+        };
+
+        dims.forEach(d => {
+          const { w, h } = parseDim(d);
+          const area = (w * h) || 1;
+          canvases.forEach(c => {
+            const canvasMod = parseFloat(next.canvasModifiers?.[c]) || 0;
+            frames.forEach(f => {
+              const frameMod = parseFloat(next.frameModifiers?.[f]) || 0;
+              const key = `${d}|${c}|${f}`;
+              const computed = Math.round(area * (baseVal + canvasMod + frameMod));
+              newMatrix[key] = { ...newMatrix[key], price: String(computed > 0 ? computed : 499) };
+            });
+          });
+        });
+        next.pricingMatrix = newMatrix;
+      }
+      return next;
+    });
   };
 
   const STEPS = [
@@ -179,13 +314,54 @@ export default function ArtListingWizard({ vendor, categoryId, subcategoryId, ca
     { id: 7, label: "Preview & Publish" }
   ];
 
-  const handleNext = () => setCurrentStep(prev => Math.min(prev + 1, 7));
+  // ─── Pricing Engine ───────────────────────────────────────────────────────
+  const recalculatePricingMatrix = (force = false) => {
+    const baseVal = parseFloat(formData.unitBasePrice) || 0;
+    const newMatrix = { ...formData.pricingMatrix };
+
+    const dims = formData.selectedDimensions.length ? formData.selectedDimensions : ["Default"];
+    const canvases = formData.selectedCanvasTypes.length ? formData.selectedCanvasTypes : ["Default"];
+    const frames = formData.selectedFrames.length ? formData.selectedFrames : ["Default"];
+
+    const parseDim = (dimStr) => {
+      const m = dimStr.match(/(\d+(?:\.\d+)?)\s*[xX×*]\s*(\d+(?:\.\d+)?)/i);
+      return m ? { w: parseFloat(m[1]), h: parseFloat(m[2]) } : { w: 1, h: 1 };
+    };
+
+    dims.forEach(d => {
+      const { w, h } = parseDim(d);
+      const area = (w * h) || 1;
+      canvases.forEach(c => {
+        const canvasMod = parseFloat(formData.canvasModifiers?.[c]) || 0;
+        frames.forEach(f => {
+          const frameMod = parseFloat(formData.frameModifiers?.[f]) || 0;
+          const key = `${d}|${c}|${f}`;
+          const computed = Math.round(area * (baseVal + canvasMod + frameMod));
+          const existing = newMatrix[key]?.price;
+          // Only overwrite if forced OR no existing manual price
+          if (force || !existing || existing === "" || existing === "0") {
+            newMatrix[key] = { ...newMatrix[key], price: String(computed) };
+          }
+        });
+      });
+    });
+
+    setFormData(prev => ({ ...prev, pricingMatrix: newMatrix }));
+  };
+
+  const handleNext = () => {
+    // Auto-compute prices when moving from Config (3) to Pricing (4)
+    if (currentStep === 3) {
+      recalculatePricingMatrix(false);
+    }
+    setCurrentStep(prev => Math.min(prev + 1, 7));
+  };
   const handlePrev = () => setCurrentStep(prev => Math.max(prev - 1, 2));
 
   const handlePublish = async () => {
     try {
       setIsPublishing(true);
-      
+
       // Specific validations
       if (!formData.name) { toast.error("Please enter the Artwork Title in Basic Info."); setIsPublishing(false); return; }
       if (!formData.description) { toast.error("Please enter a Detailed Description in Basic Info."); setIsPublishing(false); return; }
@@ -203,7 +379,7 @@ export default function ArtListingWizard({ vendor, categoryId, subcategoryId, ca
       let additionalImageUrls = [];
       const newImages = formData.images.filter(img => img instanceof File);
       const existingImages = formData.images.filter(img => typeof img === 'string');
-      
+
       if (newImages.length > 0) {
         const res = await uploadVendorImages(newImages, "vendors/products");
         const uploaded = res?.data ?? res;
@@ -214,7 +390,7 @@ export default function ArtListingWizard({ vendor, categoryId, subcategoryId, ca
       } else {
         additionalImageUrls = existingImages;
       }
-      
+
       let videoUrl = formData.video;
       if (formData.video instanceof File) {
         const res = await uploadVendorVideo(formData.video, "vendors/products/videos");
@@ -237,9 +413,9 @@ export default function ArtListingWizard({ vendor, categoryId, subcategoryId, ca
         if (dim && dim !== "Default") selection.Dimension = dim;
         if (canvas && canvas !== "Default") selection.Canvas = canvas;
         if (frame && frame !== "Default") selection.Frame = frame;
-        
+
         const backendKey = createDynamicVariantKey(selection);
-        
+
         if (formData.pricingMatrix[key]?.price) {
           mappedPrices[backendKey] = Number(formData.pricingMatrix[key].price);
         }
@@ -292,7 +468,13 @@ ${formData.readyToHang ? '- Ready to Hang' : ''}
           yearCreated: formData.yearCreated,
           artistName: formData.artistName,
           isSigned: formData.isSigned,
-          hasCertificate: formData.hasCertificate
+          hasCertificate: formData.hasCertificate,
+          pricingConfig: {
+            pricingUnit: formData.pricingUnit || "inches",
+            unitBasePrice: formData.unitBasePrice || "",
+            canvasModifiers: formData.canvasModifiers || {},
+            frameModifiers: formData.frameModifiers || {}
+          }
         },
         // Optional Fields
         tags: formData.tags.length > 0 ? formData.tags : undefined,
@@ -310,7 +492,7 @@ ${formData.readyToHang ? '- Ready to Hang' : ''}
       } else {
         result = await addProduct(payload);
       }
-      
+
       if (result) {
         if (!isEdit) localStorage.removeItem("draft_art_listing");
         toast.success(isEdit ? "Artwork updated successfully!" : "Artwork published successfully!");
@@ -324,96 +506,97 @@ ${formData.readyToHang ? '- Ready to Hang' : ''}
     }
   };
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 2: return <StepBasicInfo formData={formData} updateForm={updateForm} />;
-      case 3: return <StepConfig formData={formData} updateForm={updateForm} />;
-      case 4: return <StepPricingMatrix formData={formData} updateForm={updateForm} />;
-      case 5: return <StepShipping formData={formData} updateForm={updateForm} />;
-      case 6: return <StepSEO formData={formData} updateForm={updateForm} />;
-      case 7: return <StepPreview formData={formData} />;
-      default: return null;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 pb-24 font-sans text-gray-800">
-      {/* Sticky Header with Stepper */}
+      {/* Top Header */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between mb-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between flex-wrap gap-3">
+          <div>
             <h1 className="text-2xl font-black text-gray-900 tracking-tight">
               {isEdit ? "Edit Artwork" : "Add New Artwork"}
             </h1>
-            <div className="flex items-center gap-3">
-              {!isEdit && (
-                <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-                  Auto-saved
-                </span>
-              )}
-              <button className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50">
-                {isEdit ? "Cancel" : "Save Draft"}
-              </button>
-            </div>
+            <p className="text-xs text-gray-500 mt-0.5">Configure artwork dimensions, canvas materials, frame types, and pricing rules.</p>
           </div>
-          
-          {/* Horizontal Stepper */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {STEPS.map((step, idx) => {
-              const isPast = currentStep > step.id;
-              const isCurrent = currentStep === step.id;
-              return (
-                <div key={step.id} className="flex items-center">
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-colors ${isCurrent ? 'bg-indigo-600 text-white shadow-md' : isPast ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                    {isPast ? <FiCheck className="w-4 h-4" /> : step.id - 1}
-                  </div>
-                  <span className={`ml-2 text-sm font-bold whitespace-nowrap ${isCurrent ? 'text-indigo-900' : isPast ? 'text-green-600' : 'text-gray-400'}`}>
-                    {step.label}
-                  </span>
-                  {idx < STEPS.length - 1 && (
-                    <div className="w-8 h-px bg-gray-300 mx-3"></div>
-                  )}
-                </div>
-              );
-            })}
+          <div className="flex items-center gap-3">
+            <button 
+              type="button"
+              onClick={() => navigate("/vendor/products/manage-products")}
+              className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={isPublishing}
+              className="flex items-center justify-center gap-2 px-6 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 transition-all disabled:opacity-70"
+            >
+              {isPublishing ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : isEdit ? "Save Changes" : "Publish Artwork"}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-          >
-            {renderStepContent()}
-          </motion.div>
-        </AnimatePresence>
+      {/* Main Form Area */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+        <div>
+          <div className="mb-3 pb-2 border-b border-gray-200">
+            <h2 className="text-lg font-black text-gray-900">1. Basic Information</h2>
+          </div>
+          <StepBasicInfo formData={formData} updateForm={updateForm} />
+        </div>
+
+        <div>
+          <div className="mb-3 pb-2 border-b border-gray-200">
+            <h2 className="text-lg font-black text-gray-900">2. Artwork Configuration & Dimensions</h2>
+          </div>
+          <StepConfig formData={formData} updateForm={updateForm} />
+        </div>
+
+        <div>
+          <div className="mb-3 pb-2 border-b border-gray-200">
+            <h2 className="text-lg font-black text-gray-900">3. 1×1 Area Pricing Rules & Variant Price Matrix</h2>
+          </div>
+          <StepPricingMatrix formData={formData} updateForm={updateForm} recalculate={recalculatePricingMatrix} />
+        </div>
+
+        <div>
+          <div className="mb-3 pb-2 border-b border-gray-200">
+            <h2 className="text-lg font-black text-gray-900">4. Shipping & Package Details</h2>
+          </div>
+          <StepShipping formData={formData} updateForm={updateForm} />
+        </div>
+
+        <div>
+          <div className="mb-3 pb-2 border-b border-gray-200">
+            <h2 className="text-lg font-black text-gray-900">5. SEO Optimization</h2>
+          </div>
+          <StepSEO formData={formData} updateForm={updateForm} />
+        </div>
       </div>
 
-      {/* Sticky Bottom Navigation */}
+      {/* Fixed Action Footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <button 
-            onClick={handlePrev}
-            disabled={currentStep === 2}
-            className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 transition-all"
           >
-            <FiArrowLeft /> Back
+            <FiArrowLeft /> Top of Page
           </button>
-          
-          <button 
-            onClick={currentStep === 7 ? handlePublish : handleNext}
+
+          <button
+            type="button"
+            onClick={handlePublish}
             disabled={isPublishing}
-            className="flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-70 disabled:hover:translate-y-0"
+            className="flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-lg shadow-md hover:bg-indigo-700 transition-all hover:shadow-lg disabled:opacity-70"
           >
             {isPublishing ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : currentStep === 7 ? "Publish Artwork" : "Continue"}
+            ) : isEdit ? "Save Changes" : "Publish Artwork"}
             {!isPublishing && <FiArrowRight />}
           </button>
         </div>
@@ -429,13 +612,13 @@ const StepBasicInfo = ({ formData, updateForm }) => {
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <h2 className="text-xl font-black text-gray-900 mb-6">Basic Artwork Information</h2>
-        
+
         <div className="space-y-5">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Artwork Title *</label>
             <input type="text" value={formData.name} onChange={e => updateForm({ name: e.target.value })} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 font-medium" placeholder="e.g. Golden Sunset Canvas" />
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-1">Artist Name</label>
@@ -606,31 +789,91 @@ const StepBasicInfo = ({ formData, updateForm }) => {
   );
 };
 
-const StepConfig = ({ formData, updateForm }) => {
-  const toggleArray = (arr, val) => arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val];
+const normalizeCompare = (str) =>
+  String(str || "")
+    .trim()
+    .toLowerCase()
+    .replace(/×/g, "x")
+    .replace(/[_\s-]+/g, "_")
+    .replace(/_in$/i, "")
+    .replace(/_cm$/i, "")
+    .replace(/_ft$/i, "")
+    .replace(/_m$/i, "");
 
-  const combinationsCount = Math.max(1, formData.selectedDimensions.length) * 
-                            Math.max(1, formData.selectedCanvasTypes.length) * 
-                            Math.max(1, formData.selectedFrames.length);
+const isItemMatched = (arr, val) => {
+  if (!Array.isArray(arr) || !val) return false;
+  const target = normalizeCompare(val);
+  return arr.some(x => {
+    const c = normalizeCompare(x);
+    return c === target || c.includes(target) || target.includes(c);
+  });
+};
+
+const toggleArrayNormalized = (arr, val) => {
+  const target = normalizeCompare(val);
+  const exists = arr.some(x => normalizeCompare(x) === target || normalizeCompare(x).includes(target) || target.includes(normalizeCompare(x)));
+  if (exists) {
+    return arr.filter(x => {
+      const c = normalizeCompare(x);
+      return !(c === target || c.includes(target) || target.includes(c));
+    });
+  } else {
+    return [...arr, val];
+  }
+};
+
+const StepConfig = ({ formData, updateForm }) => {
+  const combinationsCount = Math.max(1, formData.selectedDimensions.length) *
+    Math.max(1, formData.selectedCanvasTypes.length) *
+    Math.max(1, formData.selectedFrames.length);
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 items-start">
       <div className="flex-1 space-y-6">
-        
+
         {/* Dimensions Card */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h3 className="text-lg font-black text-gray-900 mb-1">Artwork Dimensions</h3>
           <p className="text-xs text-gray-500 mb-4">Select all sizes you offer for this piece.</p>
+
+          {/* SI Unit Selector */}
+          <div className="mb-5 flex items-center gap-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-sm font-bold text-indigo-800">📐 Size Unit:</span>
+              <select
+                value={formData.pricingUnit || "inches"}
+                onChange={e => updateForm({ pricingUnit: e.target.value })}
+                className="px-3 py-2 border border-indigo-200 rounded-lg text-sm font-semibold bg-white text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              >
+                <option value="inches">Inches (in)</option>
+                <option value="cm">Centimeters (cm)</option>
+                <option value="feet">Feet (ft)</option>
+                <option value="meter">Meters (m)</option>
+              </select>
+            </div>
+            <p className="text-xs text-indigo-600 font-medium">
+              Unit used to compute price per area
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {DIMENSION_OPTIONS.map(dim => (
-              <label key={dim} className={`flex items-center gap-2 p-3 border rounded-xl cursor-pointer transition-all ${formData.selectedDimensions.includes(dim) ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
-                <input type="checkbox" className="hidden" checked={formData.selectedDimensions.includes(dim)} onChange={() => updateForm({ selectedDimensions: toggleArray(formData.selectedDimensions, dim) })} />
-                <div className={`w-5 h-5 rounded border flex items-center justify-center ${formData.selectedDimensions.includes(dim) ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300'}`}>
-                  {formData.selectedDimensions.includes(dim) && <FiCheck className="w-3 h-3" />}
-                </div>
-                <span className="font-bold text-sm text-gray-800">{dim}</span>
-              </label>
-            ))}
+            {DIMENSION_OPTIONS.map(dim => {
+              const isChecked = isItemMatched(formData.selectedDimensions, dim);
+              return (
+                <label key={dim} className={`flex items-center gap-2 p-3 border rounded-xl cursor-pointer transition-all ${isChecked ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={isChecked}
+                    onChange={() => updateForm({ selectedDimensions: toggleArrayNormalized(formData.selectedDimensions, dim) })}
+                  />
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center ${isChecked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300'}`}>
+                    {isChecked && <FiCheck className="w-3 h-3" />}
+                  </div>
+                  <span className="font-bold text-sm text-gray-800">{dim}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
 
@@ -643,37 +886,35 @@ const StepConfig = ({ formData, updateForm }) => {
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {CANVAS_OPTIONS.map(can => {
-              const isChecked = formData.selectedCanvasTypes.includes(can);
+              const isChecked = isItemMatched(formData.selectedCanvasTypes, can);
               const isDisabled = formData.selectedFrames.length > 0 && !isChecked;
               return (
-                <label 
-                  key={can} 
-                  className={`flex items-center gap-2 p-3 border rounded-xl transition-all ${
-                    isChecked 
-                      ? 'border-indigo-600 bg-indigo-50 cursor-pointer' 
+                <label
+                  key={can}
+                  className={`flex items-center gap-2 p-3 border rounded-xl transition-all ${isChecked
+                      ? 'border-indigo-600 bg-indigo-50 cursor-pointer'
                       : isDisabled
                         ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
                         : 'border-gray-200 hover:border-gray-300 cursor-pointer'
-                  }`}
+                    }`}
                 >
-                  <input 
-                    type="checkbox" 
-                    className="hidden" 
+                  <input
+                    type="checkbox"
+                    className="hidden"
                     disabled={isDisabled}
-                    checked={isChecked} 
+                    checked={isChecked}
                     onChange={() => {
                       if (!isDisabled) {
-                        updateForm({ selectedCanvasTypes: toggleArray(formData.selectedCanvasTypes, can) });
+                        updateForm({ selectedCanvasTypes: toggleArrayNormalized(formData.selectedCanvasTypes, can) });
                       }
-                    }} 
+                    }}
                   />
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center ${
-                    isChecked 
-                      ? 'bg-indigo-600 border-indigo-600 text-white' 
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center ${isChecked
+                      ? 'bg-indigo-600 border-indigo-600 text-white'
                       : isDisabled
                         ? 'border-gray-200 bg-gray-100'
                         : 'border-gray-300'
-                  }`}>
+                    }`}>
                     {isChecked && <FiCheck className="w-3 h-3" />}
                   </div>
                   <span className="font-bold text-sm text-gray-800">{can}</span>
@@ -692,37 +933,35 @@ const StepConfig = ({ formData, updateForm }) => {
           )}
           <div className="grid grid-cols-2 gap-3">
             {FRAME_OPTIONS.map(frame => {
-              const isChecked = formData.selectedFrames.includes(frame);
+              const isChecked = isItemMatched(formData.selectedFrames, frame);
               const isDisabled = formData.selectedCanvasTypes.length > 0 && !isChecked;
               return (
-                <label 
-                  key={frame} 
-                  className={`flex items-center gap-2 p-3 border rounded-xl transition-all ${
-                    isChecked 
-                      ? 'border-indigo-600 bg-indigo-50 cursor-pointer' 
+                <label
+                  key={frame}
+                  className={`flex items-center gap-2 p-3 border rounded-xl transition-all ${isChecked
+                      ? 'border-indigo-600 bg-indigo-50 cursor-pointer'
                       : isDisabled
                         ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
                         : 'border-gray-200 hover:border-gray-300 cursor-pointer'
-                  }`}
+                    }`}
                 >
-                  <input 
-                    type="checkbox" 
-                    className="hidden" 
+                  <input
+                    type="checkbox"
+                    className="hidden"
                     disabled={isDisabled}
-                    checked={isChecked} 
+                    checked={isChecked}
                     onChange={() => {
                       if (!isDisabled) {
-                        updateForm({ selectedFrames: toggleArray(formData.selectedFrames, frame) });
+                        updateForm({ selectedFrames: toggleArrayNormalized(formData.selectedFrames, frame) });
                       }
-                    }} 
+                    }}
                   />
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center ${
-                    isChecked 
-                      ? 'bg-indigo-600 border-indigo-600 text-white' 
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center ${isChecked
+                      ? 'bg-indigo-600 border-indigo-600 text-white'
                       : isDisabled
                         ? 'border-gray-200 bg-gray-100'
                         : 'border-gray-300'
-                  }`}>
+                    }`}>
                     {isChecked && <FiCheck className="w-3 h-3" />}
                   </div>
                   <span className="font-bold text-sm text-gray-800">{frame}</span>
@@ -732,12 +971,109 @@ const StepConfig = ({ formData, updateForm }) => {
           </div>
         </div>
 
+        {/* Pricing Configuration Card */}
+        {(() => {
+          const unitLabel = formData.pricingUnit === "cm" ? "cm" : formData.pricingUnit === "feet" ? "ft" : formData.pricingUnit === "meter" ? "m" : "in";
+          const hasCanvas = formData.selectedCanvasTypes.length > 0;
+          const hasFrame = formData.selectedFrames.length > 0;
+          const hasDims = formData.selectedDimensions.length > 0;
+          if (!hasDims && !hasCanvas && !hasFrame) return null;
+          return (
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <h3 className="text-lg font-black text-gray-900 mb-1">💰 Pricing Configuration</h3>
+              <p className="text-xs text-gray-500 mb-5">
+                Set the cost per <strong>1{unitLabel} × 1{unitLabel}</strong> area. The matrix will auto-compute prices for all size combinations.
+              </p>
+
+              {/* Base Price */}
+              <div className="mb-5">
+                <label className="block text-sm font-bold text-gray-700 mb-1">
+                  Base Price per 1{unitLabel} × 1{unitLabel} (₹) *
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.unitBasePrice}
+                  onChange={e => updateForm({ unitBasePrice: e.target.value })}
+                  className="w-full max-w-xs px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder={`e.g. 2.50 per sq ${unitLabel}`}
+                />
+              </div>
+
+              {/* Canvas Modifiers */}
+              {hasCanvas && (
+                <div className="mb-5">
+                  <label className="block text-sm font-bold text-gray-700 mb-3">
+                    Canvas / Material Cost per 1{unitLabel} × 1{unitLabel} (₹)
+                  </label>
+                  <div className="space-y-2">
+                    {formData.selectedCanvasTypes.map(can => (
+                      <div key={can} className="flex items-center gap-3">
+                        <span className="w-40 text-sm font-semibold text-gray-700 shrink-0">{can}</span>
+                        <span className="text-gray-400 text-sm">+</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.canvasModifiers?.[can] || ""}
+                          onChange={e => updateForm({
+                            canvasModifiers: { ...formData.canvasModifiers, [can]: e.target.value }
+                          })}
+                          className="w-32 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                          placeholder="0.00"
+                        />
+                        <span className="text-xs text-gray-400">₹ / sq {unitLabel}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Frame Modifiers */}
+              {hasFrame && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-3">
+                    Frame Cost per 1{unitLabel} × 1{unitLabel} (₹)
+                  </label>
+                  <div className="space-y-2">
+                    {formData.selectedFrames.map(frame => (
+                      <div key={frame} className="flex items-center gap-3">
+                        <span className="w-40 text-sm font-semibold text-gray-700 shrink-0">{frame}</span>
+                        <span className="text-gray-400 text-sm">+</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.frameModifiers?.[frame] || ""}
+                          onChange={e => updateForm({
+                            frameModifiers: { ...formData.frameModifiers, [frame]: e.target.value }
+                          })}
+                          className="w-32 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                          placeholder="0.00"
+                        />
+                        <span className="text-xs text-gray-400">₹ / sq {unitLabel}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                <p className="text-xs text-indigo-700 font-semibold">
+                  📐 Formula: Price = W × H × (Base{hasCanvas ? " + Canvas" : ""}{hasFrame ? " + Frame" : ""})
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
       </div>
 
       {/* Right Side Live Summary Panel */}
       <div className="w-full lg:w-80 lg:sticky lg:top-24 bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
         <h3 className="text-base font-black text-gray-900 mb-4 pb-4 border-b border-gray-100">Live Summary</h3>
-        
+
         <div className="space-y-4">
           <div>
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Dimensions ({formData.selectedDimensions.length})</p>
@@ -769,119 +1105,118 @@ const StepConfig = ({ formData, updateForm }) => {
   );
 };
 
-const StepPricingMatrix = ({ formData, updateForm }) => {
-  // Generate combinations
+const StepPricingMatrix = ({ formData, updateForm, recalculate }) => {
+  const unitLabel = formData.pricingUnit === "cm" ? "cm"
+    : formData.pricingUnit === "feet" ? "ft"
+    : formData.pricingUnit === "meter" ? "m"
+    : "in";
+
   const dims = formData.selectedDimensions.length ? formData.selectedDimensions : ["Default"];
   const canvases = formData.selectedCanvasTypes.length ? formData.selectedCanvasTypes : ["Default"];
   const frames = formData.selectedFrames.length ? formData.selectedFrames : ["Default"];
 
   const combinations = useMemo(() => {
-    let combos = [];
-    dims.forEach(d => {
-      canvases.forEach(c => {
-        frames.forEach(f => {
-          combos.push({ dim: d, canvas: c, frame: f, key: `${d}|${c}|${f}` });
-        });
-      });
-    });
+    const combos = [];
+    dims.forEach(d => canvases.forEach(c => frames.forEach(f =>
+      combos.push({ dim: d, canvas: c, frame: f, key: `${d}|${c}|${f}` })
+    )));
     return combos;
-  }, [dims, canvases, frames]);
+  }, [dims, canvases, frames]);  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const updatePrice = (key, field, value) => {
-    const current = formData.pricingMatrix[key] || {};
+  const updatePrice = (key, value) => {
     updateForm({
       pricingMatrix: {
         ...formData.pricingMatrix,
-        [key]: { ...current, [field]: value }
+        [key]: { ...(formData.pricingMatrix[key] || {}), price: value }
       }
     });
-  };
-
-  const handleBulkSetColumnPrice = (optionName, price) => {
-    const newMatrix = { ...formData.pricingMatrix };
-    combinations.forEach(c => {
-      if (c.frame === optionName || c.canvas === optionName) {
-        newMatrix[c.key] = { ...(newMatrix[c.key] || {}), price };
-      }
-    });
-    updateForm({ pricingMatrix: newMatrix });
   };
 
   const hasCanvas = formData.selectedCanvasTypes.length > 0;
   const hasFrame = formData.selectedFrames.length > 0;
+  const allPriced = combinations.every(c => formData.pricingMatrix[c.key]?.price);
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
         <div>
           <h2 className="text-xl font-black text-gray-900">Pricing Matrix & Global Inventory</h2>
-          <p className="text-sm text-gray-500 mb-4">Set the exact selling price for each combination and define total inventory.</p>
-          
-          <div className="max-w-xs mb-6">
-            <label className="block text-sm font-bold text-gray-700 mb-1">Total Artwork Inventory (Global Stock) *</label>
-            <input 
-              type="number" min="0" 
-              value={formData.totalInventory} 
-              onChange={e => updateForm({ totalInventory: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 bg-gray-50 font-medium" 
-              placeholder="e.g. 50"
-            />
-          </div>
+          <p className="text-sm text-gray-500 mt-1">
+            Prices are auto-computed from your config. You can override any row manually.
+          </p>
         </div>
-        
-        {/* Bulk Actions */}
-        <div className="flex gap-2">
-          {hasFrame ? (
-            formData.selectedFrames.map(f => (
-              <button key={f} onClick={() => {
-                const val = prompt(`Set price for ALL ${f} combinations:`);
-                if (val && !isNaN(val)) handleBulkSetColumnPrice(f, val);
-              }} className="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100">
-                Set {f} Price
-              </button>
-            ))
-          ) : hasCanvas ? (
-            formData.selectedCanvasTypes.map(c => (
-              <button key={c} onClick={() => {
-                const val = prompt(`Set price for ALL ${c} combinations:`);
-                if (val && !isNaN(val)) handleBulkSetColumnPrice(c, val);
-              }} className="px-3 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100">
-                Set {c} Price
-              </button>
-            ))
-          ) : null}
-        </div>
+
+        {/* Recalculate Button */}
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm("This will overwrite all prices with computed values from your base price and modifiers. Proceed?")) {
+              recalculate(true);
+            }
+          }}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors shadow-sm"
+        >
+          🔄 Recalculate Prices
+        </button>
       </div>
 
+      {/* Global Stock */}
+      <div className="max-w-xs mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+        <label className="block text-sm font-bold text-gray-700 mb-1">
+          Total Artwork Inventory (Global Stock) *
+        </label>
+        <input
+          type="number" min="0"
+          value={formData.totalInventory}
+          onChange={e => updateForm({ totalInventory: e.target.value })}
+          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 bg-white font-semibold outline-none"
+          placeholder="e.g. 50"
+        />
+        <p className="text-xs text-gray-400 mt-1">
+          A unique SKU is automatically assigned per variant behind the scenes.
+        </p>
+      </div>
+
+      {/* Status Banner */}
+      <div className={`mb-4 px-4 py-2.5 rounded-xl text-xs font-bold ${allPriced ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+        {allPriced ? `✅ All ${combinations.length} combinations priced` : `⚠️ ${combinations.filter(c => !formData.pricingMatrix[c.key]?.price).length} combination(s) still need a price`}
+      </div>
+
+      {/* Price Table */}
       <div className="overflow-x-auto rounded-xl border border-gray-200">
         <table className="w-full text-left border-collapse text-sm">
           <thead>
             <tr className="bg-gray-50 text-gray-600">
-              <th className="py-3 px-4 border-b font-bold w-1/4">Dimension</th>
-              {hasCanvas && <th className="py-3 px-4 border-b font-bold w-1/4">Canvas</th>}
-              {hasFrame && <th className="py-3 px-4 border-b font-bold w-1/4">Frame</th>}
-              <th className="py-3 px-4 border-b font-bold w-1/4">Price (₹) *</th>
+              <th className="py-3 px-4 border-b font-bold">Dimension</th>
+              {hasCanvas && <th className="py-3 px-4 border-b font-bold">Canvas / Material</th>}
+              {hasFrame && <th className="py-3 px-4 border-b font-bold">Frame</th>}
+              <th className="py-3 px-4 border-b font-bold">Selling Price (₹) *</th>
             </tr>
           </thead>
           <tbody>
             {combinations.map(c => {
-              const data = formData.pricingMatrix[c.key] || {};
+              const price = formData.pricingMatrix[c.key]?.price || "";
               return (
                 <tr key={c.key} className="hover:bg-gray-50 border-b border-gray-100 transition-colors">
-                  <td className="py-2 px-4 font-semibold text-gray-800">{c.dim !== "Default" ? c.dim : "-"}</td>
-                  {hasCanvas && <td className="py-2 px-4 font-medium text-gray-600">{c.canvas !== "Default" ? c.canvas : "-"}</td>}
-                  {hasFrame && <td className="py-2 px-4 font-medium text-gray-600">{c.frame !== "Default" ? c.frame : "-"}</td>}
+                  <td className="py-2 px-4 font-semibold text-gray-800">
+                    {c.dim !== "Default" ? `${c.dim} ${unitLabel}` : "—"}
+                  </td>
+                  {hasCanvas && <td className="py-2 px-4 font-medium text-gray-600">{c.canvas !== "Default" ? c.canvas : "—"}</td>}
+                  {hasFrame && <td className="py-2 px-4 font-medium text-gray-600">{c.frame !== "Default" ? c.frame : "—"}</td>}
                   <td className="py-2 px-4">
-                    <input 
-                      type="number" min="0" 
-                      value={data.price || ""} 
-                      onChange={e => updatePrice(c.key, 'price', e.target.value)}
-                      className={`w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none ${!data.price ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'}`}
-                      placeholder="Req"
-                    />
+                    <div className="flex items-center gap-1">
+                      <span className="text-gray-400 text-sm">₹</span>
+                      <input
+                        type="number" min="0"
+                        value={price}
+                        onChange={e => updatePrice(c.key, e.target.value)}
+                        className={`w-28 px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-semibold ${!price ? 'border-red-300 bg-red-50 text-red-700' : 'border-gray-200 bg-white text-gray-900'}`}
+                        placeholder="Auto"
+                      />
+                    </div>
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
@@ -909,7 +1244,7 @@ const StepShipping = ({ formData, updateForm }) => (
           </select>
         </div>
       </div>
-      
+
       <div className="flex flex-wrap gap-6">
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={formData.isFreeShipping} onChange={e => updateForm({ isFreeShipping: e.target.checked })} className="w-5 h-5 text-indigo-600 rounded" />
@@ -938,7 +1273,7 @@ const StepSEO = ({ formData, updateForm }) => (
       </div>
       <div>
         <label className="block text-sm font-bold text-gray-700 mb-1">Keywords / Tags</label>
-        <input type="text" value={formData.tags.join(", ")} onChange={e => updateForm({ tags: e.target.value.split(',').map(t=>t.trim()).filter(Boolean) })} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 bg-gray-50" placeholder="abstract, oil painting, canvas print (comma separated)" />
+        <input type="text" value={formData.tags.join(", ")} onChange={e => updateForm({ tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) })} className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 bg-gray-50" placeholder="abstract, oil painting, canvas print (comma separated)" />
       </div>
     </div>
   </div>
@@ -952,7 +1287,7 @@ const StepPreview = ({ formData }) => {
       </div>
       <h2 className="text-2xl font-black text-gray-900 mb-2">Ready to Publish!</h2>
       <p className="text-gray-500 mb-8 max-w-md mx-auto">Your artwork configuration is complete. The system has automatically generated your pricing matrix and product variants.</p>
-      
+
       <div className="bg-gray-50 rounded-xl p-4 text-left max-w-lg mx-auto border border-gray-200">
         <h4 className="font-bold text-sm text-gray-800 mb-2">Validation Checklist:</h4>
         <ul className="space-y-2 text-sm text-gray-600">
@@ -964,3 +1299,4 @@ const StepPreview = ({ formData }) => {
     </div>
   );
 };
+

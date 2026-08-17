@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { FiCheck, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiCheck, FiPlus, FiTrash2, FiRefreshCw } from "react-icons/fi";
 import toast from "react-hot-toast";
 
 const DEFAULT_DIMENSIONS = ["8x10", "12x16", "16x20", "20x30", "24x36", "30x40"];
@@ -12,6 +12,17 @@ export default function StepArtMatrix({ formData, onChange }) {
   const [customFrame, setCustomFrame] = useState("");
 
   const variants = formData.variants || {};
+
+  // Extract SI Unit & 1x1 pricing inputs from formData
+  const pricingUnit = formData.pricingUnit || "inches";
+  const unitBasePrice = formData.unitBasePrice || "";
+  const canvasModifiers = formData.canvasModifiers || {};
+  const frameModifiers = formData.frameModifiers || {};
+
+  const unitLabel = pricingUnit === "cm" ? "cm"
+    : pricingUnit === "feet" ? "ft"
+    : pricingUnit === "meter" ? "m"
+    : "in";
 
   // Extract currently selected attributes or default to empty lists
   const selectedDimensions = useMemo(() => {
@@ -111,7 +122,6 @@ export default function StepArtMatrix({ formData, onChange }) {
   }, [selectedDimensions, selectedCanvasTypes, selectedFrames, hasDim, hasCanvas, hasFrame]);
 
   const columns = useMemo(() => {
-    // If all three are selected, columns are Canvas + Frame combinations
     if (hasDim && hasCanvas && hasFrame) {
       const cols = [];
       selectedCanvasTypes.forEach(c => {
@@ -122,22 +132,18 @@ export default function StepArtMatrix({ formData, onChange }) {
       return cols;
     }
 
-    // If Dimension and Canvas are selected, columns are Canvas
     if (hasDim && hasCanvas && !hasFrame) {
       return selectedCanvasTypes.map(c => ({ canvas: c, frame: null, label: c, key: c }));
     }
 
-    // If Dimension and Frame are selected, columns are Frame
     if (hasDim && !hasCanvas && hasFrame) {
       return selectedFrames.map(f => ({ canvas: null, frame: f, label: f, key: f }));
     }
 
-    // If Canvas and Frame are selected, columns are Frame (Rows are Canvas)
     if (!hasDim && hasCanvas && hasFrame) {
       return selectedFrames.map(f => ({ canvas: null, frame: f, label: f, key: f }));
     }
 
-    // Default fallback columns
     return [{ canvas: null, frame: null, label: "Default Attribute", key: "default" }];
   }, [selectedDimensions, selectedCanvasTypes, selectedFrames, hasDim, hasCanvas, hasFrame]);
 
@@ -148,7 +154,6 @@ export default function StepArtMatrix({ formData, onChange }) {
     }
     const parts = [];
     
-    // Determine the type of the row value
     if (hasDim) {
       parts.push(`dimension=${rowVal.toLowerCase().replace(/\s+/g, '_')}`);
     } else if (hasCanvas) {
@@ -157,7 +162,6 @@ export default function StepArtMatrix({ formData, onChange }) {
       parts.push(`frame=${rowVal.toLowerCase().replace(/\s+/g, '_')}`);
     }
 
-    // Determine the type of the column value
     if (hasDim && hasCanvas && hasFrame) {
       parts.push(`canvas=${col.canvas.toLowerCase().replace(/\s+/g, '_')}`);
       parts.push(`frame=${col.frame.toLowerCase().replace(/\s+/g, '_')}`);
@@ -176,15 +180,12 @@ export default function StepArtMatrix({ formData, onChange }) {
     const backendKey = getCellBackendKey(dim, col);
     const prices = { ...(variants.prices || {}) };
     const stockMap = { ...(variants.stockMap || {}) };
-    const skuMap = { ...(variants.skuMap || {}) };
     const inactive = { ...(variants.inactive || {}) };
 
     if (field === "price") {
       prices[backendKey] = value === "" ? "" : Number(value);
     } else if (field === "stock") {
       stockMap[backendKey] = value === "" ? "" : Number(value);
-    } else if (field === "sku") {
-      skuMap[backendKey] = value;
     } else if (field === "active") {
       if (value === false) {
         inactive[backendKey] = true;
@@ -198,7 +199,6 @@ export default function StepArtMatrix({ formData, onChange }) {
         ...variants,
         prices,
         stockMap,
-        skuMap,
         inactive
       }
     });
@@ -240,24 +240,53 @@ export default function StepArtMatrix({ formData, onChange }) {
     });
   };
 
-  const bulkSetColumnSku = (col, baseSku) => {
-    if (baseSku === null) return;
-    const trimmed = String(baseSku).trim();
-    if (!trimmed) return;
+  // ─── 1x1 Price Formula Engine ─────────────────────────────────────
+  const computeVariantPrices = () => {
+    const baseVal = parseFloat(unitBasePrice) || 0;
+    if (!baseVal && baseVal !== 0) {
+      toast.error("Please enter a Base Price per 1x1 unit first.");
+      return;
+    }
 
-    const skuMap = { ...(variants.skuMap || {}) };
-    rows.forEach(dim => {
-      const backendKey = getCellBackendKey(dim, col);
-      const suffix = dim.toUpperCase().replace(/\s+/g, "_");
-      skuMap[backendKey] = `${trimmed}-${suffix}`;
+    const parseDim = (dimStr) => {
+      const m = dimStr.match(/(\d+(?:\.\d+)?)\s*[xX×*]\s*(\d+(?:\.\d+)?)/i);
+      return m ? { w: parseFloat(m[1]), h: parseFloat(m[2]) } : { w: 1, h: 1 };
+    };
+
+    const newPrices = { ...(variants.prices || {}) };
+    let count = 0;
+
+    rows.forEach(dimVal => {
+      const { w, h } = parseDim(dimVal);
+      const area = (w * h) || 1;
+
+      columns.forEach(col => {
+        const canvasName = col.canvas || (hasCanvas ? dimVal : null);
+        const frameName = col.frame || (hasFrame ? dimVal : null);
+
+        const canvasMod = parseFloat(canvasModifiers[canvasName]) || 0;
+        const frameMod = parseFloat(frameModifiers[frameName]) || 0;
+
+        const computedPrice = Math.round(area * (baseVal + canvasMod + frameMod));
+        const backendKey = getCellBackendKey(dimVal, col);
+
+        newPrices[backendKey] = computedPrice;
+        count++;
+      });
     });
 
     onChange({
+      pricingUnit,
+      unitBasePrice,
+      canvasModifiers,
+      frameModifiers,
       variants: {
         ...variants,
-        skuMap
+        prices: newPrices
       }
     });
+
+    toast.success(`Calculated prices for ${count} variant combinations!`);
   };
 
   const isCanvasDisabled = selectedFrames.length > 0;
@@ -293,7 +322,7 @@ export default function StepArtMatrix({ formData, onChange }) {
                   }`}>
                     {isChecked && <span className="w-1.5 h-1.5 rounded-full bg-primary-600" />}
                   </span>
-                  {dim}
+                  {dim} {unitLabel}
                 </button>
               );
             })}
@@ -430,6 +459,142 @@ export default function StepArtMatrix({ formData, onChange }) {
 
       </div>
 
+      {/* ─── SI UNIT & 1x1 AREA PRICING CONFIGURATION CARD ───────────────── */}
+      {(hasDim || hasCanvas || hasFrame) && (
+        <div className="bg-gradient-to-r from-indigo-900 to-slate-900 p-6 rounded-2xl text-white shadow-xl space-y-5">
+          <div className="flex flex-wrap justify-between items-start gap-4 pb-4 border-b border-indigo-700/50">
+            <div>
+              <h3 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
+                📐 SI Unit & 1×1 Area Pricing Rules
+              </h3>
+              <p className="text-xs text-indigo-200 mt-0.5">
+                Set your 1×1 unit base cost, material cost, and frame cost. Prices for all size combinations will be calculated automatically.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={computeVariantPrices}
+              className="flex items-center gap-2 px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-indigo-950 font-black text-xs rounded-xl shadow-lg transition-transform active:scale-95 cursor-pointer"
+            >
+              <FiRefreshCw className="w-4 h-4" />
+              ⚡ Calculate All Matrix Prices
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* SI Unit Dropdown */}
+            <div className="bg-white/10 p-4 rounded-xl border border-white/10 backdrop-blur-xs space-y-2">
+              <label className="block text-xs font-bold text-indigo-200 uppercase tracking-wider">
+                Select SI Size Unit *
+              </label>
+              <select
+                value={pricingUnit}
+                onChange={e => onChange({ pricingUnit: e.target.value })}
+                className="w-full px-3 py-2 bg-indigo-950 text-white font-bold text-sm border border-indigo-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+              >
+                <option value="inches">Inches (in)</option>
+                <option value="cm">Centimeters (cm)</option>
+                <option value="feet">Feet (ft)</option>
+                <option value="meter">Meters (m)</option>
+              </select>
+              <p className="text-[10px] text-indigo-300">Dimensions are computed in sq {unitLabel}.</p>
+            </div>
+
+            {/* Base Price per 1x1 */}
+            <div className="bg-white/10 p-4 rounded-xl border border-white/10 backdrop-blur-xs space-y-2">
+              <label className="block text-xs font-bold text-indigo-200 uppercase tracking-wider">
+                Base Price per 1{unitLabel} × 1{unitLabel} (₹) *
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-300 font-bold text-sm">₹</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={unitBasePrice}
+                  onChange={e => onChange({ unitBasePrice: e.target.value })}
+                  placeholder="e.g. 2.50"
+                  className="w-full pl-7 pr-3 py-2 bg-indigo-950 text-white font-bold text-sm border border-indigo-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+              <p className="text-[10px] text-indigo-300">Base artwork rate per sq {unitLabel}.</p>
+            </div>
+
+            {/* Formula Preview */}
+            <div className="bg-amber-400/10 p-4 rounded-xl border border-amber-400/30 backdrop-blur-xs flex flex-col justify-between">
+              <div>
+                <span className="text-[11px] font-black text-amber-300 uppercase tracking-wider block mb-1">📐 Dynamic Price Formula</span>
+                <p className="text-xs text-amber-100 font-mono">
+                  Price = W × H × (Base + Material + Frame)
+                </p>
+              </div>
+              <p className="text-[10px] text-amber-200/80 mt-2">
+                e.g. 8×10 ({80} sq {unitLabel}) @ ₹{unitBasePrice || "2.50"} = ₹{Math.round(80 * (parseFloat(unitBasePrice) || 2.5))} base.
+              </p>
+            </div>
+          </div>
+
+          {/* Canvas & Frame 1x1 Cost Modifiers */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-indigo-700/50">
+            {/* Canvas Modifiers */}
+            {hasCanvas && (
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-indigo-200 uppercase tracking-wider">
+                  Material Cost per 1{unitLabel} × 1{unitLabel} (₹)
+                </label>
+                <div className="space-y-2">
+                  {selectedCanvasTypes.map(can => (
+                    <div key={can} className="flex items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/10">
+                      <span className="text-xs font-bold text-white flex-1 truncate">{can}</span>
+                      <span className="text-xs text-indigo-300">+ ₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={canvasModifiers[can] || ""}
+                        onChange={e => onChange({
+                          canvasModifiers: { ...canvasModifiers, [can]: e.target.value }
+                        })}
+                        placeholder="0.00"
+                        className="w-24 px-2 py-1 bg-indigo-950 text-white font-bold text-xs border border-indigo-600 rounded focus:outline-none focus:ring-1 focus:ring-amber-400"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Frame Modifiers */}
+            {hasFrame && (
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-indigo-200 uppercase tracking-wider">
+                  Frame Cost per 1{unitLabel} × 1{unitLabel} (₹)
+                </label>
+                <div className="space-y-2">
+                  {selectedFrames.map(frame => (
+                    <div key={frame} className="flex items-center gap-3 bg-white/5 p-2 rounded-lg border border-white/10">
+                      <span className="text-xs font-bold text-white flex-1 truncate">{frame}</span>
+                      <span className="text-xs text-indigo-300">+ ₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={frameModifiers[frame] || ""}
+                        onChange={e => onChange({
+                          frameModifiers: { ...frameModifiers, [frame]: e.target.value }
+                        })}
+                        placeholder="0.00"
+                        className="w-24 px-2 py-1 bg-indigo-950 text-white font-bold text-xs border border-indigo-600 rounded focus:outline-none focus:ring-1 focus:ring-amber-400"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Pricing Matrix Table Grid */}
       {selectedDimensions.length === 0 && selectedCanvasTypes.length === 0 && selectedFrames.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center shadow-sm">
@@ -454,7 +619,7 @@ export default function StepArtMatrix({ formData, onChange }) {
                     {hasDim ? "Dimension / Size" : hasCanvas ? "Canvas Type" : hasFrame ? "Frame Option" : "Size"}
                   </th>
                   {columns.map(col => (
-                    <th key={col.key} className="py-2.5 px-3 border-r border-gray-200 font-bold text-center align-top min-w-[220px]">
+                    <th key={col.key} className="py-2.5 px-3 border-r border-gray-200 font-bold text-center align-top min-w-[200px]">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-gray-800 font-black">{col.label}</span>
                         <div className="flex flex-wrap gap-1 justify-center mt-1.5">
@@ -478,16 +643,6 @@ export default function StepArtMatrix({ formData, onChange }) {
                           >
                             ⚡ Stock
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const val = prompt(`Set base SKU prefix for ALL rows under "${col.label}":`);
-                              bulkSetColumnSku(col, val);
-                            }}
-                            className="text-[9px] text-purple-600 hover:text-purple-700 font-extrabold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 transition-colors"
-                          >
-                            ⚡ SKU
-                          </button>
                         </div>
                       </div>
                     </th>
@@ -498,13 +653,12 @@ export default function StepArtMatrix({ formData, onChange }) {
                 {rows.map(dim => (
                   <tr key={dim} className="hover:bg-gray-50/50 border-b border-gray-100 transition-colors">
                     <td className="py-3 px-4 font-bold text-gray-900 border-r border-gray-200 bg-gray-50/50 sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
-                      {dim}
+                      {dim} {hasDim ? unitLabel : ""}
                     </td>
                     {columns.map(col => {
-                      const key = getBackendKey(dim, col.canvas, col.frame);
+                      const key = getCellBackendKey(dim, col);
                       const price = variants.prices?.[key] ?? "";
                       const stock = variants.stockMap?.[key] ?? "";
-                      const sku = variants.skuMap?.[key] ?? "";
                       const isActive = !(variants.inactive?.[key]);
 
                       return (
@@ -517,7 +671,7 @@ export default function StepArtMatrix({ formData, onChange }) {
                             
                             {/* Active Toggle Checkbox */}
                             <div className="flex items-center justify-between border-b border-gray-200 pb-1 mb-0.5">
-                              <span className="text-[10px] font-black text-gray-400">Offer combination?</span>
+                              <span className="text-[10px] font-black text-gray-400">Offer option?</span>
                               <input
                                 type="checkbox"
                                 checked={isActive}
@@ -526,9 +680,9 @@ export default function StepArtMatrix({ formData, onChange }) {
                               />
                             </div>
 
-                            {/* Price */}
+                            {/* Computed Selling Price */}
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-black text-gray-500 w-9 text-right">Price:</span>
+                              <span className="text-[10px] font-black text-gray-500 w-10 text-right">Price:</span>
                               <div className="relative flex-1">
                                 <span className="absolute left-1.5 top-1/2 transform -translate-y-1/2 text-gray-400 text-[10px]">₹</span>
                                 <input
@@ -544,14 +698,14 @@ export default function StepArtMatrix({ formData, onChange }) {
                                         ? "border-red-200 bg-red-50/40" 
                                         : "border-gray-300 bg-white"
                                   }`}
-                                  placeholder={isActive ? "Req *" : "Disabled"}
+                                  placeholder={isActive ? "Auto" : "Disabled"}
                                 />
                               </div>
                             </div>
 
                             {/* Stock */}
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-black text-gray-500 w-9 text-right">Stock:</span>
+                              <span className="text-[10px] font-black text-gray-500 w-10 text-right">Stock:</span>
                               <input
                                 type="number"
                                 min="0"
@@ -564,23 +718,6 @@ export default function StepArtMatrix({ formData, onChange }) {
                                     : "border-gray-300 bg-white"
                                 }`}
                                 placeholder={isActive ? "0" : "Disabled"}
-                              />
-                            </div>
-
-                            {/* SKU */}
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-black text-gray-500 w-9 text-right">SKU:</span>
-                              <input
-                                type="text"
-                                value={sku}
-                                disabled={!isActive}
-                                onChange={e => handleCellChange(dim, col, 'sku', e.target.value)}
-                                className={`flex-1 px-1.5 py-1 text-[10px] border rounded-md focus:ring-1 focus:ring-primary-400 outline-none font-mono ${
-                                  !isActive 
-                                    ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed" 
-                                    : "border-gray-300 bg-white"
-                                }`}
-                                placeholder={isActive ? "Optional" : "Disabled"}
                               />
                             </div>
 

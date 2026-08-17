@@ -82,6 +82,37 @@ export const deleteProductTemplate = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, null, 'Template deleted.'));
 });
 
+export const publishProductTemplate = asyncHandler(async (req, res) => {
+    const ProductTemplate = mongoose.model('ProductTemplate');
+    const template = await ProductTemplate.findOne({ _id: req.params.id }).lean();
+    if (!template) {
+        throw new ApiError(404, 'Template not found.');
+    }
+    if (!template.steps || template.steps.length === 0) {
+        throw new ApiError(400, 'Cannot publish a template with no wizard steps. Add at least one step first.');
+    }
+    const updated = await ProductTemplate.findOneAndUpdate(
+        { _id: req.params.id },
+        { $set: { status: 'published' } },
+        { new: true, returnDocument: 'after' }
+    ).lean();
+    res.status(200).json(new ApiResponse(200, { ...updated, id: String(updated._id) }, 'Template published successfully.'));
+});
+
+export const unpublishProductTemplate = asyncHandler(async (req, res) => {
+    const ProductTemplate = mongoose.model('ProductTemplate');
+    const template = await ProductTemplate.findOne({ _id: req.params.id }).lean();
+    if (!template) {
+        throw new ApiError(404, 'Template not found.');
+    }
+    const updated = await ProductTemplate.findOneAndUpdate(
+        { _id: req.params.id },
+        { $set: { status: 'draft' } },
+        { new: true, returnDocument: 'after' }
+    ).lean();
+    res.status(200).json(new ApiResponse(200, { ...updated, id: String(updated._id) }, 'Template moved back to draft.'));
+});
+
 // ─── Product Types ──────────────────────────────────────────────────────
 export const getProductTypes = asyncHandler(async (req, res) => {
     const ProductType = mongoose.model('ProductType');

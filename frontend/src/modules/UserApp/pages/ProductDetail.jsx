@@ -88,6 +88,98 @@ const normalizeProduct = (raw) => {
   const image = raw?.image || raw?.images?.[0] || "";
   const images = Array.isArray(raw?.images) ? raw.images.filter(Boolean) : image ? [image] : [];
 
+  // Reconstruct variants.attributes from specifications if missing or incomplete
+  let variants = raw?.variants ? { ...raw.variants } : {};
+  let attributes = Array.isArray(variants.attributes) ? [...variants.attributes] : [];
+
+  const specs = raw?.specifications || {};
+  const allowedAttrKeys = ["size", "dimension", "material", "canvas", "canvas_type", "frame", "frame_type"];
+
+  const getSpecValues = (val) => {
+    if (Array.isArray(val)) return val.filter(Boolean);
+    if (typeof val === "string" && val.trim()) return val.split(",").map(s => s.trim()).filter(Boolean);
+    return [];
+  };
+
+  Object.entries(specs).forEach(([key, val]) => {
+    const lowerKey = key.toLowerCase();
+    if (allowedAttrKeys.includes(lowerKey)) {
+      const vals = getSpecValues(val);
+      if (vals.length > 0) {
+        const existingIdx = attributes.findIndex(a => String(a.name || "").toLowerCase() === lowerKey || (lowerKey.includes("frame") && String(a.name || "").toLowerCase().includes("frame")));
+        const formattedName = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ");
+        if (existingIdx >= 0) {
+          if (!attributes[existingIdx].values || attributes[existingIdx].values.length === 0) {
+            attributes[existingIdx] = { ...attributes[existingIdx], values: vals };
+          }
+        } else {
+          attributes.push({ name: formattedName, values: vals });
+        }
+      }
+    }
+  });
+
+  variants.attributes = attributes;
+
+  // Auto-calculate prices if price is 0 or variants.prices is missing/0
+  const pricingConfig = specs.pricingConfig || {};
+  const baseVal = parseFloat(pricingConfig.unitBasePrice) || (attributes.length > 0 ? 2.5 : 0);
+  if (baseVal > 0 && attributes.length > 0) {
+    const parseDim = (dimStr) => {
+      const m = String(dimStr || "").match(/(\d+(?:\.\d+)?)\s*[xX×*]\s*(\d+(?:\.\d+)?)/i);
+      return m ? { w: parseFloat(m[1]), h: parseFloat(m[2]) } : { w: 1, h: 1 };
+    };
+
+    const canvasMods = pricingConfig.canvasModifiers || {};
+    const frameMods = pricingConfig.frameModifiers || {};
+    const prices = { ...(variants.prices || {}) };
+    const calculatedList = [];
+
+    const generateCombos = (attrList) => {
+      if (!attrList.length) return [];
+      return attrList.reduce((combos, attr) => {
+        const next = [];
+        const vals = Array.isArray(attr.values) ? attr.values : [];
+        combos.forEach(c => vals.forEach(v => next.push({ ...c, [attr.name]: v })));
+        return next;
+      }, [{}]);
+    };
+
+    const combos = generateCombos(attributes);
+    combos.forEach(combo => {
+      const sizeVal = combo.size || combo.dimension || combo.Size || combo.Dimension || Object.values(combo)[0];
+      const { w, h } = parseDim(sizeVal);
+      const area = (w * h) || 1;
+
+      const matVal = combo.material || combo.canvas || combo.canvas_type || combo.Material || combo.Canvas || "";
+      const matMod = parseFloat(canvasMods[matVal]) || 0;
+
+      const frameVal = combo.frame || combo.frame_type || combo.Frame || combo.Frame_type || "";
+      const frameMod = parseFloat(frameMods[frameVal]) || 0;
+
+      const calculated = Math.round(area * (baseVal + matMod + frameMod));
+
+      const makeKey = (c) => Object.entries(c)
+        .map(([k, v]) => `${String(k).toLowerCase().replace(/\s+/g, '_')}=${String(v).trim().toLowerCase()}`)
+        .sort()
+        .join('|');
+
+      const k = makeKey(combo);
+      if (!prices[k] || prices[k] === 0) {
+        prices[k] = calculated;
+      }
+      if (calculated > 0) calculatedList.push(calculated);
+    });
+
+    variants.prices = prices;
+  }
+
+  let rawPrice = Number(raw?.price) || 0;
+  if (rawPrice === 0 && variants.prices) {
+    const validP = Object.values(variants.prices).map(Number).filter(p => Number.isFinite(p) && p > 0);
+    if (validP.length > 0) rawPrice = Math.min(...validP);
+  }
+
   return {
     ...raw,
     id,
@@ -95,10 +187,11 @@ const normalizeProduct = (raw) => {
     vendorId,
     brandId,
     categoryId,
+    variants,
     bookConfig: raw?.bookConfig || (raw?.specifications && raw.specifications.bookConfig ? raw.specifications.bookConfig : raw?.specifications) || null,
     image,
     images,
-    price: Number(raw?.price) || 0,
+    price: rawPrice,
     originalPrice:
       raw?.originalPrice !== undefined && raw?.originalPrice !== null
         ? Number(raw.originalPrice)
@@ -1449,7 +1542,7 @@ const MobileProductDetail = () => {
                     )}
 
                     {/* Language Options */}
-                    {Array.isArray(product.bookConfig.languageOptions) && product.bookConfig.languageOptions.length > 0 && (
+                    {Array.isArray(product?.bookConfig?.languageOptions) && product.bookConfig.languageOptions.length > 0 && (
                       <div className="space-y-2">
                         <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest block">Language</label>
                         <div className="relative">
@@ -1480,7 +1573,7 @@ const MobileProductDetail = () => {
                 {isTurbanProduct && (() => {
                   let sizes = product?.variants?.sizes || [];
                   if (sizes.length === 0 && Array.isArray(product?.variants?.attributes)) {
-                    const sizeAttr = product.variants.attributes.find(
+                    const sizeAttr = product?.variants?.attributes?.find(
                       (a) => ["size", "length", "dimension"].includes(String(a.name || "").toLowerCase())
                     );
                     if (sizeAttr && Array.isArray(sizeAttr.values)) {
@@ -1575,7 +1668,7 @@ const MobileProductDetail = () => {
                 {isTurbanProduct && (() => {
                   let colors = product?.variants?.colors || [];
                   if (colors.length === 0 && Array.isArray(product?.variants?.attributes)) {
-                    const colorAttr = product.variants.attributes.find(
+                    const colorAttr = product?.variants?.attributes?.find(
                       (a) => String(a.name || "").toLowerCase() === "color"
                     );
                     if (colorAttr && Array.isArray(colorAttr.values)) {
@@ -1661,7 +1754,7 @@ const MobileProductDetail = () => {
                 )}
 
                 {/* General Variants Selector for Non-Turban Products */}
-                {!isTurbanProduct && product.variants && (
+                {!isTurbanProduct && product?.variants && (
                   <div className="mb-2">
                     <VariantSelector
                       variants={product.variants}
