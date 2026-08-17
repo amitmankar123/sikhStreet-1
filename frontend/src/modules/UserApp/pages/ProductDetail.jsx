@@ -85,6 +85,15 @@ const normalizeProduct = (raw) => {
   const vendorId = String(vendorObj?._id || vendorObj?.id || raw?.vendorId || "").trim();
   const brandId = String(brandObj?._id || brandObj?.id || raw?.brandId || "").trim();
   const categoryId = String(categoryObj?._id || categoryObj?.id || raw?.categoryId || "").trim();
+  const categoryName = raw?.categoryName || categoryObj?.name || "";
+  
+  const isCategoryBook =
+    categoryName.toLowerCase().includes("book") ||
+    categoryName.toLowerCase().includes("literature") ||
+    categoryName.toLowerCase().includes("scripture") ||
+    categoryName.toLowerCase().includes("nitnem") ||
+    String(categoryId).toLowerCase().includes("book");
+
   const image = raw?.image || raw?.images?.[0] || "";
   const images = Array.isArray(raw?.images) ? raw.images.filter(Boolean) : image ? [image] : [];
 
@@ -188,7 +197,7 @@ const normalizeProduct = (raw) => {
     brandId,
     categoryId,
     variants,
-    bookConfig: raw?.bookConfig || (raw?.specifications && raw.specifications.bookConfig ? raw.specifications.bookConfig : raw?.specifications) || null,
+    bookConfig: raw?.bookConfig || (raw?.specifications && raw.specifications.bookConfig ? raw.specifications.bookConfig : isCategoryBook ? raw?.specifications : null) || null,
     image,
     images,
     price: rawPrice,
@@ -201,7 +210,7 @@ const normalizeProduct = (raw) => {
     stockQuantity: Number(raw?.stockQuantity) || 0,
     vendorName: raw?.vendorName || vendorObj?.storeName || vendorObj?.name || "",
     brandName: raw?.brandName || brandObj?.name || "",
-    categoryName: raw?.categoryName || categoryObj?.name || "",
+    categoryName: categoryName,
     vendor: vendorObj
       ? {
         ...vendorObj,
