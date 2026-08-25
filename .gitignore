@@ -8,3 +8,5 @@ temp_interactive_push.bat
 PROJECT_ROADMAP.md
 CLIENT_REPORT.md
 changes_log.md
+config.bat
+node_modules
