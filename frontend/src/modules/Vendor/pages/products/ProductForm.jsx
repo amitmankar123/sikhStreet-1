@@ -604,6 +604,7 @@ const ProductForm = () => {
     },
   });
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [rawProduct, setRawProduct] = useState(null);
   const [variantAxisInput, setVariantAxisInput] = useState({
     sizes: "",
     colors: "",
@@ -640,6 +641,7 @@ const ProductForm = () => {
       // First try local cache, then fetch from API by id
       const cached = getById(id);
       if (cached) {
+        setRawProduct(cached);
         populateForm(cached, categories);
       } else {
         fetchProductById(id).then((product) => {
@@ -648,6 +650,7 @@ const ProductForm = () => {
             navigate("/vendor/products/manage-products");
             return;
           }
+          setRawProduct(product);
           populateForm(product, categories);
         });
       }
@@ -2350,7 +2353,7 @@ const ProductForm = () => {
           categoryId={formData.categoryId}
           subcategoryId={formData.subcategoryId}
           isEdit={isEdit}
-          productToEdit={isEdit ? { ...formData, id } : null}
+          productToEdit={isEdit ? rawProduct : null}
         />
       )}
     </motion.div>

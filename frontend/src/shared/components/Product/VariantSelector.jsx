@@ -284,12 +284,7 @@ const VariantSelector = ({ variants, onVariantChange, currentPrice, isKada, useD
 
 
 
-      {getVariantPrice() !== Number(currentPrice || 0) && (
-        <div className="p-4 bg-primary-50 rounded-xl border border-primary-200">
-          <p className="text-sm text-gray-600 mb-1">Selected variant price:</p>
-          <p className="text-xl font-bold text-primary-700">{formatPrice(getVariantPrice())}</p>
-        </div>
-      )}
+
       {isKada && (
         <KadaMeasurementTool
           isOpen={isMeasurementToolOpen}

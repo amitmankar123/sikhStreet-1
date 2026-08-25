@@ -819,6 +819,7 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
         .then((res) => {
           const product = res?.data || res;
           if (product) {
+            const pricingConfig = product.specifications?.pricingConfig || {};
             setFormData({
               name: product.name || "",
               unit: product.unit || "",
@@ -880,6 +881,10 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
                 downloadLimit: "",
                 version: "1.0.0"
               },
+              unitBasePrice: pricingConfig.unitBasePrice || "",
+              pricingUnit: pricingConfig.pricingUnit || "inches",
+              canvasModifiers: pricingConfig.canvasModifiers || {},
+              frameModifiers: pricingConfig.frameModifiers || {},
               specifications: product.specifications || {}
             });
           }
@@ -1685,7 +1690,10 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
                                         </div>
                                       )}
                                     </div>
-                                  ) : field.type === "multi_select" || field.type === "checkbox_group" || field.allowMultiple ? (
+                                  ) : field.type === "multi_select" || field.type === "checkbox_group" || field.allowMultiple || (
+                                    (field.type === "dropdown" || field.type === "select") &&
+                                    (field.isVariant || variantAttributeNames.includes(field.name) || shouldForceMultiSelect)
+                                  ) ? (
                                     <div className="relative multi-select-dropdown-container">
                                       {/* Trigger Button */}
                                       <button
@@ -1997,15 +2005,7 @@ export default function DynamicProductWizard({ isEdit = false, productId = null 
                         </p>
                       </div>
 
-                      {isArtCategory && (
-                        <button
-                          type="button"
-                          onClick={computeAreaPricingForMatrix}
-                          className="flex items-center gap-2 px-4 py-2 bg-amber-400 hover:bg-amber-300 text-indigo-950 font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer"
-                        >
-                          ⚡ Calculate All Matrix Prices
-                        </button>
-                      )}
+
                     </div>
 
                     {/* ── SI Unit & 1x1 Area Pricing Rules Card for Artwork Templates ── */}

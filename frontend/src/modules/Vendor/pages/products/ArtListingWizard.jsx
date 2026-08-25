@@ -90,12 +90,22 @@ export default function ArtListingWizard({ vendor, categoryId, subcategoryId, ca
       const canvasSet = new Set();
       const frameSet = new Set();
 
+      const addCaseInsensitive = (set, val, standardOptions = []) => {
+        if (!val) return;
+        const matchedStandard = standardOptions.find(opt => opt.toLowerCase() === val.toLowerCase());
+        const finalVal = matchedStandard || val;
+        const exists = Array.from(set).some(item => item.toLowerCase() === finalVal.toLowerCase());
+        if (!exists) {
+          set.add(finalVal);
+        }
+      };
+
       if (Array.isArray(productToEdit.variants?.attributes)) {
         productToEdit.variants.attributes.forEach(attr => {
           const lower = String(attr.name || "").toLowerCase();
-          if (["dimension", "size"].includes(lower)) attr.values?.forEach(v => dimSet.add(v));
-          if (["canvas", "material", "canvas_type"].includes(lower)) attr.values?.forEach(v => canvasSet.add(v));
-          if (["frame", "frame_type"].includes(lower)) attr.values?.forEach(v => frameSet.add(v));
+          if (["dimension", "size"].includes(lower)) attr.values?.forEach(v => addCaseInsensitive(dimSet, v, DIMENSION_OPTIONS));
+          if (["canvas", "material", "canvas_type"].includes(lower)) attr.values?.forEach(v => addCaseInsensitive(canvasSet, v, CANVAS_OPTIONS));
+          if (["frame", "frame_type"].includes(lower)) attr.values?.forEach(v => addCaseInsensitive(frameSet, v, FRAME_OPTIONS));
         });
       }
 
@@ -112,9 +122,9 @@ export default function ArtListingWizard({ vendor, categoryId, subcategoryId, ca
             if (val) {
               const lowerAxis = String(axis || "").toLowerCase();
               const cleanVal = String(val).trim().replace(/_/g, " ");
-              if (["size", "dimension"].includes(lowerAxis)) dimSet.add(cleanVal);
-              if (["canvas", "material", "canvas_type"].includes(lowerAxis)) canvasSet.add(cleanVal);
-              if (["frame", "frame_type"].includes(lowerAxis)) frameSet.add(cleanVal);
+              if (["size", "dimension"].includes(lowerAxis)) addCaseInsensitive(dimSet, cleanVal, DIMENSION_OPTIONS);
+              if (["canvas", "material", "canvas_type"].includes(lowerAxis)) addCaseInsensitive(canvasSet, cleanVal, CANVAS_OPTIONS);
+              if (["frame", "frame_type"].includes(lowerAxis)) addCaseInsensitive(frameSet, cleanVal, FRAME_OPTIONS);
             }
           });
         });
@@ -136,13 +146,13 @@ export default function ArtListingWizard({ vendor, categoryId, subcategoryId, ca
         };
 
         if (dimSet.size === 0) {
-          getVals(specObj.size || specObj.dimension || specObj.Size || specObj.Dimension).forEach(v => dimSet.add(v));
+          getVals(specObj.size || specObj.dimension || specObj.Size || specObj.Dimension).forEach(v => addCaseInsensitive(dimSet, v, DIMENSION_OPTIONS));
         }
         if (canvasSet.size === 0) {
-          getVals(specObj.material || specObj.canvas || specObj.canvas_type || specObj.Material || specObj.Canvas).forEach(v => canvasSet.add(v));
+          getVals(specObj.material || specObj.canvas || specObj.canvas_type || specObj.Material || specObj.Canvas).forEach(v => addCaseInsensitive(canvasSet, v, CANVAS_OPTIONS));
         }
         if (frameSet.size === 0) {
-          getVals(specObj.frame || specObj.frame_type || specObj.Frame || specObj.Frame_type).forEach(v => frameSet.add(v));
+          getVals(specObj.frame || specObj.frame_type || specObj.Frame || specObj.Frame_type).forEach(v => addCaseInsensitive(frameSet, v, FRAME_OPTIONS));
         }
 
         medium = specObj.medium || specObj.Medium || "";
@@ -518,7 +528,7 @@ ${formData.readyToHang ? '- Ready to Hang' : ''}
             <p className="text-xs text-gray-500 mt-0.5">Configure artwork dimensions, canvas materials, frame types, and pricing rules.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button 
+            <button
               type="button"
               onClick={() => navigate("/vendor/products/manage-products")}
               className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50"
@@ -569,12 +579,14 @@ ${formData.readyToHang ? '- Ready to Hang' : ''}
           <StepShipping formData={formData} updateForm={updateForm} />
         </div>
 
-        <div>
-          <div className="mb-3 pb-2 border-b border-gray-200">
-            <h2 className="text-lg font-black text-gray-900">5. SEO Optimization</h2>
+        {!isEdit && (
+          <div>
+            <div className="mb-3 pb-2 border-b border-gray-200">
+              <h2 className="text-lg font-black text-gray-900">5. SEO Optimization</h2>
+            </div>
+            <StepSEO formData={formData} updateForm={updateForm} />
           </div>
-          <StepSEO formData={formData} updateForm={updateForm} />
-        </div>
+        )}
       </div>
 
       {/* Fixed Action Footer */}
@@ -892,10 +904,10 @@ const StepConfig = ({ formData, updateForm }) => {
                 <label
                   key={can}
                   className={`flex items-center gap-2 p-3 border rounded-xl transition-all ${isChecked
-                      ? 'border-indigo-600 bg-indigo-50 cursor-pointer'
-                      : isDisabled
-                        ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
-                        : 'border-gray-200 hover:border-gray-300 cursor-pointer'
+                    ? 'border-indigo-600 bg-indigo-50 cursor-pointer'
+                    : isDisabled
+                      ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
+                      : 'border-gray-200 hover:border-gray-300 cursor-pointer'
                     }`}
                 >
                   <input
@@ -910,10 +922,10 @@ const StepConfig = ({ formData, updateForm }) => {
                     }}
                   />
                   <div className={`w-5 h-5 rounded border flex items-center justify-center ${isChecked
-                      ? 'bg-indigo-600 border-indigo-600 text-white'
-                      : isDisabled
-                        ? 'border-gray-200 bg-gray-100'
-                        : 'border-gray-300'
+                    ? 'bg-indigo-600 border-indigo-600 text-white'
+                    : isDisabled
+                      ? 'border-gray-200 bg-gray-100'
+                      : 'border-gray-300'
                     }`}>
                     {isChecked && <FiCheck className="w-3 h-3" />}
                   </div>
@@ -939,10 +951,10 @@ const StepConfig = ({ formData, updateForm }) => {
                 <label
                   key={frame}
                   className={`flex items-center gap-2 p-3 border rounded-xl transition-all ${isChecked
-                      ? 'border-indigo-600 bg-indigo-50 cursor-pointer'
-                      : isDisabled
-                        ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
-                        : 'border-gray-200 hover:border-gray-300 cursor-pointer'
+                    ? 'border-indigo-600 bg-indigo-50 cursor-pointer'
+                    : isDisabled
+                      ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
+                      : 'border-gray-200 hover:border-gray-300 cursor-pointer'
                     }`}
                 >
                   <input
@@ -957,10 +969,10 @@ const StepConfig = ({ formData, updateForm }) => {
                     }}
                   />
                   <div className={`w-5 h-5 rounded border flex items-center justify-center ${isChecked
-                      ? 'bg-indigo-600 border-indigo-600 text-white'
-                      : isDisabled
-                        ? 'border-gray-200 bg-gray-100'
-                        : 'border-gray-300'
+                    ? 'bg-indigo-600 border-indigo-600 text-white'
+                    : isDisabled
+                      ? 'border-gray-200 bg-gray-100'
+                      : 'border-gray-300'
                     }`}>
                     {isChecked && <FiCheck className="w-3 h-3" />}
                   </div>
@@ -1108,8 +1120,8 @@ const StepConfig = ({ formData, updateForm }) => {
 const StepPricingMatrix = ({ formData, updateForm, recalculate }) => {
   const unitLabel = formData.pricingUnit === "cm" ? "cm"
     : formData.pricingUnit === "feet" ? "ft"
-    : formData.pricingUnit === "meter" ? "m"
-    : "in";
+      : formData.pricingUnit === "meter" ? "m"
+        : "in";
 
   const dims = formData.selectedDimensions.length ? formData.selectedDimensions : ["Default"];
   const canvases = formData.selectedCanvasTypes.length ? formData.selectedCanvasTypes : ["Default"];
